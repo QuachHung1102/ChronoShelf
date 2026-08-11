@@ -97,6 +97,18 @@ npm run design:lint    # kiểm tra design token
 npm run design:build   # sinh lại tailwind.theme.json từ DESIGN.md
 ```
 
+## Agent skills
+
+### Issue tracker
+
+Issue và ticket nằm dưới dạng markdown trong `.scratch/<feature>/` (repo chưa có git remote).
+Spec dài theo subsystem vẫn ở `docs/superpowers/`. Xem `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` + `docs/adr/` ở gốc repo — cả hai chưa tồn tại, tạm thời
+`content.md`, `DESIGN.md` và file này giữ vai trò đó. Xem `docs/agents/domain.md`.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know
