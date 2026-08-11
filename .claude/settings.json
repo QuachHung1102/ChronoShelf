@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(npm run build)",
+      "Bash(npm run lint)",
+      "Bash(npm ls:*)",
+      "mcp__insforge__fetch-docs",
+      "mcp__insforge__fetch-sdk-docs",
+      "mcp__insforge__get-backend-metadata",
+      "mcp__insforge__get-table-schema",
+      "mcp__insforge__list-buckets",
+      "mcp__insforge__get-function",
+      "mcp__pencil__get_app_state",
+      "mcp__pencil__get_guidelines",
+      "mcp__pencil__get_screenshot",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "mcp__plugin_context7_context7__query-docs"
+    ],
+    "deny": [
+      "Read(./pen.dev/**)",
+      "Edit(./pen.dev/**)",
+      "Write(./pen.dev/**)"
+    ]
+  }
+}
