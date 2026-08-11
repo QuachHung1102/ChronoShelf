@@ -1,0 +1,123 @@
+{
+  "theme": {
+    "extend": {
+      "colors": {
+        "primary": "#6e4a2e",
+        "primary-dark": "#3b2415",
+        "secondary": "#7a6248",
+        "tertiary": "#e8622c",
+        "tertiary-deep": "#a83a10",
+        "tertiary-light": "#ffc0a0",
+        "neutral": "#efe3cb",
+        "surface": "#fbf4e4",
+        "surface-shelf": "#2a160c",
+        "surface-reader": "#241209",
+        "surface-locked": "#5a3b22",
+        "on-primary": "#f6ecda"
+      },
+      "fontFamily": {
+        "headline-lg": [
+          "Playfair Display"
+        ],
+        "headline-md": [
+          "Playfair Display"
+        ],
+        "headline-sm": [
+          "Playfair Display"
+        ],
+        "title-book": [
+          "Playfair Display"
+        ],
+        "body-md": [
+          "Lora"
+        ],
+        "body-sm": [
+          "Lora"
+        ],
+        "label-md": [
+          "Lora"
+        ],
+        "label-caps": [
+          "Lora"
+        ],
+        "caption": [
+          "Lora"
+        ]
+      },
+      "fontSize": {
+        "headline-lg": [
+          "36px",
+          {
+            "fontWeight": "700"
+          }
+        ],
+        "headline-md": [
+          "24px",
+          {
+            "fontWeight": "700"
+          }
+        ],
+        "headline-sm": [
+          "20px",
+          {
+            "fontWeight": "700"
+          }
+        ],
+        "title-book": [
+          "15px",
+          {
+            "fontWeight": "700"
+          }
+        ],
+        "body-md": [
+          "14px",
+          {
+            "fontWeight": "400"
+          }
+        ],
+        "body-sm": [
+          "13px",
+          {
+            "fontWeight": "400"
+          }
+        ],
+        "label-md": [
+          "14px",
+          {
+            "fontWeight": "600"
+          }
+        ],
+        "label-caps": [
+          "12px",
+          {
+            "letterSpacing": "0.12em",
+            "fontWeight": "700"
+          }
+        ],
+        "caption": [
+          "12px",
+          {
+            "fontWeight": "400"
+          }
+        ]
+      },
+      "borderRadius": {
+        "none": "0px",
+        "sm": "4px",
+        "md": "6px",
+        "lg": "12px",
+        "full": "9999px"
+      },
+      "spacing": {
+        "xs": "4px",
+        "sm": "8px",
+        "md": "16px",
+        "lg": "24px",
+        "xl": "32px",
+        "page-margin": "48px",
+        "shelf-gap": "28px",
+        "header-height": "72px"
+      }
+    }
+  }
+}
