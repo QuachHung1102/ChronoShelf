@@ -15,6 +15,8 @@ quyển thì nhận được một vật phẩm, và chính vật phẩm đó m�
 | File | Nội dung |
 |---|---|
 | `content.md` | Bản mô tả sản phẩm đầy đủ: sitemap, cơ chế, nội dung từng trang. Nguồn sự thật về *cái gì* cần xây. |
+| `docs/superpowers/plans/2026-08-12-ban-giao-phase-tiep-theo.md` | **Đọc khi mở phiên mới**: đã xong tới đâu, còn gì, và các bẫy đã gặp. |
+| `content/shelves/*.json` | Nguồn sự thật cho nội dung bài học (tiêu đề, trang, vật phẩm). |
 | `DESIGN.md` | Hệ thiết kế (format `design.md` của Google Labs): toàn bộ color/typography/spacing token + lý do. Nguồn sự thật về *trông như thế nào*. |
 | `docs/superpowers/specs/` | Spec đã được duyệt, mỗi subsystem một file. |
 | `docs/superpowers/plans/` | Kế hoạch triển khai từng bước, mỗi subsystem một file. |
@@ -66,6 +68,21 @@ npm run design:build    # DESIGN.md -> tailwind.theme.json
 - `design:lint` chặn lỗi tương phản. Palette đã được sửa để đạt AA: `tertiary` (#E8622C) chỉ
   dùng cho đồ họa, `tertiary-deep` khi accent làm nền cho chữ, `tertiary-light` khi accent là
   chữ trên nền nâu. Chi tiết lý do nằm trong mục Colors của `DESIGN.md`.
+
+## Nội dung ở JSON, database chỉ giữ trạng thái người dùng
+
+Nội dung bài học là dữ liệu **biên tập**, không phải dữ liệu người dùng. Nó nằm ở
+`content/shelves/*.json` (có version trong git, import thẳng vào bundle để render tĩnh), ảnh
+tĩnh ở `public/`. Database chỉ có 3 bảng: `user_book_progress`, `user_items`, và `book_unlocks`.
+
+`book_unlocks` là **bản chiếu sinh ra từ JSON** — đừng sửa tay, chạy `npm run content:sync` rồi
+đưa SQL qua MCP `run-raw-sql`. Nó phải nằm trong DB (chứ không chỉ ở JSON) vì quyết định trao
+vật phẩm bắt buộc chạy phía máy chủ, mà backend không có `service_role` nên route Next.js không
+đủ quyền ghi `user_items` — đường duy nhất là hàm Postgres `SECURITY DEFINER`, và hàm đó chỉ đọc
+được chuỗi mở khóa nếu nó ở trong DB.
+
+Sửa JSON xong luôn chạy `npm run content:check` — nó bắt lỗi chuỗi mở khóa đứt gãy (quyển N phải
+cần đúng vật phẩm quyển N-1 trao) trước khi người đọc mắc kẹt ở một quyển không ai mở được.
 
 ## Backend — InsForge
 
