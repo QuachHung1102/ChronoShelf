@@ -15,6 +15,10 @@ colors:
   surface-reader: "#241209"
   surface-locked: "#5A3B22"
   on-primary: "#F6ECDA"
+  ring: "#A83A10"
+  ring-on-dark: "#F6ECDA"
+  destructive: "#B3261E"
+  on-destructive: "#FFFFFF"
 typography:
   headline-lg:
     fontFamily: Playfair Display
@@ -148,6 +152,20 @@ components:
   eyebrow:
     textColor: "{colors.tertiary-deep}"
     typography: "{typography.label-caps}"
+  focus-ring:
+    backgroundColor: "{colors.neutral}"
+    textColor: "{colors.ring}"
+    rounded: "{rounded.sm}"
+  focus-ring-on-dark:
+    backgroundColor: "{colors.primary}"
+    textColor: "{colors.ring-on-dark}"
+    rounded: "{rounded.sm}"
+  error-toast:
+    backgroundColor: "{colors.destructive}"
+    textColor: "{colors.on-destructive}"
+    typography: "{typography.body-sm}"
+    rounded: "{rounded.md}"
+    padding: "{spacing.md}"
 ---
 
 # Cửa Sổ Lịch Sử — Design System
@@ -235,6 +253,37 @@ Chỉ có hai chỗ được dùng đổ bóng thật:
 
 Không đổ bóng lên chữ, icon, hay nút.
 
+## Motion
+
+Chuyển động ở đây phải **mang nghĩa**, không trang trí. Mỗi hoạt cảnh trả lời một câu hỏi của
+người học: quyển này mở được chưa, tôi đang ở trang mấy, tôi vừa nhận được gì.
+
+**Ngân sách chuyển động: tối đa 1–2 thành phần động cùng lúc trên mỗi màn hình.** Kệ sách chỉ
+có đúng một thứ nhấp nháy — quyển tiếp theo cần đọc. Hoạt cảnh nhận vật phẩm ở trang cuối là
+một chuỗi **tuần tự**, không phải năm thứ động cùng lúc: vật phẩm rơi và xoay → bay vào túi
+hành trang → (sang màn kệ sách) ổ khóa bật mở. Đừng chạy chồng chúng lên nhau.
+
+| Loại | Thời lượng | Easing |
+| --- | --- | --- |
+| Micro-interaction (hover, focus, đổi trạng thái nút) | 150–200ms | `ease-out` |
+| Chuyển trạng thái (bìa sách nhô lên, tooltip) | 200–300ms | `ease-out` khi vào, `ease-in` khi ra |
+| Lật trang, mở bìa sách 3D | 400–500ms | `ease-in-out` |
+| Hoạt cảnh nhận vật phẩm | tối đa 1200ms cả chuỗi | tuần tự, mỗi chặng ≤ 400ms |
+
+Không dùng `linear` cho chuyển động giao diện. Không có hoạt cảnh nào của giao diện vượt 500ms
+trừ hai ngoại lệ đã nêu ở bảng trên, và cả hai đều phải bỏ qua được.
+
+### `prefers-reduced-motion` là bắt buộc
+
+Đây không phải phần tùy chọn. Người dùng bật giảm chuyển động thì:
+
+- Quầng sáng nhấp nháy trên bìa sách **dừng hẳn** — thay bằng viền `tertiary` tĩnh.
+- Lật trang và mở bìa 3D thành chuyển cảnh mờ dần (fade) ≤ 150ms.
+- Hoạt cảnh vật phẩm rơi bị bỏ qua; hiện thẳng kết quả "Bạn nhận được: …".
+
+Trạng thái cuối phải giống hệt nhau ở cả hai chế độ. Người tắt chuyển động không được mất
+thông tin nào — nếu tắt hoạt cảnh làm mất một thông báo, thiết kế đó sai.
+
 ## Shapes
 
 Bo góc nhẹ và nhất quán, gợi cạnh giấy và gáy sách đã mòn chứ không phải thẻ giao diện hiện đại:
@@ -285,4 +334,14 @@ thành phần accent duy nhất mang chữ; mọi chỗ accent khác đều là 
   nên khi thêm một icon-trên-nền-màu mới thì phải khai báo nó ở đó, đừng để ngoài hệ.
 - **Don't** thêm đổ bóng ngoài hai chỗ đã nêu ở mục Elevation — hệ này dựa vào lớp tông màu.
 - **Do** chọn font thay thế có đủ dấu tiếng Việt nếu phải đổi; Playfair Display và Lora đều
-  đạt yêu cầu này.
+  đạt yêu cầu này. Kiểm tra bằng khối `unicode-range` chứa `U+1EA0-1EF9` trong CSS mà Google
+  Fonts trả về — ví dụ Kalam **không** có khối này nên không dùng được cho dự án.
+- **Don't** dùng emoji làm icon (`🔥`, `🎒`, `✓`, `✕`). Dùng `lucide-react`, cùng bộ với tên
+  icon đã dùng trong mockup Pencil (`flame`, `backpack`, `lock`, `lock-open`, `check`, `x`,
+  `chevron-left`, `chevron-right`, `volume-2`, `stamp`). Emoji render khác nhau theo từng hệ
+  điều hành và không nhận được `aria-label` hay màu theo token.
+- **Do** để lộ vòng focus bàn phím trên mọi thứ bấm được: `ring` trên nền sáng, `ring-on-dark`
+  trên nền nâu/tối. Không bao giờ `outline: none` mà không thay bằng thứ khác — bìa sách và
+  mũi tên lật trang đều phải dùng được bằng bàn phím.
+- **Do** tôn trọng `prefers-reduced-motion` (xem mục Motion). Đây là ràng buộc bắt buộc, không
+  phải phần thêm nếu còn thời gian.

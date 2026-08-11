@@ -13,7 +13,11 @@
         "surface-shelf": "#2a160c",
         "surface-reader": "#241209",
         "surface-locked": "#5a3b22",
-        "on-primary": "#f6ecda"
+        "on-primary": "#f6ecda",
+        "ring": "#a83a10",
+        "ring-on-dark": "#f6ecda",
+        "destructive": "#b3261e",
+        "on-destructive": "#ffffff"
       },
       "fontFamily": {
         "headline-lg": [
