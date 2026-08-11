@@ -123,10 +123,14 @@ export const insforge = createClient({
 ```
 
 ```bash
-# .env.local
+# .env.local  (gitignored — never commit this file or paste the key into docs)
 NEXT_PUBLIC_INSFORGE_BASE_URL=https://pk3kdyx2.ap-southeast.insforge.app
-NEXT_PUBLIC_INSFORGE_ANON_KEY=anon_608dd0a6f9973e4233e253436802be82af681f9411e51ef620a5da11c95e5337
+NEXT_PUBLIC_INSFORGE_ANON_KEY=<lấy bằng MCP tool `get-anon-key`, hoặc `npx @insforge/cli secrets get ANON_KEY`>
 ```
+
+Anon key là khóa công khai dành cho client, được bảo vệ bằng RLS — nhưng vẫn lấy lúc cần thay
+vì chép cứng vào tài liệu, để tài liệu không hỏng khi khóa được xoay vòng. Khóa admin (`ik_…`)
+chỉ nằm trong `.mcp.json` đã gitignore, tuyệt đối không đưa vào `.env.local` hay code client.
 
 - [ ] **Step 7: Commit**
 

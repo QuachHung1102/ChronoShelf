@@ -28,8 +28,14 @@ spec → plan → code riêng: **kệ sách + đọc sách** (cơ chế lõi), t
 
 ## Quy tắc bắt buộc
 
-- **`.pen` chỉ mở bằng Pencil MCP** (`get_app_state` với đủ 3 flag → `execute`). File này được
-  mã hóa — KHÔNG dùng Read / Grep / Edit lên `.pen` (đã chặn sẵn trong `.claude/settings.json`).
+- **`.pen` chỉ mở bằng Pencil MCP** (`get_app_state` với đủ 3 flag → `execute`). KHÔNG dùng
+  Read / Grep / Edit lên `.pen`: MCP server của Pencil quy định như vậy, và đọc thô file này
+  chỉ cho ra một khối JSON lớn đã cũ thay vì trạng thái thật mà `get_app_state` trả về.
+  `.claude/settings.json` có deny rule `Read/Edit/Write(pen.dev/**)`. Nó chặn thật: Claude Code
+  chuẩn hóa đường dẫn Windows sang dạng POSIX trước khi so khớp, và deny rule của `Read` cũng
+  áp cho `cat`/`head`/`tail`/`sed` chạy qua Bash. **Nhưng nó không chặn subprocess tùy ý** —
+  `git show HEAD:pen.dev/design.pen` vẫn đọc được (vì vậy `git show` đã bị bỏ khỏi allowlist,
+  nó sẽ hỏi trước khi chạy). Đây là hàng rào chống lỡ tay, không phải ranh giới bảo mật.
 - **Tailwind CSS 3.4, không nâng lên v4.** InsForge yêu cầu; version đã pin cứng trong
   `package.json`.
 - **Logic mở khóa phải nằm ở phía server.** Client chỉ báo "đã đọc xong quyển X"; việc trao vật
