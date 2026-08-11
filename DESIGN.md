@@ -110,6 +110,11 @@ components:
     typography: "{typography.title-book}"
     rounded: "{rounded.md}"
     padding: "{spacing.md}"
+  stamp-completed:
+    backgroundColor: "{colors.tertiary-deep}"
+    textColor: "{colors.on-primary}"
+    rounded: "{rounded.full}"
+    size: "{spacing.lg}"
   book-cover-locked:
     backgroundColor: "{colors.surface-locked}"
     textColor: "{colors.on-primary}"
@@ -250,8 +255,13 @@ chế mở khóa:
   được. Hover chỉ hiện gợi ý "Cần [tên vật phẩm] để mở" — không bao giờ hiện nội dung bên trong.
 - **`book-cover-unlocked`**: nền `primary`, viền `tertiary` kèm quầng sáng nhấp nháy nhẹ.
   Hover thì sách nhô lên khỏi kệ. Đây là hành động chính của màn hình kệ sách.
-- **`book-cover-completed`**: nền `primary`, dấu triện tròn màu `tertiary` ở góc trên. Vẫn bấm
-  được để đọc lại, nhưng không còn phát sáng — nó đã hết vai trò mời gọi.
+- **`book-cover-completed`**: nền `primary`, dấu triện tròn (`stamp-completed`) ở góc trên. Vẫn
+  bấm được để đọc lại, nhưng không còn phát sáng — nó đã hết vai trò mời gọi.
+
+`stamp-completed` dùng nền `tertiary-deep` chứ không phải `tertiary`. Dấu triện là thứ **duy
+nhất** phân biệt "đã đọc xong" với "chưa đọc", nên nó là thành phần giao diện mang thông tin và
+phải đạt 3:1 theo WCAG 1.4.11. Icon kem trên `tertiary` chỉ đạt 2.89:1; trên `tertiary-deep` là
+5.47:1.
 
 `progress-ribbon` và `button-primary` cùng dùng nền `tertiary-deep` với chữ kem. Đây là hai
 thành phần accent duy nhất mang chữ; mọi chỗ accent khác đều là đồ họa thuần.
@@ -270,6 +280,9 @@ thành phần accent duy nhất mang chữ; mọi chỗ accent khác đều là 
 - **Don't** đặt chữ nhỏ hơn 12px, và đừng viết hoa toàn bộ một đoạn tiếng Việt có dấu.
 - **Do** giữ tương phản tối thiểu 4.5:1 cho chữ thường. Chạy `npm run design:lint` trước khi
   commit thay đổi về màu.
+- **Don't** quên rằng icon và thành phần giao diện **mang thông tin** cũng có ngưỡng riêng —
+  3:1 theo WCAG 1.4.11. `design:lint` chỉ kiểm tra được các cặp đã khai báo trong `components`,
+  nên khi thêm một icon-trên-nền-màu mới thì phải khai báo nó ở đó, đừng để ngoài hệ.
 - **Don't** thêm đổ bóng ngoài hai chỗ đã nêu ở mục Elevation — hệ này dựa vào lớp tông màu.
 - **Do** chọn font thay thế có đủ dấu tiếng Việt nếu phải đổi; Playfair Display và Lora đều
   đạt yêu cầu này.

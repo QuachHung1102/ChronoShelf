@@ -36,6 +36,11 @@ spec → plan → code riêng: **kệ sách + đọc sách** (cơ chế lõi), t
   áp cho `cat`/`head`/`tail`/`sed` chạy qua Bash. **Nhưng nó không chặn subprocess tùy ý** —
   `git show HEAD:pen.dev/design.pen` vẫn đọc được (vì vậy `git show` đã bị bỏ khỏi allowlist,
   nó sẽ hỏi trước khi chạy). Đây là hàng rào chống lỡ tay, không phải ranh giới bảo mật.
+- **Sửa `.pen` xong phải kiểm tra `git status` trước khi commit.** Mutation qua Pencil MCP
+  không ghi xuống đĩa ngay — `Get`/`GetVariables` đọc trạng thái trong bộ nhớ editor nên vẫn
+  trả về giá trị mới trong khi file trên đĩa còn y nguyên. Đã suýt commit hụt một loạt thay
+  đổi vì tin vào `Get`. Nếu `git status` chưa thấy `pen.dev/design.pen` bị sửa, chạy thêm một
+  `execute` nữa (ví dụ `SetVariables` lặp lại đúng giá trị cũ) để đẩy phần đang treo xuống đĩa.
 - **Tailwind CSS 3.4, không nâng lên v4.** InsForge yêu cầu; version đã pin cứng trong
   `package.json`.
 - **Logic mở khóa phải nằm ở phía server.** Client chỉ báo "đã đọc xong quyển X"; việc trao vật
