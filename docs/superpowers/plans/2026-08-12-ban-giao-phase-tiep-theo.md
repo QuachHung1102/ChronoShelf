@@ -57,17 +57,21 @@ không giả lập được `auth.uid()` nên hàm một-mảnh không test đư
   đã chuyển sang `public/`. Cân nhắc xóa nếu không dùng tới.
 - **Code**: `lib/content/` (đọc JSON), `lib/insforge/` (client + data layer), `components/Header.tsx`,
   `components/shelf/BookCover.tsx`.
+- **Kệ sách + đọc sách (2026-08-13)**: `BookShelf`, `ShelfPageClient`, `app/lich-su-viet-nam/page.tsx`,
+  `components/reader/` (`BookReaderModal`, `PageSpread`, `ItemDropOverlay`). `app/page.tsx` không
+  còn là trang create-next-app; ảnh trong JSON đã đổi sang `null` và UI dùng nền phẳng.
+  Đã chạy thật đủ 3 nhánh (chưa đăng nhập → báo cần đăng nhập; đọc xong → nhận Trống đồng và mở
+  khóa quyển 2; đọc lại → `alreadyCompleted`, `user_items` vẫn đúng 1 dòng).
 
 ## 3. Chưa xong — việc của phase tiếp theo
 
 | # | Việc | Ghi chú |
 |---|---|---|
-| 1 | `components/shelf/BookShelf.tsx` | Kệ gỗ, tiêu đề, tiến độ "Bạn đã mở x/5 quyển", chú giải 3 trạng thái. Nhận `ShelfView`. |
-| 2 | `app/lich-su-viet-nam/page.tsx` | Server component: `getUserShelfState()` → `buildShelfView()` → client wrapper giữ `openBookSlug`. |
-| 3 | `components/reader/*` | `BookReaderModal`, `PageSpread`, `ItemDropOverlay`. Xem mục 5.2/5.3 của spec. |
-| 4 | Ảnh | JSON đang trỏ tới `/books/*.svg`, `/pages/*.svg`, `/items/*.svg` — **các file này chưa tồn tại**. Phải tạo trong `public/` hoặc đổi JSON sang `null` và dùng nền phẳng. |
-| 5 | Auth | Chưa có màn đăng nhập. Chưa đăng nhập thì kệ vẫn xem được nhưng chỉ quyển đầu mở và tiến độ không lưu (`setCurrentPage` trả `false`). Là subsystem riêng. |
-| 6 | Xóa `app/page.tsx` mặc định | Vẫn là trang create-next-app. |
+| 1 | Auth | Chưa có màn đăng nhập/đăng ký. Chưa đăng nhập thì kệ vẫn xem được nhưng chỉ quyển đầu mở, và nút "Đọc xong" báo "Bạn cần đăng nhập…". Là subsystem riêng, và là thứ chặn nhiều nhất hiện giờ. |
+| 2 | Ảnh thật | `cover`/`image` trong JSON đang là `null` → UI hiện khối phẳng + "Ảnh minh họa sẽ được bổ sung". Có ảnh thì đặt vào `public/` rồi điền lại đường dẫn, component đã xử lý sẵn cả hai nhánh. |
+| 3 | Túi hành trang + streak | Số 12/7 trên header vẫn là placeholder. Hoạt cảnh "vật phẩm bay vào túi" (spec màn C) chưa làm vì chưa có túi thật. |
+| 4 | Chi tiết đọc sách còn thiếu | Âm thanh lật trang + nút tắt tiếng (spec §2 màn B), kéo góc trang, focus trap trong modal (hiện đã có Escape + mũi tên + `role="dialog"`). |
+| 5 | Trang chủ thật | `app/page.tsx` mới chỉ là lối vào kệ sách, timeline "Ngày ấy – Bây giờ" là subsystem riêng. |
 
 ### Ràng buộc UI đã chốt trong DESIGN.md, phải tuân thủ
 
@@ -94,6 +98,18 @@ không giả lập được `auth.uid()` nên hàm một-mảnh không test đư
 - **`py` là Python launcher trên máy này**, `python`/`python3` đều không có.
 - **Tailwind 3.4 xuất màu dạng `rgb(r g b/alpha)`**, không phải hex — grep hex trong CSS build
   ra sẽ báo sai là "token không tới nơi".
+- **Thang spacing của Tailwind không có `42`.** `w-42` (168px, bề ngang bìa sách) im lặng không
+  sinh ra class nào — bìa bị co lại theo nội dung. Cỡ nào không có trong thang thì đặt tay trong
+  `.module.scss`, đừng đoán tên class.
+- **Phiên đăng nhập InsForge nằm ở trình duyệt**, nên `getUserShelfState()` gọi từ server
+  component luôn trả về rỗng (ai cũng thành "chưa đăng nhập"). Trạng thái người dùng phải lấy
+  phía client — đó là lý do có `ShelfPageClient`, và cũng là lý do sau khi đọc xong chỉ cần gọi
+  lại `getUserShelfState()` chứ không `router.refresh()`.
+- **Backend đang bật xác minh email**: `auth.signUp` trả `requireEmailVerification: true` và
+  `accessToken: null`. Muốn tạo user để test thì `UPDATE auth.users SET email_verified = true`
+  qua `run-raw-sql` rồi mới `signInWithPassword` được.
+- **Chưa đăng nhập, mỗi lần đọc trạng thái sẽ log 401 từ `/api/auth/refresh`** ở console. Đó là
+  SDK thử làm mới phiên, không phải lỗi của trang.
 
 ## 5. Lệnh
 

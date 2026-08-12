@@ -1,5 +1,11 @@
 # Kệ sách & Đọc sách — Implementation Plan
 
+> ⚠️ **ĐÃ LỖI THỜI — đừng làm theo từng bước.** Task 2–6 mô tả kiến trúc cũ (nội dung nằm
+> trong DB: bảng `shelves`/`books`/`pages`/`items`, id là uuid). Kiến trúc hiện tại để nội
+> dung ở `content/shelves/*.json` và DB chỉ giữ trạng thái người dùng. File này giữ lại để
+> tra lý do các quyết định đầu tiên; nguồn sự thật là `CLAUDE.md` +
+> `docs/superpowers/plans/2026-08-12-ban-giao-phase-tiep-theo.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build the "Lịch sử Việt Nam" bookshelf + book reader flow end-to-end (real InsForge backend + Next.js UI) matching the approved design in `docs/superpowers/specs/2026-08-12-ke-sach-doc-sach-design.md` and the Pencil mockup in `pen.dev/design.pen`.

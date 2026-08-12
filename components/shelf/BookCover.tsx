@@ -2,8 +2,9 @@
 
 import { Check, Lock } from "lucide-react";
 import type { BookView } from "@/lib/insforge/types";
+import s from "./BookCover.module.scss";
 
-const COVER = "flex h-60 w-42 flex-col rounded-md p-md text-left";
+const COVER = "flex h-60 w-full flex-col rounded-md p-md text-left";
 
 export function BookCover({
   view,
@@ -17,7 +18,7 @@ export function BookCover({
   if (state === "locked") {
     const hint = requiredItem ? `Cần ${requiredItem.name} để mở` : "Chưa mở khóa";
     return (
-      <div className="flex w-42 flex-col items-center gap-sm">
+      <div className={`${s.slot} flex flex-col items-center gap-sm`}>
         <div
           className={`${COVER} items-center justify-center gap-sm border border-surface-shelf bg-surface-locked`}
           aria-label={`${book.title} — ${hint}`}
@@ -35,7 +36,7 @@ export function BookCover({
   const isCompleted = state === "completed";
 
   return (
-    <div className="flex w-42 flex-col items-center gap-sm">
+    <div className={`${s.slot} flex flex-col items-center gap-sm`}>
       <button
         type="button"
         onClick={() => onOpen(book.slug)}
@@ -43,14 +44,12 @@ export function BookCover({
           isCompleted ? `Đọc lại: ${book.title} (đã đọc xong)` : `Mở đọc: ${book.title}`
         }
         className={`${COVER} cursor-pointer justify-between bg-primary transition-transform duration-200 ease-out hover:-translate-y-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-on-dark focus-visible:ring-offset-2 focus-visible:ring-offset-primary-dark motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${
-          isCompleted
-            ? ""
-            : "border-2 border-tertiary shadow-[0_0_24px_2px_rgba(232,98,45,0.55)] motion-safe:animate-pulse"
+          isCompleted ? "" : s.glow
         }`}
       >
         {isCompleted && (
           <span className="flex justify-end">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-tertiary-deep">
+            <span className="flex h-lg w-lg items-center justify-center rounded-full bg-tertiary-deep">
               <Check aria-hidden className="h-3.5 w-3.5 text-on-primary" />
             </span>
           </span>

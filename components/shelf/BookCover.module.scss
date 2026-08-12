@@ -1,0 +1,27 @@
+// Chỉ giữ phần Tailwind không diễn đạt gọn được: kích thước bìa và quầng sáng.
+// Màu vẫn lấy từ token qua `theme()` — đừng viết mã hex ở đây.
+
+// 168px không có trong thang spacing của Tailwind (w-42 không tồn tại — class đó
+// im lặng không sinh ra gì), nên chiều rộng bìa đặt tay ở đây.
+.slot {
+  width: 168px;
+}
+
+// Quyển tiếp theo cần đọc — điểm phát sáng DUY NHẤT của màn hình kệ sách.
+// Giảm chuyển động: quầng sáng đứng yên, viền cam tĩnh vẫn còn (DESIGN.md § Motion).
+.glow {
+  border: 2px solid theme('colors.tertiary');
+  box-shadow: 0 0 24px 2px theme('colors.tertiary / 55%');
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .glow {
+    animation: pulse-glow 2400ms ease-in-out infinite;
+  }
+}
+
+@keyframes pulse-glow {
+  50% {
+    box-shadow: 0 0 32px 6px theme('colors.tertiary / 80%');
+  }
+}

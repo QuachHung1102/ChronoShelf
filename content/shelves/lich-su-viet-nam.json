@@ -6,31 +6,31 @@
     {
       "slug": "trong-dong",
       "name": "Trống đồng",
-      "image": "/items/trong-dong.svg",
+      "image": null,
       "description": "Biểu tượng của nền văn minh Đông Sơn thời Hùng Vương."
     },
     {
       "slug": "coc-go-bach-dang",
       "name": "Cọc gỗ Bạch Đằng",
-      "image": "/items/coc-go-bach-dang.svg",
+      "image": null,
       "description": "Cọc gỗ bịt sắt đóng ngầm dưới lòng sông, vũ khí thủy chiến của Ngô Quyền năm 938."
     },
     {
       "slug": "an-tin-dong-a",
       "name": "Ấn tín Đông A",
-      "image": "/items/an-tin-dong-a.svg",
+      "image": null,
       "description": "Ấn tín tượng trưng cho hào khí nhà Trần ba lần đánh tan quân Nguyên - Mông."
     },
     {
       "slug": "ao-bao-quang-trung",
       "name": "Áo bào Quang Trung",
-      "image": "/items/ao-bao-quang-trung.svg",
+      "image": null,
       "description": "Chiếc áo bào nhuốm khói thuốc súng trong trận Ngọc Hồi - Đống Đa mùa xuân 1789."
     },
     {
       "slug": "la-co-quyet-chien",
       "name": "Lá cờ Quyết Chiến Quyết Thắng",
-      "image": "/items/la-co-quyet-chien.svg",
+      "image": null,
       "description": "Lá cờ tung bay trên nóc hầm Đờ Cát chiều 7/5/1954."
     }
   ],
@@ -38,26 +38,26 @@
     {
       "slug": "khoi-nguon-bo-coi",
       "title": "Khởi nguồn bờ cõi",
-      "cover": "/books/khoi-nguon-bo-coi.svg",
+      "cover": null,
       "requiredItem": null,
       "rewardItem": "trong-dong",
       "pages": [
         {
           "heading": "Nhà nước đầu tiên",
-          "image": "/pages/khoi-nguon-bo-coi-1.svg",
-          "caption": "Lorem ipsum dolor sit amet",
+          "image": null,
+          "caption": null,
           "body": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
         },
         {
           "heading": "Văn minh Đông Sơn",
-          "image": "/pages/khoi-nguon-bo-coi-2.svg",
-          "caption": "Lorem ipsum dolor sit amet",
+          "image": null,
+          "caption": null,
           "body": "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
         },
         {
           "heading": "Truyền thuyết dựng nước",
-          "image": "/pages/khoi-nguon-bo-coi-3.svg",
-          "caption": "Lorem ipsum dolor sit amet",
+          "image": null,
+          "caption": null,
           "body": "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur."
         },
         {
@@ -77,26 +77,26 @@
     {
       "slug": "tran-chien-bach-dang-938",
       "title": "Trận chiến Bạch Đằng 938",
-      "cover": "/books/tran-chien-bach-dang-938.svg",
+      "cover": null,
       "requiredItem": "trong-dong",
       "rewardItem": "coc-go-bach-dang",
       "pages": [
         {
           "heading": "Bối cảnh",
-          "image": "/pages/bach-dang-1.svg",
-          "caption": "Lorem ipsum dolor sit amet",
+          "image": null,
+          "caption": null,
           "body": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore."
         },
         {
           "heading": "Trận địa cọc ngầm",
-          "image": "/pages/bach-dang-2.svg",
-          "caption": "Lorem ipsum dolor sit amet",
+          "image": null,
+          "caption": null,
           "body": "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo."
         },
         {
           "heading": "Lợi dụng thủy triều",
-          "image": "/pages/bach-dang-3.svg",
-          "caption": "Lorem ipsum dolor sit amet",
+          "image": null,
+          "caption": null,
           "body": "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla."
         },
         {
@@ -116,26 +116,26 @@
     {
       "slug": "hao-khi-dong-a",
       "title": "Hào khí Đông A",
-      "cover": "/books/hao-khi-dong-a.svg",
+      "cover": null,
       "requiredItem": "coc-go-bach-dang",
       "rewardItem": "an-tin-dong-a",
       "pages": [
         {
           "heading": "Nhà Trần dựng nghiệp",
-          "image": "/pages/dong-a-1.svg",
-          "caption": "Lorem ipsum dolor sit amet",
+          "image": null,
+          "caption": null,
           "body": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt."
         },
         {
           "heading": "Ba lần kháng Nguyên",
-          "image": "/pages/dong-a-2.svg",
-          "caption": "Lorem ipsum dolor sit amet",
+          "image": null,
+          "caption": null,
           "body": "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip."
         },
         {
           "heading": "Hội nghị Diên Hồng",
-          "image": "/pages/dong-a-3.svg",
-          "caption": "Lorem ipsum dolor sit amet",
+          "image": null,
+          "caption": null,
           "body": "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore."
         },
         {
@@ -155,26 +155,26 @@
     {
       "slug": "dai-pha-quan-thanh",
       "title": "Đại phá quân Thanh",
-      "cover": "/books/dai-pha-quan-thanh.svg",
+      "cover": null,
       "requiredItem": "an-tin-dong-a",
       "rewardItem": "ao-bao-quang-trung",
       "pages": [
         {
           "heading": "Nguyễn Huệ lên ngôi",
-          "image": "/pages/quang-trung-1.svg",
-          "caption": "Lorem ipsum dolor sit amet",
+          "image": null,
+          "caption": null,
           "body": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor."
         },
         {
           "heading": "Hành quân thần tốc",
-          "image": "/pages/quang-trung-2.svg",
-          "caption": "Lorem ipsum dolor sit amet",
+          "image": null,
+          "caption": null,
           "body": "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi."
         },
         {
           "heading": "Chiến thắng Ngọc Hồi - Đống Đa",
-          "image": "/pages/quang-trung-3.svg",
-          "caption": "Lorem ipsum dolor sit amet",
+          "image": null,
+          "caption": null,
           "body": "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum."
         },
         {
@@ -194,26 +194,26 @@
     {
       "slug": "su-thi-dien-bien-phu",
       "title": "Sử thi Điện Biên Phủ",
-      "cover": "/books/su-thi-dien-bien-phu.svg",
+      "cover": null,
       "requiredItem": "ao-bao-quang-trung",
       "rewardItem": "la-co-quyet-chien",
       "pages": [
         {
           "heading": "Lòng chảo Điện Biên",
-          "image": "/pages/dien-bien-1.svg",
-          "caption": "Lorem ipsum dolor sit amet",
+          "image": null,
+          "caption": null,
           "body": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod."
         },
         {
           "heading": "Kéo pháo vào trận địa",
-          "image": "/pages/dien-bien-2.svg",
-          "caption": "Lorem ipsum dolor sit amet",
+          "image": null,
+          "caption": null,
           "body": "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris."
         },
         {
           "heading": "56 ngày đêm",
-          "image": "/pages/dien-bien-3.svg",
-          "caption": "Lorem ipsum dolor sit amet",
+          "image": null,
+          "caption": null,
           "body": "Duis aute irure dolor in reprehenderit in voluptate velit esse."
         },
         {

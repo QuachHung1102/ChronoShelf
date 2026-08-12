@@ -65,6 +65,10 @@ npm run design:build    # DESIGN.md -> tailwind.theme.json
   `tailwind.theme.json` bằng tay** — nó là file sinh ra.
 - **Đừng hardcode mã hex trong component.** Dùng class Tailwind sinh từ token: `bg-primary`,
   `text-on-primary`, `rounded-md`, `text-headline-lg`…
+- **Tailwind là chính; SCSS chỉ cho phần phải code tay.** Layout/màu/chữ/khoảng cách viết bằng
+  class Tailwind ngay trong JSX. Chỉ mở `*.module.scss` khi Tailwind không diễn đạt gọn được:
+  `@keyframes`, `box-shadow`/gradient tùy biến, kích thước không có trong thang spacing. Trong
+  SCSS vẫn lấy màu từ token bằng `theme('colors.tertiary / 55%')` — không viết hex.
 - `design:lint` chặn lỗi tương phản. Palette đã được sửa để đạt AA: `tertiary` (#E8622C) chỉ
   dùng cho đồ họa, `tertiary-deep` khi accent làm nền cho chữ, `tertiary-light` khi accent là
   chữ trên nền nâu. Chi tiết lý do nằm trong mục Colors của `DESIGN.md`.
