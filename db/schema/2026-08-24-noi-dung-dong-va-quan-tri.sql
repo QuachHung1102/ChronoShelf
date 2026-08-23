@@ -216,24 +216,35 @@ BEGIN
     IF NOT EXISTS (
       SELECT 1 FROM pg_policies
        WHERE schemaname = 'public' AND tablename = t AND policyname = 'admin write'
-         AND qual       LIKE '%is\_admin()%' ESCAPE '\'
-         AND with_check LIKE '%is\_admin()%' ESCAPE '\'
+         -- So khớp CHÍNH XÁC chứ không LIKE: `USING (is_admin() OR true)` vẫn chứa
+         -- chuỗi con `is_admin()` nhưng mở toang cửa cho mọi người đã đăng nhập.
+         -- Giá trị thật trong pg_policies đúng là `is_admin()` (đã kiểm ngày
+         -- 2026-08-24). Sửa biểu thức policy thì khẳng định này nổ to — đúng ý muốn:
+         -- mọi thay đổi lên hàng rào ghi nội dung đều phải có người xem lại.
+         AND qual       = 'is_admin()'
+         AND with_check = 'is_admin()'
+         AND cmd        = 'ALL'
     ) THEN
       RAISE EXCEPTION
         'policy "admin write" trên bảng % thiếu, hoặc không còn gọi is_admin() ở cả USING lẫn WITH CHECK', t;
     END IF;
   END LOOP;
 
-  -- Ràng buộc thứ tự phải DEFERRABLE, nếu không admin đổi chỗ hai quyển sẽ vỡ unique.
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint
-                  WHERE conname = 'books_shelf_position_key' AND condeferrable) THEN
-    RAISE EXCEPTION 'books_shelf_position_key không DEFERRABLE';
-  END IF;
-
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint
-                  WHERE conname = 'pages_book_position_key' AND condeferrable) THEN
-    RAISE EXCEPTION 'pages_book_position_key không DEFERRABLE';
-  END IF;
+  -- Ràng buộc thứ tự phải DEFERRABLE INITIALLY DEFERRED, nếu không admin đổi chỗ hai
+  -- quyển sẽ vỡ unique.
+  --
+  -- Phải kiểm CẢ HAI cột catalog. `condeferrable` chỉ nói "có thể hoãn được", còn
+  -- `condeferred` mới nói "mặc định hoãn". Hạ xuống `DEFERRABLE INITIALLY IMMEDIATE`
+  -- thì condeferrable vẫn true — khẳng định vẫn xanh — trong khi một transaction đổi
+  -- chỗ hai quyển mà không tự gọi `SET CONSTRAINTS ... DEFERRED` lại vỡ đúng như cũ.
+  FOREACH t IN ARRAY ARRAY['shelves_position_key',
+                           'books_shelf_position_key',
+                           'pages_book_position_key'] LOOP
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint
+                    WHERE conname = t AND condeferrable AND condeferred) THEN
+      RAISE EXCEPTION '% không phải DEFERRABLE INITIALLY DEFERRED', t;
+    END IF;
+  END LOOP;
 
   RAISE NOTICE 'Task 2 OK';
 END $$;
