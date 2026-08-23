@@ -41,6 +41,99 @@ $fn$;
 REVOKE ALL ON FUNCTION public.is_admin() FROM public;
 GRANT EXECUTE ON FUNCTION public.is_admin() TO anon, authenticated;
 
+-- ---------------------------------------------------------------------------
+-- Nội dung. `required_item_slug` CỐ Ý KHÔNG TỒN TẠI: nó suy ra được 100% từ vị trí
+-- (quyển i mở bằng vật phẩm thưởng của quyển i-1), nên không lưu thì chuỗi mở khóa
+-- không thể đứt. Xem spec §2.2.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.shelves (
+  slug         text PRIMARY KEY,
+  name         text NOT NULL,
+  position     integer NOT NULL,
+  country_code text UNIQUE,      -- id số ISO-3166-1 của world-atlas; '704' = Việt Nam
+  blurb        text NOT NULL DEFAULT '',
+  cover_url    text,
+  published    boolean NOT NULL DEFAULT false,
+  CONSTRAINT shelves_position_key UNIQUE (position) DEFERRABLE INITIALLY DEFERRED
+);
+
+CREATE TABLE IF NOT EXISTS public.items (
+  slug         text PRIMARY KEY,
+  name         text NOT NULL,
+  description  text NOT NULL DEFAULT '',
+  image_url    text,
+  image_source text,             -- URL trang gốc (Wikimedia Commons…)
+  image_credit text              -- tác giả + giấy phép; điều kiện của CC BY-SA
+);
+
+CREATE TABLE IF NOT EXISTS public.books (
+  slug             text PRIMARY KEY,
+  shelf_slug       text NOT NULL REFERENCES public.shelves(slug) ON DELETE CASCADE,
+  position         integer NOT NULL,
+  title            text NOT NULL,
+  era              text NOT NULL,
+  cover_url        text,
+  cover_source     text,
+  cover_credit     text,
+  -- RESTRICT chứ không SET NULL: SET NULL sẽ âm thầm mở toang quyển kế tiếp khi ai đó
+  -- xóa một vật phẩm. RESTRICT bắt admin gỡ liên kết trước.
+  reward_item_slug text REFERENCES public.items(slug) ON DELETE RESTRICT,
+  published        boolean NOT NULL DEFAULT false,
+  created_at       timestamptz NOT NULL DEFAULT now(),
+  updated_at       timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT books_shelf_position_key UNIQUE (shelf_slug, position) DEFERRABLE INITIALLY DEFERRED
+);
+
+CREATE TABLE IF NOT EXISTS public.pages (
+  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  book_slug    text NOT NULL REFERENCES public.books(slug) ON DELETE CASCADE,
+  position     integer NOT NULL CHECK (position >= 1),
+  heading      text NOT NULL,
+  body         text NOT NULL,
+  image_url    text,
+  image_source text,
+  image_credit text,
+  caption      text,
+  summary      text[],           -- chỉ trang cuối, 3-5 ý (content.md 4.3)
+  CONSTRAINT pages_book_position_key UNIQUE (book_slug, position) DEFERRABLE INITIALLY DEFERRED
+);
+
+ALTER TABLE public.shelves ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.items   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.books   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.pages   ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "read published" ON public.shelves;
+DROP POLICY IF EXISTS "read published" ON public.books;
+DROP POLICY IF EXISTS "read items"     ON public.items;
+DROP POLICY IF EXISTS "read pages"     ON public.pages;
+DROP POLICY IF EXISTS "admin write"    ON public.shelves;
+DROP POLICY IF EXISTS "admin write"    ON public.items;
+DROP POLICY IF EXISTS "admin write"    ON public.books;
+DROP POLICY IF EXISTS "admin write"    ON public.pages;
+
+CREATE POLICY "read published" ON public.shelves FOR SELECT USING (published OR public.is_admin());
+CREATE POLICY "read published" ON public.books   FOR SELECT USING (published OR public.is_admin());
+-- items chỉ là tên/mô tả/ảnh, không có gì để giấu — và trang kệ cần tên vật phẩm để
+-- hiện "Cần Trống đồng để mở" cho quyển đang khóa.
+CREATE POLICY "read items"     ON public.items   FOR SELECT USING (true);
+CREATE POLICY "read pages"     ON public.pages   FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.books b
+           WHERE b.slug = pages.book_slug AND (b.published OR public.is_admin()))
+);
+
+CREATE POLICY "admin write" ON public.shelves FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+CREATE POLICY "admin write" ON public.items   FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+CREATE POLICY "admin write" ON public.books   FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+CREATE POLICY "admin write" ON public.pages   FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+-- RLS chỉ LỌC DÒNG, nó không cấp quyền bảng. GRANT dưới đây là cần thiết để admin
+-- thật ghi được; người đã đăng nhập nhưng không phải admin đi qua GRANT rồi bị
+-- policy "admin write" chặn lại. Đó chính là phép 10 của `npm run db:check`.
+REVOKE ALL ON public.shelves, public.items, public.books, public.pages FROM anon, authenticated;
+GRANT SELECT                 ON public.shelves, public.items, public.books, public.pages TO anon, authenticated;
+GRANT INSERT, UPDATE, DELETE ON public.shelves, public.items, public.books, public.pages TO authenticated;
+
 -- === TỰ KIỂM TASK 1 ===
 DO $$
 BEGIN
@@ -88,4 +181,48 @@ BEGIN
   END IF;
 
   RAISE NOTICE 'Task 1 OK';
+END $$;
+
+-- === TỰ KIỂM TASK 2 ===
+DO $$
+DECLARE t text;
+BEGIN
+  FOREACH t IN ARRAY ARRAY['shelves','items','books','pages'] LOOP
+    IF NOT EXISTS (SELECT 1 FROM pg_tables
+                    WHERE schemaname = 'public' AND tablename = t AND rowsecurity) THEN
+      RAISE EXCEPTION 'bảng % chưa tồn tại hoặc chưa bật RLS', t;
+    END IF;
+
+    IF NOT has_table_privilege('anon', 'public.' || t, 'SELECT') THEN
+      RAISE EXCEPTION 'anon không đọc được % — kệ sẽ trắng khi chưa đăng nhập', t;
+    END IF;
+
+    IF has_table_privilege('anon', 'public.' || t, 'INSERT') THEN
+      RAISE EXCEPTION 'anon ghi được %', t;
+    END IF;
+
+    -- authenticated PHẢI có GRANT ghi; hàng rào thật là policy "admin write",
+    -- không phải GRANT. Thiếu GRANT thì chính admin cũng không ghi được.
+    IF NOT has_table_privilege('authenticated', 'public.' || t, 'INSERT') THEN
+      RAISE EXCEPTION 'authenticated thiếu GRANT INSERT trên % — admin thật cũng ghi hỏng', t;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_policies
+                    WHERE schemaname = 'public' AND tablename = t AND policyname = 'admin write') THEN
+      RAISE EXCEPTION 'bảng % thiếu policy "admin write"', t;
+    END IF;
+  END LOOP;
+
+  -- Ràng buộc thứ tự phải DEFERRABLE, nếu không admin đổi chỗ hai quyển sẽ vỡ unique.
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint
+                  WHERE conname = 'books_shelf_position_key' AND condeferrable) THEN
+    RAISE EXCEPTION 'books_shelf_position_key không DEFERRABLE';
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint
+                  WHERE conname = 'pages_book_position_key' AND condeferrable) THEN
+    RAISE EXCEPTION 'pages_book_position_key không DEFERRABLE';
+  END IF;
+
+  RAISE NOTICE 'Task 2 OK';
 END $$;
