@@ -33,7 +33,12 @@ if (files.length === 0) {
 const shelves = [];
 for (const file of files) shelves.push(JSON.parse(await readFile(join(dir, file), "utf8")));
 
-const out = ["BEGIN;"];
+// KHÔNG phát `BEGIN;`/`COMMIT;`: MCP `run-raw-sql` từ chối lệnh điều khiển transaction
+// tường minh, và nó không cần — proxy đã tự bọc cả batch trong một transaction. Đã kiểm
+// bằng thực nghiệm ngày 2026-08-24: một batch có `CREATE TABLE` rồi một `INSERT` trùng
+// khóa làm cả batch roll back, bảng vừa tạo cũng biến mất. Thêm `BEGIN;` vào chỉ khiến
+// output không dán thẳng vào MCP được, đúng lỗi đã vấp lần đầu.
+const out = [];
 
 for (const shelf of shelves) {
   out.push(
@@ -83,5 +88,4 @@ for (const shelf of shelves) {
   });
 }
 
-out.push("COMMIT;");
 console.log(out.join("\n\n"));
