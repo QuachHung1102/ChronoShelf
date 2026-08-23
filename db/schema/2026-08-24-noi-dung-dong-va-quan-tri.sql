@@ -167,7 +167,8 @@ BEGIN
        AND tablename  = 'user_roles'
        AND policyname = 'own role select'
        AND qual LIKE '%auth.uid()%'
-       AND qual LIKE '%user_id%'
+       -- `_` là ký tự đại diện của LIKE; không ESCAPE thì pattern khớp cả `user2id`.
+       AND qual LIKE '%user\_id%' ESCAPE '\'
   ) THEN
     RAISE EXCEPTION 'policy "own role select" không còn giới hạn theo auth.uid() = user_id';
   END IF;
@@ -207,9 +208,19 @@ BEGIN
       RAISE EXCEPTION 'authenticated thiếu GRANT INSERT trên % — admin thật cũng ghi hỏng', t;
     END IF;
 
-    IF NOT EXISTS (SELECT 1 FROM pg_policies
-                    WHERE schemaname = 'public' AND tablename = t AND policyname = 'admin write') THEN
-      RAISE EXCEPTION 'bảng % thiếu policy "admin write"', t;
+    -- Chỉ kiểm TÊN policy là chưa đủ: một policy vẫn mang tên 'admin write' nhưng
+    -- USING (true) sẽ cho mọi người đã đăng nhập sửa nội dung, mà khẳng định
+    -- chỉ-kiểm-tên vẫn xanh. `db:check` phép 10 chỉ thử live trên `books`, nên
+    -- `shelves`/`items`/`pages` không có hàng rào nào khác ngoài khẳng định này.
+    -- Soi cả hai vế: USING (sửa/xóa được dòng nào) và WITH CHECK (ghi vào được gì).
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_policies
+       WHERE schemaname = 'public' AND tablename = t AND policyname = 'admin write'
+         AND qual       LIKE '%is\_admin()%' ESCAPE '\'
+         AND with_check LIKE '%is\_admin()%' ESCAPE '\'
+    ) THEN
+      RAISE EXCEPTION
+        'policy "admin write" trên bảng % thiếu, hoặc không còn gọi is_admin() ở cả USING lẫn WITH CHECK', t;
     END IF;
   END LOOP;
 
