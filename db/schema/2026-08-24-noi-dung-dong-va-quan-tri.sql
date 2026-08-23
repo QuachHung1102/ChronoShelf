@@ -248,3 +248,212 @@ BEGIN
 
   RAISE NOTICE 'Task 2 OK';
 END $$;
+
+-- ---------------------------------------------------------------------------
+-- RPC. Vẫn tách hai hàm vì SQL proxy của InsForge chặn set_config('request.jwt.claims',…)
+-- nên auth.uid() không giả lập được và hàm một-mảnh sẽ không test được.
+-- BẢO MẬT: _complete_book_for KHÔNG ĐƯỢC cấp EXECUTE cho anon/authenticated.
+-- Đổi so với bản cũ: đọc books/pages thay cho book_unlocks; lọc `published`; và
+-- "quyển kế tiếp đã mở" tính từ vật phẩm thưởng của CHÍNH quyển vừa xong (spec §2.2).
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public._complete_book_for(p_user_id uuid, p_book_slug text)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth
+AS $fn$
+DECLARE
+  v_book              RECORD;
+  v_page_count        integer;
+  v_progress          RECORD;
+  v_already_completed boolean := false;
+  v_next              RECORD;
+  v_has_next          boolean := false;
+  v_next_unlocked     boolean := false;
+BEGIN
+  IF p_user_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  SELECT * INTO v_book FROM public.books WHERE slug = p_book_slug AND published;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Book not found';
+  END IF;
+
+  SELECT count(*) INTO v_page_count FROM public.pages WHERE book_slug = p_book_slug;
+  IF v_page_count = 0 THEN
+    -- Không có dòng này thì current_page >= 0 luôn đúng và quyển rỗng thành máy phát
+    -- vật phẩm.
+    RAISE EXCEPTION 'Book has no pages';
+  END IF;
+
+  SELECT * INTO v_progress
+    FROM public.user_book_progress
+   WHERE user_id = p_user_id AND book_slug = p_book_slug
+     FOR UPDATE;
+
+  IF NOT FOUND THEN
+    INSERT INTO public.user_book_progress (user_id, book_slug, current_page)
+         VALUES (p_user_id, p_book_slug, 1)
+      RETURNING * INTO v_progress;
+  END IF;
+
+  IF v_progress.completed THEN
+    v_already_completed := true;
+  ELSE
+    IF v_progress.current_page < v_page_count THEN
+      RAISE EXCEPTION 'Book not finished yet (page % of %)', v_progress.current_page, v_page_count;
+    END IF;
+
+    UPDATE public.user_book_progress
+       SET completed = true, completed_at = now()
+     WHERE user_id = p_user_id AND book_slug = p_book_slug;
+
+    IF v_book.reward_item_slug IS NOT NULL THEN
+      INSERT INTO public.user_items (user_id, item_slug)
+           VALUES (p_user_id, v_book.reward_item_slug)
+      ON CONFLICT (user_id, item_slug) DO NOTHING;
+    END IF;
+  END IF;
+
+  SELECT * INTO v_next
+    FROM public.books
+   WHERE shelf_slug = v_book.shelf_slug AND position > v_book.position AND published
+   ORDER BY position ASC LIMIT 1;
+  v_has_next := FOUND;
+
+  IF v_has_next THEN
+    -- Quyển kế tiếp mở ⟺ người dùng có vật phẩm thưởng của quyển này. Không tra cột
+    -- required_item_slug nào cả — nó không tồn tại, nên chuỗi không thể đứt.
+    v_next_unlocked := v_book.reward_item_slug IS NULL
+      OR EXISTS (SELECT 1 FROM public.user_items
+                  WHERE user_id = p_user_id AND item_slug = v_book.reward_item_slug);
+  END IF;
+
+  RETURN jsonb_build_object(
+    'alreadyCompleted', v_already_completed,
+    'grantedItemSlug',  v_book.reward_item_slug,
+    'nextBook',
+      CASE WHEN v_has_next
+           THEN jsonb_build_object('slug', v_next.slug, 'unlocked', v_next_unlocked)
+           ELSE null END
+  );
+END;
+$fn$;
+
+CREATE OR REPLACE FUNCTION public.complete_book(p_book_slug text)
+RETURNS jsonb
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public, auth
+AS $w$ SELECT public._complete_book_for(auth.uid(), p_book_slug) $w$;
+
+REVOKE ALL ON FUNCTION public._complete_book_for(uuid, text) FROM public, anon, authenticated;
+REVOKE ALL ON FUNCTION public.complete_book(text) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.complete_book(text) TO authenticated;
+
+-- FK của tiến độ đọc chuyển từ bảng xương sang bảng nội dung thật.
+ALTER TABLE public.user_book_progress DROP CONSTRAINT IF EXISTS user_book_progress_book_slug_fkey;
+ALTER TABLE public.user_book_progress
+  ADD CONSTRAINT user_book_progress_book_slug_fkey
+  FOREIGN KEY (book_slug) REFERENCES public.books(slug) ON DELETE CASCADE;
+
+-- === TỰ KIỂM TASK 4 ===
+DO $$
+DECLARE
+  v_user uuid := '11111111-1111-1111-1111-111111111111';
+  v_res  jsonb;
+  v_msg  text;
+  v_items int;
+BEGIN
+  -- Fixture: user giả + tiến độ đã đọc hết 4 trang của quyển 1.
+  INSERT INTO auth.users (id, email, email_verified, is_project_admin, is_anonymous)
+       VALUES (v_user, '__selfcheck@example.invalid', true, false, false)
+  ON CONFLICT (id) DO NOTHING;
+
+  DELETE FROM public.user_items         WHERE user_id = v_user;
+  DELETE FROM public.user_book_progress WHERE user_id = v_user;
+  INSERT INTO public.user_book_progress (user_id, book_slug, current_page)
+       VALUES (v_user, 'khoi-nguon-bo-coi', 4);
+
+  -- 1. Đọc xong quyển 1 -> nhận trống đồng, mở khóa quyển 2.
+  v_res := public._complete_book_for(v_user, 'khoi-nguon-bo-coi');
+  IF (v_res->>'alreadyCompleted')::boolean THEN
+    RAISE EXCEPTION 'lần đầu mà đã báo alreadyCompleted';
+  END IF;
+  IF v_res->>'grantedItemSlug' IS DISTINCT FROM 'trong-dong' THEN
+    RAISE EXCEPTION 'vật phẩm sai: %', v_res->>'grantedItemSlug';
+  END IF;
+  IF v_res->'nextBook'->>'slug' IS DISTINCT FROM 'tran-chien-bach-dang-938' THEN
+    RAISE EXCEPTION 'quyển kế tiếp sai: %', v_res->'nextBook'->>'slug';
+  END IF;
+  IF NOT (v_res->'nextBook'->>'unlocked')::boolean THEN
+    RAISE EXCEPTION 'quyển 2 chưa mở dù đã có trống đồng';
+  END IF;
+
+  -- 2. Gọi lại phải idempotent, không nhân đôi vật phẩm.
+  v_res := public._complete_book_for(v_user, 'khoi-nguon-bo-coi');
+  IF NOT (v_res->>'alreadyCompleted')::boolean THEN
+    RAISE EXCEPTION 'lần hai không báo alreadyCompleted';
+  END IF;
+  SELECT count(*) INTO v_items FROM public.user_items WHERE user_id = v_user;
+  IF v_items <> 1 THEN
+    RAISE EXCEPTION 'có % dòng user_items, chờ đúng 1', v_items;
+  END IF;
+
+  -- 3. Chưa đọc hết thì không được hoàn thành.
+  INSERT INTO public.user_book_progress (user_id, book_slug, current_page)
+       VALUES (v_user, 'tran-chien-bach-dang-938', 2);
+  BEGIN
+    v_res := public._complete_book_for(v_user, 'tran-chien-bach-dang-938');
+    RAISE EXCEPTION 'hoàn thành được quyển mới đọc 2/4 trang';
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_msg = MESSAGE_TEXT;
+    IF v_msg NOT LIKE 'Book not finished yet%' THEN RAISE; END IF;
+  END;
+
+  -- 4. Quyển chưa xuất bản không được hoàn thành (hàm chạy SECURITY DEFINER nên
+  --    nó KHÔNG chịu RLS — thiếu `AND published` là sách nháp phát vật phẩm thật).
+  UPDATE public.books SET published = false WHERE slug = 'hao-khi-dong-a';
+  INSERT INTO public.user_book_progress (user_id, book_slug, current_page)
+       VALUES (v_user, 'hao-khi-dong-a', 4);
+  BEGIN
+    v_res := public._complete_book_for(v_user, 'hao-khi-dong-a');
+    RAISE EXCEPTION 'hoàn thành được quyển chưa xuất bản';
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_msg = MESSAGE_TEXT;
+    IF v_msg NOT LIKE 'Book not found%' THEN RAISE; END IF;
+  END;
+  UPDATE public.books SET published = true WHERE slug = 'hao-khi-dong-a';
+
+  -- 5. Quyển 0 trang không được thành máy phát vật phẩm.
+  INSERT INTO public.books (slug, shelf_slug, position, title, era, published)
+       VALUES ('__selfcheck-rong', 'lich-su-viet-nam', 99, 'Rỗng', '—', true);
+  INSERT INTO public.user_book_progress (user_id, book_slug, current_page)
+       VALUES (v_user, '__selfcheck-rong', 1);
+  BEGIN
+    v_res := public._complete_book_for(v_user, '__selfcheck-rong');
+    RAISE EXCEPTION 'hoàn thành được quyển 0 trang';
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_msg = MESSAGE_TEXT;
+    IF v_msg NOT LIKE 'Book has no pages%' THEN RAISE; END IF;
+  END;
+
+  -- 6. Quyền: _complete_book_for phải kín, complete_book chỉ mở cho authenticated.
+  IF has_function_privilege('anon', 'public._complete_book_for(uuid, text)', 'EXECUTE')
+  OR has_function_privilege('authenticated', 'public._complete_book_for(uuid, text)', 'EXECUTE') THEN
+    RAISE EXCEPTION '_complete_book_for lộ EXECUTE — tự trao vật phẩm cho user bất kỳ được';
+  END IF;
+  IF has_function_privilege('anon', 'public.complete_book(text)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'anon gọi được complete_book';
+  END IF;
+  IF NOT has_function_privilege('authenticated', 'public.complete_book(text)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'authenticated không gọi được complete_book';
+  END IF;
+
+  -- Dọn fixture. auth.users ON DELETE CASCADE kéo theo progress và items.
+  DELETE FROM public.books WHERE slug = '__selfcheck-rong';
+  DELETE FROM auth.users   WHERE id = v_user;
+
+  RAISE NOTICE 'Task 4 OK';
+END $$;
