@@ -63,6 +63,22 @@ BEGIN
     RAISE EXCEPTION 'anon đọc được user_roles';
   END IF;
 
+  -- `has_table_privilege` chỉ trả lời "role này có được phép SELECT không", KHÔNG trả
+  -- lời "RLS cho nó thấy những dòng nào". Nếu policy bị sửa thành USING (true) hay mất
+  -- mệnh đề USING, thì MỌI khẳng định phía trên vẫn xanh — `rowsecurity` vẫn true,
+  -- grant vẫn nguyên — trong khi vai trò của mọi người lộ ra cho mọi người đã đăng nhập.
+  -- Vì vậy phải soi thẳng vào biểu thức của policy, không suy ra từ quyền.
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+     WHERE schemaname = 'public'
+       AND tablename  = 'user_roles'
+       AND policyname = 'own role select'
+       AND qual LIKE '%auth.uid()%'
+       AND qual LIKE '%user_id%'
+  ) THEN
+    RAISE EXCEPTION 'policy "own role select" không còn giới hạn theo auth.uid() = user_id';
+  END IF;
+
   IF NOT has_function_privilege('anon', 'public.is_admin()', 'EXECUTE') THEN
     RAISE EXCEPTION 'anon không gọi được is_admin() — policy SELECT của bảng nội dung sẽ vỡ';
   END IF;
