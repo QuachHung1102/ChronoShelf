@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { BookReaderModal } from "@/components/reader/BookReaderModal";
+import { findBook } from "@/lib/content/find";
+import type { ContentShelf } from "@/lib/content/types";
+import { onAuthChange } from "@/lib/insforge/auth";
 import { buildShelfView, getUserShelfState } from "@/lib/insforge/shelf";
 import type { UserShelfState } from "@/lib/insforge/types";
 import { BookShelf } from "./BookShelf";
@@ -10,11 +13,11 @@ import { BookShelf } from "./BookShelf";
 const SIGNED_OUT: UserShelfState = { ownedItemSlugs: new Set(), progressByBook: new Map() };
 
 /**
- * Nội dung kệ nằm sẵn trong bundle nên render được ngay; chỉ trạng thái người dùng
- * (vật phẩm, tiến độ) mới phải hỏi backend — và phiên đăng nhập của InsForge nằm ở
- * trình duyệt, nên phần đó bắt buộc chạy phía client.
+ * Nội dung tới từ server component qua prop; chỉ trạng thái người dùng (vật phẩm,
+ * tiến độ) mới phải hỏi backend — và phiên đăng nhập của InsForge nằm ở trình duyệt,
+ * nên phần đó bắt buộc chạy phía client.
  */
-export function ShelfPageClient({ shelfSlug }: { shelfSlug: string }) {
+export function ShelfPageClient({ shelf }: { shelf: ContentShelf }) {
   const [userState, setUserState] = useState<UserShelfState>(SIGNED_OUT);
   const [openBookSlug, setOpenBookSlug] = useState<string | null>(null);
 
@@ -24,17 +27,22 @@ export function ShelfPageClient({ shelfSlug }: { shelfSlug: string }) {
       .catch(() => setUserState(SIGNED_OUT));
   }, []);
 
-  useEffect(refresh, [refresh]);
+  // Đăng nhập/đăng xuất ở header không đổi route, nên kệ phải tự nghe sự kiện phiên
+  // thì mới mở/khóa lại đúng mà người dùng không cần tải lại trang.
+  useEffect(() => {
+    refresh();
+    return onAuthChange(refresh);
+  }, [refresh]);
 
-  const shelf = buildShelfView(shelfSlug, userState);
-  const openBook = shelf.books.find((view) => view.book.slug === openBookSlug);
+  const view = buildShelfView(shelf, userState);
+  const openBook = view.books.find((b) => b.book.slug === openBookSlug);
 
   return (
     <>
-      <BookShelf shelf={shelf} onOpenBook={setOpenBookSlug} />
-      {openBook && (
+      <BookShelf shelf={view} onOpenBook={setOpenBookSlug} />
+      {openBook && findBook(shelf, openBook.book.slug) && (
         <BookReaderModal
-          shelfSlug={shelfSlug}
+          shelf={shelf}
           bookSlug={openBook.book.slug}
           startPage={openBook.currentPage}
           onClose={() => {

@@ -1,5 +1,6 @@
 import { LockOpen, Sparkles } from "lucide-react";
-import { getBook, getItem } from "@/lib/content/shelves";
+import { findBook, findItem } from "@/lib/content/find";
+import type { ContentShelf } from "@/lib/content/types";
 import type { CompleteBookResult } from "@/lib/insforge/types";
 import s from "./reader.module.scss";
 
@@ -10,15 +11,15 @@ import s from "./reader.module.scss";
  */
 export function ItemDropOverlay({
   result,
-  shelfSlug,
+  shelf,
   onClose,
 }: {
   result: CompleteBookResult;
-  shelfSlug: string;
+  shelf: ContentShelf;
   onClose: () => void;
 }) {
-  const item = result.grantedItemSlug ? getItem(result.grantedItemSlug) : null;
-  const nextBook = result.nextBook ? getBook(shelfSlug, result.nextBook.slug) : null;
+  const item = result.grantedItemSlug ? findItem(shelf, result.grantedItemSlug) : null;
+  const nextBook = result.nextBook ? findBook(shelf, result.nextBook.slug) : null;
   const replay = result.alreadyCompleted;
   const anim = (className: string) => (replay ? "" : className);
 

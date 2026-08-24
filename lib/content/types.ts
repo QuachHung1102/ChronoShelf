@@ -17,8 +17,13 @@ export interface ContentPage {
 export interface ContentBook {
   slug: string;
   title: string;
+  /** Niên đại dập trên bìa sách — chuỗi ngắn, ví dụ "Năm 938". */
+  era: string;
   cover: string | null;
-  requiredItem: string | null;
+  /**
+   * Vật phẩm nhận được khi đọc xong. Đây cũng là thứ mở khóa quyển kế tiếp —
+   * không có trường `requiredItem`, xem lib/insforge/unlock.ts.
+   */
   rewardItem: string | null;
   pages: ContentPage[];
 }
@@ -27,6 +32,8 @@ export interface ContentShelf {
   slug: string;
   name: string;
   order: number;
+  /** Mã ISO-3166-1 numeric để nối với bản đồ thế giới; null nghĩa là chưa gắn. */
+  countryCode: string | null;
   items: ContentItem[];
   books: ContentBook[];
 }

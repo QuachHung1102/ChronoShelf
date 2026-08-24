@@ -1,29 +1,35 @@
 import Link from "next/link";
 import { Backpack, Flame } from "lucide-react";
-
-const NAV_ITEMS = [
-  { href: "/", label: "Trang chủ" },
-  { href: "/lich-su-viet-nam", label: "Lịch sử Việt Nam" },
-  { href: "/lich-su-the-gioi", label: "Lịch sử Thế giới" },
-  { href: "/lich-su-quanh-cuoc-song", label: "Lịch sử quanh cuộc sống" },
-  { href: "/bai-giang-slide", label: "Bài giảng & Slide" },
-];
+import { AuthMenu } from "@/components/auth/AuthMenu";
+import type { ShelfSummary } from "@/lib/content/read";
 
 const focusOnDark =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-on-dark focus-visible:ring-offset-2 focus-visible:ring-offset-primary rounded-sm";
 
-export function Header({ activeHref }: { activeHref: string }) {
+/**
+ * `shelves` do server component truyền xuống — danh sách kệ nay là dữ liệu động
+ * (admin tạo thêm được), không còn là hằng trong mã nguồn.
+ */
+export function Header({
+  activeHref,
+  shelves = [],
+}: {
+  activeHref: string;
+  shelves?: ShelfSummary[];
+}) {
+  const navItems = [
+    { href: "/", label: "Trang chủ" },
+    ...shelves.map((s) => ({ href: `/${s.slug}`, label: s.name })),
+  ];
+
   return (
     <header className="flex h-header-height items-center justify-between bg-primary px-8">
-      <Link
-        href="/"
-        className={`font-heading text-headline-sm text-on-primary ${focusOnDark}`}
-      >
+      <Link href="/" className={`font-heading text-headline-sm text-on-primary ${focusOnDark}`}>
         CỬA SỔ LỊCH SỬ
       </Link>
 
       <nav className="flex items-center gap-lg" aria-label="Điều hướng chính">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const isActive = item.href === activeHref;
           return (
             <Link
@@ -50,6 +56,8 @@ export function Header({ activeHref }: { activeHref: string }) {
           <span className="font-body text-label-md">7</span>
           <span className="sr-only">vật phẩm đã sưu tầm</span>
         </span>
+
+        <AuthMenu />
       </nav>
     </header>
   );

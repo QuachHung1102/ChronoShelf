@@ -1,10 +1,12 @@
 import { insforge } from "./client";
-import { getItem, getShelf } from "@/lib/content/shelves";
-import type { BookState, BookView, CompleteBookResult, ShelfView, UserShelfState } from "./types";
+import { getSignedInUser } from "./auth";
+import { resolveState } from "./unlock";
+import { findItem } from "@/lib/content/find";
+import type { ContentShelf } from "@/lib/content/types";
+import type { BookView, CompleteBookResult, ShelfView, UserShelfState } from "./types";
 
 async function getCurrentUserId(): Promise<string | null> {
-  const { data } = await insforge.auth.getCurrentUser();
-  return data?.user?.id ?? null;
+  return (await getSignedInUser())?.id ?? null;
 }
 
 /**
@@ -32,28 +34,17 @@ export async function getUserShelfState(): Promise<UserShelfState> {
   };
 }
 
-function resolveState(
-  requiredItem: string | null,
-  isFirstBook: boolean,
-  completed: boolean,
-  owned: Set<string>,
-): BookState {
-  if (completed) return "completed";
-  // Quyển đầu mỗi kệ luôn mở sẵn để người học có điểm bắt đầu (content.md 4.1).
-  if (isFirstBook || requiredItem === null) return "unlocked";
-  return owned.has(requiredItem) ? "unlocked" : "locked";
-}
-
-/** Ghép nội dung tĩnh với trạng thái người dùng thành view của kệ sách. */
-export function buildShelfView(shelfSlug: string, state: UserShelfState): ShelfView {
-  const shelf = getShelf(shelfSlug);
+/** Ghép nội dung (đã tải từ server component) với trạng thái người dùng. */
+export function buildShelfView(shelf: ContentShelf, state: UserShelfState): ShelfView {
   return {
     slug: shelf.slug,
     name: shelf.name,
     books: shelf.books.map((book, index): BookView => {
       const progress = state.progressByBook.get(book.slug);
+      // Vật phẩm mở quyển này = vật phẩm thưởng của quyển ngay trước (spec §2.2).
+      const prevRewardItem = index === 0 ? null : shelf.books[index - 1].rewardItem;
       const bookState = resolveState(
-        book.requiredItem,
+        prevRewardItem,
         index === 0,
         progress?.completed ?? false,
         state.ownedItemSlugs,
@@ -63,7 +54,7 @@ export function buildShelfView(shelfSlug: string, state: UserShelfState): ShelfV
         state: bookState,
         currentPage: progress?.currentPage ?? 1,
         requiredItem:
-          bookState === "locked" && book.requiredItem ? getItem(book.requiredItem) : null,
+          bookState === "locked" && prevRewardItem ? findItem(shelf, prevRewardItem) : null,
       };
     }),
   };
