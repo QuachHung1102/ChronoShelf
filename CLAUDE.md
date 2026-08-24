@@ -174,15 +174,39 @@ những cổng đó bắt lỗi tốt hơn một bộ test JSX:
 |---|---|
 | Chuỗi mở khóa đứt gãy | Không xảy ra được — không có cột nào lưu nó |
 | Người dùng thường sửa được nội dung | `npm run db:check` (phép 10) |
+| Người dùng tự phong admin | `npm run db:check` (phép 8, 11) |
 | Token màu/chữ sai, tương phản dưới AA | `design:lint` |
 | Sai kiểu, route không tồn tại | `build` (typegen + tsc) |
 | **RLS và quyền của `complete_book`** | **`npm run db:check`** |
 
 Hàng cuối là rủi ro lớn nhất của dự án. `scripts/db-check.mjs` gọi backend thật bằng đúng khóa
-`anon` mà trình duyệt cầm, và khẳng định kẻ chưa đăng nhập **không** ghi được `user_items`,
-**không** ghi được `user_book_progress`, **không** gọi được `_complete_book_for` hay
-`complete_book`. Kỳ vọng: 6/6 pass, mỗi phép chặn báo `42501 permission denied` — nếu một dòng
-hỏng vì lý do khác (ví dụ vướng khóa ngoại) thì hàng rào thật đã mất, chỉ là chưa lộ ra.
+`anon` mà trình duyệt cầm — **11 phép**, tất cả qua HTTP thật, không phải SQL qua MCP.
+
+Chín phép đầu chạy khi **chưa đăng nhập**: xác nhận sách đã xuất bản vẫn đọc được, và khẳng
+định kẻ chưa đăng nhập **không** ghi được `user_items` hay `user_book_progress`, **không** gọi
+được `_complete_book_for` hay `complete_book`, **không** đọc được sách nháp, **không** ghi được
+`user_roles` hay `books`, và đọc `user_items` ra rỗng.
+
+Hai phép cuối cần tài khoản thật (`DB_CHECK_USER_EMAIL` / `DB_CHECK_USER_PASSWORD` trong
+`.env.local`) và kiểm **người đã đăng nhập nhưng không phải admin**: không ghi được `books`,
+và không tự phong admin được cũng không đọc trộm được vai trò người khác trong `user_roles`.
+Thiếu hai biến đó thì kết quả báo `9/9 ... (2 PHÉP BỊ BỎ QUA)` — đó là **bỏ qua, không phải
+đạt**.
+
+**Phép ghi `books` khi đã đăng nhập bắt buộc phải hỏng vì POLICY chặn, không phải vì thiếu
+GRANT** — thiếu GRANT thì admin thật cũng ghi hỏng, phép kiểm không chứng minh được gì. Postgres
+trả CHUNG sqlstate `42501` cho cả hai trường hợp, khác nhau duy nhất ở message
+(`permission denied for table` so với `new row violates row-level security policy`); script bắt
+buộc soi message, không được soi mã lỗi. Đây đã là bẫy thật một lần: ai tin "chặn nào cũng ra
+42501 permission denied" mà đơn giản hóa lại thành so mã lỗi thì phép kiểm mất khả năng phân
+biệt hai trường hợp đó, và hỏng âm thầm — không còn ai biết.
+
+Hai dòng seed tồn tại chỉ để làm mồi nhử, không phải nội dung thật: quyển nháp vĩnh viễn
+`__nhap-khong-bao-gio-xuat-ban` (cho phép 7) và dòng vai trò `admin` của tài khoản mồi nhử
+`22222222-2222-2222-2222-222222222222` trong `user_roles` (cho phép 11). Thiếu mồi nhử thì
+phép đó vẫn chạy, vẫn báo PASS, nhưng hết nghĩa — sách thật đều đã publish nên phép 7 luôn
+thấy 0 dòng, `user_roles` không còn dòng "người khác" nào nên phép 11 luôn thấy 0 dòng, kể cả
+khi RLS hỏng hoàn toàn. Đừng "dọn" hai dòng này.
 
 Cố ý **không** viết bằng SQL chạy qua MCP `run-raw-sql`: SQL chạy bằng quyền admin nên kiểm
 được `has_function_privilege` nhưng không kiểm được thứ thật sự quan trọng — cái mà một request
