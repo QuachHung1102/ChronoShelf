@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * Bootstrap MỘT CHIỀU: đổ nội dung từ content/shelves/*.json vào các bảng nội dung.
+ * Bootstrap MỘT CHIỀU: đổ nội dung từ db/seed/*.json vào các bảng nội dung.
  *
  * Sau khi chạy, DATABASE LÀ NGUỒN SỰ THẬT. Sửa JSON KHÔNG làm đổi nội dung đang chạy —
  * muốn sửa nội dung thì vào /quan-tri. File JSON chỉ còn để dựng lại một DB dev từ số
- * không, đó là lý do nó chuyển sang db/seed/ ở cuối chặng này.
+ * không.
  *
  * In ra SQL để chạy qua MCP `run-raw-sql`:
  *   node scripts/seed-content.mjs
@@ -16,7 +16,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const dir = join(root, "content", "shelves");
+const dir = join(root, "db", "seed");
 
 /** Mã ISO-3166-1 numeric mà world-atlas dùng làm id quốc gia (chặng D cần). */
 const COUNTRY_CODE = { "lich-su-viet-nam": "704" };

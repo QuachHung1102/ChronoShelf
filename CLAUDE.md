@@ -16,7 +16,6 @@ quyển thì nhận được một vật phẩm, và chính vật phẩm đó m�
 |---|---|
 | `content.md` | Bản mô tả sản phẩm đầy đủ: sitemap, cơ chế, nội dung từng trang. Nguồn sự thật về *cái gì* cần xây. |
 | `docs/superpowers/plans/2026-08-12-ban-giao-phase-tiep-theo.md` | **Đọc khi mở phiên mới**: đã xong tới đâu, còn gì, và các bẫy đã gặp. |
-| `content/shelves/*.json` | Nguồn sự thật cho nội dung bài học (tiêu đề, trang, vật phẩm). |
 | `DESIGN.md` | Hệ thiết kế (format `design.md` của Google Labs): toàn bộ color/typography/spacing token + lý do. Nguồn sự thật về *trông như thế nào*. |
 | `docs/superpowers/specs/` | Spec đã được duyệt, mỗi subsystem một file. |
 | `docs/superpowers/plans/` | Kế hoạch triển khai từng bước, mỗi subsystem một file. |
@@ -35,9 +34,11 @@ spec → plan → code riêng: **kệ sách + đọc sách** (cơ chế lõi), t
   chỉ cho ra một khối JSON lớn đã cũ thay vì trạng thái thật mà `get_app_state` trả về.
   `.claude/settings.json` có deny rule `Read/Edit/Write(pen.dev/**)`. Nó chặn thật: Claude Code
   chuẩn hóa đường dẫn Windows sang dạng POSIX trước khi so khớp, và deny rule của `Read` cũng
-  áp cho `cat`/`head`/`tail`/`sed` chạy qua Bash. **Nhưng nó không chặn subprocess tùy ý** —
-  `git show HEAD:pen.dev/design.pen` vẫn đọc được (vì vậy `git show` đã bị bỏ khỏi allowlist,
-  nó sẽ hỏi trước khi chạy). Đây là hàng rào chống lỡ tay, không phải ranh giới bảo mật.
+  áp cho `cat`/`head`/`tail`/`sed` chạy qua Bash. **Nhưng deny rule không chặn subprocess tùy
+  ý** — `git show HEAD:pen.dev/design.pen` từng đọc được đủ 57361 byte. Lỗ đó nay bịt bằng hook
+  `PreToolUse(Bash)` ở `.claude/hooks/guard-pen-dev.mjs`: mọi lệnh shell có chuỗi `pen.dev` đều
+  bị chặn, vì mọi lệnh đều đi qua đúng một cửa đó. Vẫn là hàng rào chống lỡ tay, không phải
+  ranh giới bảo mật — ghép chuỗi là lách được.
 - **Sửa `.pen` xong phải kiểm tra `git status` trước khi commit.** Mutation qua Pencil MCP
   không ghi xuống đĩa ngay — `Get`/`GetVariables` đọc trạng thái trong bộ nhớ editor nên vẫn
   trả về giá trị mới trong khi file trên đĩa còn y nguyên. Đã suýt commit hụt một loạt thay
@@ -73,20 +74,23 @@ npm run design:build    # DESIGN.md -> tailwind.theme.json
   dùng cho đồ họa, `tertiary-deep` khi accent làm nền cho chữ, `tertiary-light` khi accent là
   chữ trên nền nâu. Chi tiết lý do nằm trong mục Colors của `DESIGN.md`.
 
-## Nội dung ở JSON, database chỉ giữ trạng thái người dùng
+## Nội dung nằm trong database
 
-Nội dung bài học là dữ liệu **biên tập**, không phải dữ liệu người dùng. Nó nằm ở
-`content/shelves/*.json` (có version trong git, import thẳng vào bundle để render tĩnh), ảnh
-tĩnh ở `public/`. Database chỉ có 3 bảng: `user_book_progress`, `user_items`, và `book_unlocks`.
+Nội dung bài học (kệ, sách, trang, vật phẩm) nằm ở 4 bảng `shelves`, `items`, `books`,
+`pages`. **Admin sửa qua `/quan-tri`, không sửa bằng cách đụng vào file.** Đây là thay đổi
+so với mô hình JSON cũ: admin phải tạo được sách lúc chạy mà không cần build lại. Lý do đầy
+đủ ở `docs/superpowers/specs/2026-08-24-noi-dung-dong-va-quan-tri-design.md` §2.1.
 
-`book_unlocks` là **bản chiếu sinh ra từ JSON** — đừng sửa tay, chạy `npm run content:sync` rồi
-đưa SQL qua MCP `run-raw-sql`. Nó phải nằm trong DB (chứ không chỉ ở JSON) vì quyết định trao
-vật phẩm bắt buộc chạy phía máy chủ, mà backend không có `service_role` nên route Next.js không
-đủ quyền ghi `user_items` — đường duy nhất là hàm Postgres `SECURITY DEFINER`, và hàm đó chỉ đọc
-được chuỗi mở khóa nếu nó ở trong DB.
+`db/seed/*.json` là **bootstrap một chiều**, chạy bằng `npm run seed:content` rồi đưa SQL qua
+MCP `run-raw-sql`. Sửa file đó KHÔNG làm đổi nội dung đang chạy.
 
-Sửa JSON xong luôn chạy `npm run content:check` — nó bắt lỗi chuỗi mở khóa đứt gãy (quyển N phải
-cần đúng vật phẩm quyển N-1 trao) trước khi người đọc mắc kẹt ở một quyển không ai mở được.
+**Không có cột "vật phẩm cần để mở".** Quyển `i` mở bằng vật phẩm thưởng của quyển `i-1`,
+suy ra từ vị trí chứ không lưu — nên chuỗi mở khóa không thể đứt. Đánh đổi và đường nâng cấp
+ghi ở `lib/insforge/unlock.ts`.
+
+Vai trò nằm ở `public.user_roles`: không có dòng nghĩa là `user`, chỉ admin mới có dòng.
+`authenticated` không có GRANT ghi nào lên bảng đó, nên không ai tự phong admin được. Cấp
+admin bằng SQL qua MCP.
 
 ## Backend — InsForge
 
@@ -108,15 +112,99 @@ Base URL: `https://pk3kdyx2.ap-southeast.insforge.app`
 dựa vào nó. Backend chỉ có role `anon` và `authenticated` — **không có `service_role`**, nên logic
 đặc quyền đi qua hàm Postgres `SECURITY DEFINER` chứ không phải edge function cầm service key.
 
+## Bẫy đã gặp
+
+- **MCP `run-raw-sql` từ chối `BEGIN;`/`COMMIT;` tường minh — và không cần chúng.** Proxy
+  đã tự bọc mỗi batch trong một transaction. Đã kiểm: batch gồm `CREATE TABLE` rồi một
+  `INSERT` trùng khóa làm cả batch roll back, bảng vừa tạo cũng biến mất. Script sinh SQL
+  đừng phát hai lệnh đó, nếu không output không dán thẳng vào MCP được.
+- **`run-raw-sql` thỉnh thoảng trả `Changing SQL session configuration is not allowed`
+  với batch lớn — và nó KHÔNG tất định.** Cùng một query byte-for-byte, chạy lại ngay sau
+  đó thì thành công. Đã bisect cả file schema 459 dòng: không có tổ hợp câu lệnh nào tái
+  hiện được ổn định; mọi tổ hợp con đều pass, chỉ full batch mới thỉnh thoảng hỏng.
+  Đây là flakiness phía proxy. **Cứ chạy lại**, đừng ngồi chia nhỏ file hay sắp xếp lại
+  câu lệnh — đã có người mất một lượt bisect đầy đủ để kết luận đúng điều này. Batch hỏng
+  thì roll back sạch (đã xác minh), nên retry an toàn.
+- **`SET ROLE` / `SET LOCAL ROLE` bị chặn**, cùng họ với `set_config`. Không giả lập được
+  `anon`/`authenticated` qua MCP — muốn kiểm quyền thật thì phải đi HTTP bằng khóa anon,
+  đó là lý do `scripts/db-check.mjs` tồn tại.
+
 ## Lệnh
 
 ```bash
+npm run check          # CỔNG DUY NHẤT — chạy cái này trước khi nói "xong". ~13s
+npm run db:check       # ranh giới bảo mật tầng DB, cần mạng. Sau mỗi lần đổi db/schema/
 npm run dev            # dev server
-npm run build          # phải pass trước khi commit
-npm run lint           # eslint
-npm run design:lint    # kiểm tra design token
 npm run design:build   # sinh lại tailwind.theme.json từ DESIGN.md
+npm run seed:content   # sinh SQL bootstrap db/seed/*.json -> bảng nội dung
 ```
+
+`npm run check` cũng chạy tự động ở **pre-commit**: `.githooks/pre-commit`, được nối vào bằng
+`core.hooksPath` trong script `prepare` của npm (npm tự gọi `prepare` sau `npm install`, nên
+máy mới clone là có hook luôn — không cần husky). Cần bỏ qua một lần thì `git commit --no-verify`.
+
+`npm run check` chạy tuần tự, dừng ở lỗi đầu tiên, xếp theo thứ tự nhanh-hỏng-trước:
+`design:lint` → `test` → `lint` → `build`. Từng cái vẫn gọi riêng được
+khi cần lặp nhanh. Đừng tự bịa ra một tổ hợp lệnh khác — nếu thiếu cổng nào thì thêm vào
+`check`, để chỗ nào cũng chỉ có một câu trả lời cho câu hỏi "đã xong chưa".
+
+Hai cái bẫy đã bị đóng lại, đừng mở ra:
+
+- **`npx tsc --noEmit` một mình sẽ báo lỗi giả trên cây vừa clone.** `tsconfig.json` include
+  `.next/types/**/*.ts`, mà `.next/` bị gitignore — kiểu `AppRoutes` (dùng bởi `PageProps<…>`)
+  chưa tồn tại thì tsc thoát mã 2. Dùng `npm run typecheck`, nó chạy `next typegen` trước.
+  `npm run build` cũng tự lo phần này.
+- **File test import nhau bằng đuôi `.ts` thật.** `node --test` chạy TypeScript trực tiếp và
+  bộ resolve của Node cần đuôi; vì vậy `tsconfig.json` bật `allowImportingTsExtensions`.
+
+## Test — cố tình rất ít
+
+`node --test` của Node 24, **không có framework nào**. Test nằm cạnh mã nguồn ở
+`lib/**/*.test.ts`.
+
+Bề mặt test JS chỉ gồm module **thuần, import tương đối**: alias `@/` không resolve được dưới
+test runner của Node (đã thử — `ERR_MODULE_NOT_FOUND`), nên bất cứ thứ gì chạm vào `@/` là
+không test kiểu này được. Đó là lý do `resolveState` nằm riêng ở `lib/insforge/unlock.ts` chứ
+không ở trong `shelf.ts`, và `safeNext` nằm riêng ở `lib/safe-next.ts`.
+
+Đừng cài Vitest/Jest chỉ để lách chuyện alias. Phần còn lại của repo đã có cổng riêng và
+những cổng đó bắt lỗi tốt hơn một bộ test JSX:
+
+| Rủi ro | Ai bắt |
+|---|---|
+| Chuỗi mở khóa đứt gãy | Không xảy ra được — không có cột nào lưu nó |
+| Người dùng thường sửa được nội dung | `npm run db:check` (phép 10) |
+| Token màu/chữ sai, tương phản dưới AA | `design:lint` |
+| Sai kiểu, route không tồn tại | `build` (typegen + tsc) |
+| **RLS và quyền của `complete_book`** | **`npm run db:check`** |
+
+Hàng cuối là rủi ro lớn nhất của dự án. `scripts/db-check.mjs` gọi backend thật bằng đúng khóa
+`anon` mà trình duyệt cầm, và khẳng định kẻ chưa đăng nhập **không** ghi được `user_items`,
+**không** ghi được `user_book_progress`, **không** gọi được `_complete_book_for` hay
+`complete_book`. Kỳ vọng: 6/6 pass, mỗi phép chặn báo `42501 permission denied` — nếu một dòng
+hỏng vì lý do khác (ví dụ vướng khóa ngoại) thì hàng rào thật đã mất, chỉ là chưa lộ ra.
+
+Cố ý **không** viết bằng SQL chạy qua MCP `run-raw-sql`: SQL chạy bằng quyền admin nên kiểm
+được `has_function_privilege` nhưng không kiểm được thứ thật sự quan trọng — cái mà một request
+thật từ ngoài Internet làm được. Script này đi đúng đường của kẻ tấn công, và không cần MCP nên
+chạy được cả khi MCP không kết nối.
+
+## Agent harness — cái gì nằm ở đâu
+
+| Đường dẫn | Vai trò |
+|---|---|
+| `CLAUDE.md` (file này) | Toàn bộ kiến thức dự án. **Không** viết vào `AGENTS.md` — installer InsForge ghi đè file đó. |
+| `.claude/settings.json` | Allowlist lệnh + deny rule `pen.dev/**` + đăng ký hook. |
+| `.claude/hooks/guard-pen-dev.mjs` | `PreToolUse(Bash)`, chặn mọi lệnh shell chạm `pen.dev`. |
+| `.githooks/pre-commit` | Chạy `npm run check` trước mỗi commit. Nối bằng `npm run prepare`. |
+| `scripts/db-check.mjs` | Self-check 11 ranh giới bảo mật tầng DB (`npm run db:check`). |
+| `docs/agents/` | Quy ước cho skill: `issue-tracker.md`, `domain.md`. |
+| `.scratch/<feature>/` | Issue tracker (repo chưa có remote nên không dùng GitHub Issues). |
+| `docs/superpowers/specs/` + `plans/` | Spec và kế hoạch dài theo cả subsystem. |
+| `lib/**/*.test.ts` | Test `node --test`, xem mục Test ở trên. |
+
+Sửa `.claude/settings.json` hay file hook thì **phải mở phiên mới** mới có hiệu lực — Claude
+Code nạp chúng lúc khởi động phiên.
 
 ## Agent skills
 
