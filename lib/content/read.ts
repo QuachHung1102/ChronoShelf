@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { insforge } from "@/lib/insforge/client";
 import type { ContentBook, ContentItem, ContentPage, ContentShelf } from "./types";
 
@@ -102,8 +103,14 @@ function toItem(row: ItemRow): ContentItem {
  * Backend không trả lời được (mất mạng, sai URL...) thì NỔ bằng exception, không được
  * trả về null: null ở đây có nghĩa "404", nên một lần backend sập sẽ bị hiểu nhầm thành
  * slug không tồn tại thay vì báo lỗi thật.
+ *
+ * Bọc bằng `cache()` của React: `app/[shelf]/page.tsx` gọi hàm này ở cả `generateMetadata`
+ * lẫn thân trang. Bình thường Next tự memoize fetch trùng trong một request, nhưng SDK
+ * InsForge luôn gắn `AbortSignal` vào fetch (timeout mặc định 30000ms) — mà fetch có
+ * AbortSignal thì Next KHÔNG memoize — nên nếu thiếu lớp này, mỗi lượt xem trang kệ tốn
+ * gấp đôi round-trip xuống backend. Đừng xoá vì tưởng là thừa.
  */
-export async function readShelf(slug: string): Promise<ContentShelf | null> {
+export const readShelf = cache(async function readShelf(slug: string): Promise<ContentShelf | null> {
   // Vật phẩm là bảng dùng chung cho mọi kệ nên không lồng được vào truy vấn trên;
   // hai request này độc lập, chạy song song.
   const [shelfRes, itemsRes] = await Promise.all([
@@ -124,10 +131,17 @@ export async function readShelf(slug: string): Promise<ContentShelf | null> {
     items: ((itemsRes.data ?? []) as ItemRow[]).map(toItem),
     books: byPosition(row.books ?? []).map(toBook),
   };
-}
+});
 
-/** Danh sách kệ đã xuất bản, cho thanh điều hướng và bản đồ. */
-export async function readShelfList(): Promise<ShelfSummary[]> {
+/**
+ * Danh sách kệ đã xuất bản, cho thanh điều hướng và bản đồ.
+ *
+ * Bọc bằng `cache()` cùng lý do như `readShelf` ở trên: SDK InsForge luôn gắn
+ * `AbortSignal` vào fetch nên Next không tự memoize, còn hàm này lại được gọi từ nhiều
+ * nơi trong cùng một request (trang, layout, nav) — không có lớp này thì mỗi nơi gọi
+ * lại tốn thêm một round-trip.
+ */
+export const readShelfList = cache(async function readShelfList(): Promise<ShelfSummary[]> {
   const { data, error } = await insforge.database
     .from("shelves")
     .select("slug, name, position, country_code")
@@ -144,4 +158,4 @@ export async function readShelfList(): Promise<ShelfSummary[]> {
     name: row.name,
     countryCode: row.country_code,
   }));
-}
+});
