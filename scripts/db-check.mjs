@@ -33,6 +33,7 @@ const SENTINEL = "__db_check_khong_duoc_ton_tai";
 const FAKE_UUID = "00000000-0000-0000-0000-000000000000";
 
 const results = [];
+let skipped = 0;
 
 /** `expect` mô tả điều PHẢI đúng; trả về chuỗi lý do khi sai, hoặc null khi đạt. */
 async function check(name, run, expect) {
@@ -100,12 +101,18 @@ await check(
 );
 
 await check(
-  "anon đọc user_items ra rỗng (RLS auth.uid() = user_id, anon không có uid)",
+  "anon đọc user_items ra rỗng (REVOKE ALL khỏi anon; đổi grant thì RLS auth.uid() = user_id vẫn lọc rỗng)",
   () => anon.database.from("user_items").select("item_slug"),
-  ({ data, error }) =>
-    error || (data?.length ?? 0) === 0
-      ? null
-      : `đọc ra ${data.length} dòng của người khác`,
+  ({ data, error }) => {
+    if (!error) return (data?.length ?? 0) === 0 ? null : `đọc ra ${data.length} dòng của người khác`;
+    // user_items REVOKE ALL khỏi anon ngay từ 2026-08-12-ke-sach-doc-sach.sql — anon
+    // không có cả SELECT, nên đường an toàn LUÔN lỗi 42501 "permission denied for
+    // table" (đã kiểm thực nghiệm 2026-08-24), không bao giờ chạy tới nhánh RLS lọc
+    // rỗng ở trên. Một lỗi khác (đổi tên bảng, mất mạng, …) không chứng minh được gì
+    // nên vẫn phải coi là hỏng — không tự động biến MỌI lỗi thành "đạt".
+    const code = error.code ?? error.error ?? "";
+    return code === "42501" ? null : `lỗi bất thường: ${errorLabel(error)}`;
+  },
 );
 
 // --- Phép 7 -------------------------------------------------------------------
@@ -144,8 +151,12 @@ await check(
 );
 
 // --- Phép 10: phép quan trọng nhất của đợt này --------------------------------
-// Đi đúng đường của kẻ tấn công CÓ TÀI KHOẢN. Phải thất bại theo kiểu policy,
-// KHÔNG phải 42501 — 42501 nghĩa là GRANT đang thiếu và admin thật cũng ghi hỏng.
+// Đi đúng đường của kẻ tấn công CÓ TÀI KHOẢN. Phải thất bại vì POLICY chặn, chứ
+// không phải vì thiếu GRANT — thiếu GRANT thì admin thật cũng ghi hỏng.
+//
+// CẢNH BÁO: không phân biệt được hai trường hợp đó bằng sqlstate. Postgres trả
+// CHUNG mã 42501 cho cả hai, chỉ khác message ("permission denied for table" vs
+// "new row violates row-level security policy"). Bắt buộc soi message.
 //
 // Kiểm hai thứ trong một phiên: không sửa được nội dung, và không tự phong admin.
 //
@@ -156,6 +167,7 @@ const testEmail = process.env.DB_CHECK_USER_EMAIL;
 const testPassword = process.env.DB_CHECK_USER_PASSWORD;
 
 if (!testEmail || !testPassword) {
+  skipped = 2;
   console.warn(
     "\n!!  BỎ QUA phép 10 và 11 — thiếu DB_CHECK_USER_EMAIL / DB_CHECK_USER_PASSWORD trong .env.local.\n" +
       "!!  Đây là hàng rào QUAN TRỌNG NHẤT của tầng nội dung: người dùng thường không được\n" +
@@ -169,20 +181,39 @@ if (!testEmail || !testPassword) {
     "authenticated (không phải admin) KHÔNG ghi được books",
     async () => {
       if (signIn.error) return { signInError: signIn.error };
+      // `published: true` KHÔNG phải trang trí — nó là thứ làm phép kiểm này có nghĩa.
+      // Nếu thiếu, cột mặc định `false`, và policy đọc `published OR is_admin()` khiến
+      // chính phiên non-admin này KHÔNG thấy dòng nó vừa ghi. Khi đó một policy ghi bị
+      // hở sẽ cho INSERT thành công không lỗi, đọc lại ra 0 dòng, và phép kiểm báo ĐẠT
+      // đúng vào lúc hàng rào bị phá. Đặt `published: true` khiến mọi cú ghi lọt qua
+      // đều hiện ra ở bước đọc lại. Ở trạng thái đúng thì `WITH CHECK` chặn trước khi
+      // giá trị này kịp có ý nghĩa, nên nó vô hại.
       const insert = await user.database
         .from("books")
         .insert([
-          { slug: SENTINEL_AUTH, shelf_slug: "lich-su-viet-nam", position: 998, title: "x", era: "x" },
+          {
+            slug: SENTINEL_AUTH,
+            shelf_slug: "lich-su-viet-nam",
+            position: 998,
+            title: "x",
+            era: "x",
+            published: true,
+          },
         ]);
       const readBack = await user.database.from("books").select("slug").eq("slug", SENTINEL_AUTH);
-      return { insert, rows: readBack.data ?? [] };
+      return { insert, rows: readBack.data ?? [], readError: readBack.error };
     },
-    ({ signInError, insert, rows, error }) => {
+    ({ signInError, insert, rows, readError, error }) => {
       // `error` là ngoại lệ do chính `check` bắt, khác với lỗi trong {data,error} của SDK.
       if (error) return `lỗi bất thường: ${errorLabel(error)}`;
       if (signInError) return `không đăng nhập được tài khoản test: ${errorLabel(signInError)}`;
       if ((rows ?? []).length > 0) return "GHI ĐƯỢC — xóa dòng rác " + SENTINEL_AUTH;
-      if (!insert?.error) return null; // policy chặn im lặng, đọc lại 0 dòng: đạt
+      // Đọc lại mà lỗi thì "0 dòng" không chứng minh được gì — đừng coi là đạt.
+      if (readError) return `không đọc lại được để kiểm chứng: ${errorLabel(readError)}`;
+      // Tới đây `insert` không lỗi VÀ đọc lại thành công ra 0 dòng. Với `published: true`
+      // ở payload, một cú ghi lọt qua chắc chắn đã hiện ra ở nhánh trên, nên trường hợp
+      // này là policy chặn mà driver không báo lỗi.
+      if (!insert?.error) return null;
       const code = insert.error.code ?? insert.error.error ?? "";
       const message = insert.error.message ?? "";
       // Postgres dùng CHUNG sqlstate 42501 cho cả "thiếu GRANT" (message "permission
@@ -200,8 +231,9 @@ if (!testEmail || !testPassword) {
 
   // Phép này bắt HAI thứ trong một truy vấn đọc lại:
   //   a) không tự ghi được dòng admin cho chính mình;
-  //   b) không đọc trộm được dòng của NGƯỜI KHÁC — chủ dự án đã có một dòng
-  //      role='admin' từ Task 3, và tài khoản test phải thấy ĐÚNG 0 dòng.
+  //   b) không đọc trộm được dòng của NGƯỜI KHÁC — dòng mồi nhử tạo ở Step 1c
+  //      (Task 3's cấp admin thật là tùy chọn nên không dựa vào nó), và tài khoản
+  //      test phải thấy ĐÚNG 0 dòng.
   // Vế (b) là thứ duy nhất chứng minh policy "own role select" thật sự lọc theo
   // auth.uid(); `has_table_privilege` trong khối tự kiểm SQL không với tới được.
   await check(
@@ -213,11 +245,17 @@ if (!testEmail || !testPassword) {
         .from("user_roles")
         .insert([{ user_id: me.data?.user?.id, role: "admin" }]);
       const readBack = await user.database.from("user_roles").select("user_id, role");
-      return { insert, rows: readBack.data ?? [], myId: me.data?.user?.id };
+      return {
+        insert,
+        rows: readBack.data ?? [],
+        readError: readBack.error,
+        myId: me.data?.user?.id,
+      };
     },
-    ({ signInError, insert, rows, myId, error }) => {
+    ({ signInError, insert, rows, readError, myId, error }) => {
       if (error) return `lỗi bất thường: ${errorLabel(error)}`;
       if (signInError) return `không đăng nhập được tài khoản test: ${errorLabel(signInError)}`;
+      if (readError) return `không đọc lại được để kiểm chứng: ${errorLabel(readError)}`;
       const seen = rows ?? [];
       if (seen.some((r) => r.user_id === myId)) {
         return "TỰ PHONG ADMIN ĐƯỢC — xóa dòng trong user_roles ngay";
@@ -245,7 +283,8 @@ for (const r of results) {
 
 console.log(
   failed === 0
-    ? `\nOK — ${results.length}/${results.length} ranh giới còn nguyên.`
+    ? `\nOK — ${results.length}/${results.length} ranh giới còn nguyên.` +
+        (skipped > 0 ? ` (${skipped} PHÉP BỊ BỎ QUA — xem cảnh báo phía trên.)` : "")
     : `\n${failed}/${results.length} KIỂM TRA HỎNG. Đừng deploy cho tới khi sửa xong.`,
 );
 process.exit(failed === 0 ? 0 : 1);
