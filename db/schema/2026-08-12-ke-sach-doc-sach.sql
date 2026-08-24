@@ -2,6 +2,13 @@
 -- Chạy qua MCP `run-raw-sql`. File này là nguồn sự thật, backend không tự version.
 -- Đã chạy và xác minh trên backend ngày 2026-08-12 (9/9 self-check pass).
 --
+-- SIÊU VIỆT MỘT PHẦN bởi db/schema/2026-08-24-noi-dung-dong-va-quan-tri.sql: file đó
+-- CREATE OR REPLACE lại _complete_book_for/complete_book (đọc books/pages có published thay
+-- vì book_unlocks) và DROP TABLE book_unlocks. Chạy CHỈ file này một mình trên một DB đã có cả
+-- hai file sẽ HẠ CẤP _complete_book_for về bản đọc book_unlocks và TẠO LẠI bảng book_unlocks
+-- rỗng — vỡ toàn bộ tầng nội dung. Luôn chạy CẢ HAI, đúng thứ tự: file này (2026-08-12) trước,
+-- rồi file 2026-08-24 sau.
+--
 -- KIẾN TRÚC: nội dung bài học (tiêu đề, trang, vật phẩm) nằm ở content/shelves/*.json.
 -- DB chỉ giữ (a) trạng thái người dùng và (b) `book_unlocks` — bản chiếu của chuỗi
 -- mở khóa, sinh ra từ JSON bằng `npm run content:sync`.

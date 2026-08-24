@@ -40,7 +40,6 @@
       "title": "Khởi nguồn bờ cõi",
       "era": "TK VII – 179 TCN",
       "cover": null,
-      "requiredItem": null,
       "rewardItem": "trong-dong",
       "pages": [
         {
@@ -80,7 +79,6 @@
       "title": "Trận chiến Bạch Đằng 938",
       "era": "Năm 938",
       "cover": null,
-      "requiredItem": "trong-dong",
       "rewardItem": "coc-go-bach-dang",
       "pages": [
         {
@@ -120,7 +118,6 @@
       "title": "Hào khí Đông A",
       "era": "1258 – 1288",
       "cover": null,
-      "requiredItem": "coc-go-bach-dang",
       "rewardItem": "an-tin-dong-a",
       "pages": [
         {
@@ -160,7 +157,6 @@
       "title": "Đại phá quân Thanh",
       "era": "Xuân 1789",
       "cover": null,
-      "requiredItem": "an-tin-dong-a",
       "rewardItem": "ao-bao-quang-trung",
       "pages": [
         {
@@ -200,7 +196,6 @@
       "title": "Sử thi Điện Biên Phủ",
       "era": "Năm 1954",
       "cover": null,
-      "requiredItem": "ao-bao-quang-trung",
       "rewardItem": "la-co-quyet-chien",
       "pages": [
         {

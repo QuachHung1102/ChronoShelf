@@ -1,5 +1,15 @@
 # Bàn giao — mở phase mới
 
+> ⚠️ **File này đã bị thay thế bởi
+> `docs/superpowers/specs/2026-08-24-noi-dung-dong-va-quan-tri-design.md`.** Mục 1 ngay dưới
+> đây ("Nội dung ở JSON, database chỉ giữ trạng thái người dùng") và bảng 3-bảng-DB của nó
+> **không còn đúng**: nội dung giờ nằm TRONG database (4 bảng `shelves`/`items`/`books`/
+> `pages`), `content/shelves/*.json` không còn tồn tại (đã chuyển thành `db/seed/*.json`, một
+> bootstrap một chiều), và bảng `book_unlocks` mà mục đó cảnh báo "đừng dọn nhầm" **đã bị xóa
+> có chủ đích** — xem spec 2026-08-24 §2.1 để biết vì sao đổi kiến trúc. Mục 4 "Bẫy đã gặp" bên
+> dưới (lật trang 3D, InsForge xác minh email, `set_config` bị chặn…) vẫn còn giá trị — những
+> cái đó không liên quan tới thay đổi kiến trúc này, giữ lại làm lịch sử tham khảo.
+
 Ngày: 2026-08-12
 Nhánh: `feature/ke-sach-doc-sach` (chưa merge vào `master`, chưa có remote)
 Trạng thái build: `npm run build` pass, `npx tsc --noEmit` sạch, `design:lint` 0 lỗi 0 cảnh báo

@@ -3,6 +3,11 @@ import { ArrowRight } from "lucide-react";
 import { Header } from "@/components/Header";
 import { readShelfList } from "@/lib/content/read";
 
+// Nội dung là dữ liệu runtime (admin xuất bản kệ mới không cần build lại — spec
+// 2026-08-24 §2.1). Prerender tĩnh sẽ chụp danh sách kệ tại thời điểm build rồi giấu
+// biệt mọi kệ xuất bản sau đó cho tới lần build kế tiếp — đúng thứ spec muốn xóa bỏ.
+export const dynamic = "force-dynamic";
+
 // Bản đồ thế giới thay chỗ trang này ở chặng D. Tạm thời: lối vào các kệ đang có.
 export default async function Home() {
   const shelves = await readShelfList();

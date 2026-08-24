@@ -95,7 +95,14 @@ function toItem(row: ItemRow): ContentItem {
   };
 }
 
-/** Trả về null khi không có kệ nào mang slug đó, hoặc kệ đó chưa xuất bản. */
+/**
+ * Trả về null khi không có kệ nào mang slug đó, hoặc kệ đó chưa xuất bản — đây là câu
+ * trả lời "rỗng" THẬT, và `/[shelf]` 404 đúng trên nó.
+ *
+ * Backend không trả lời được (mất mạng, sai URL...) thì NỔ bằng exception, không được
+ * trả về null: null ở đây có nghĩa "404", nên một lần backend sập sẽ bị hiểu nhầm thành
+ * slug không tồn tại thay vì báo lỗi thật.
+ */
 export async function readShelf(slug: string): Promise<ContentShelf | null> {
   // Vật phẩm là bảng dùng chung cho mọi kệ nên không lồng được vào truy vấn trên;
   // hai request này độc lập, chạy song song.
@@ -104,7 +111,9 @@ export async function readShelf(slug: string): Promise<ContentShelf | null> {
     insforge.database.from("items").select("slug, name, description, image_url"),
   ]);
 
-  if (shelfRes.error || !shelfRes.data) return null;
+  if (shelfRes.error) throw new Error(`Không đọc được kệ "${slug}": ${shelfRes.error.message}`);
+  if (itemsRes.error) throw new Error(`Không đọc được danh sách vật phẩm: ${itemsRes.error.message}`);
+  if (!shelfRes.data) return null;
   const row = shelfRes.data as ShelfRow;
 
   return {
@@ -123,7 +132,11 @@ export async function readShelfList(): Promise<ShelfSummary[]> {
     .from("shelves")
     .select("slug, name, position, country_code")
     .order("position");
-  if (error) return [];
+  // NỔ khi backend không trả lời được, thay vì âm thầm coi như "chưa kệ nào xuất bản".
+  // Trang chủ ở app/page.tsx bắt buộc phải fail xây dựng nếu điều này xảy ra lúc build
+  // — nếu không, một backend sập tạm thời sẽ bị đóng băng vĩnh viễn thành trang chủ
+  // trắng trong bản HTML tĩnh đã build ra.
+  if (error) throw new Error(`Không đọc được danh sách kệ: ${error.message}`);
   // Kiểu riêng, KHÔNG dùng lại ShelfRow: truy vấn này không lấy `books`.
   type ShelfListRow = Omit<ShelfRow, "books">;
   return ((data ?? []) as ShelfListRow[]).map((row) => ({

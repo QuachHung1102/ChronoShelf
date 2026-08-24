@@ -15,7 +15,7 @@ quyển thì nhận được một vật phẩm, và chính vật phẩm đó m�
 | File | Nội dung |
 |---|---|
 | `content.md` | Bản mô tả sản phẩm đầy đủ: sitemap, cơ chế, nội dung từng trang. Nguồn sự thật về *cái gì* cần xây. |
-| `docs/superpowers/plans/2026-08-12-ban-giao-phase-tiep-theo.md` | **Đọc khi mở phiên mới**: đã xong tới đâu, còn gì, và các bẫy đã gặp. |
+| `docs/superpowers/specs/2026-08-24-noi-dung-dong-va-quan-tri-design.md` | **Đọc khi mở phiên mới**: kiến trúc hiện tại — nội dung nằm trong database, vai trò admin/user, RPC đọc thẳng `books`/`pages`. Bản bàn giao 2026-08-12 đã bị thay thế (xem banner ở đầu file đó) — mô hình JSON nó mô tả không còn đúng. |
 | `DESIGN.md` | Hệ thiết kế (format `design.md` của Google Labs): toàn bộ color/typography/spacing token + lý do. Nguồn sự thật về *trông như thế nào*. |
 | `docs/superpowers/specs/` | Spec đã được duyệt, mỗi subsystem một file. |
 | `docs/superpowers/plans/` | Kế hoạch triển khai từng bước, mỗi subsystem một file. |
@@ -77,9 +77,12 @@ npm run design:build    # DESIGN.md -> tailwind.theme.json
 ## Nội dung nằm trong database
 
 Nội dung bài học (kệ, sách, trang, vật phẩm) nằm ở 4 bảng `shelves`, `items`, `books`,
-`pages`. **Admin sửa qua `/quan-tri`, không sửa bằng cách đụng vào file.** Đây là thay đổi
+`pages`. **`/quan-tri` CHƯA được xây** — đó là chặng C (xem spec §11), nhánh này mới xong
+chặng A+B (schema + tầng đọc). Cho tới khi `/quan-tri` có, cách DUY NHẤT để đổi nội dung
+đang chạy là viết SQL `INSERT`/`UPDATE` tay rồi đưa qua MCP `run-raw-sql` — **không sửa bằng
+cách đụng vào file** (`db/seed/*.json` là bootstrap một chiều, xem đoạn dưới). Đây là thay đổi
 so với mô hình JSON cũ: admin phải tạo được sách lúc chạy mà không cần build lại. Lý do đầy
-đủ ở `docs/superpowers/specs/2026-08-24-noi-dung-dong-va-quan-tri-design.md` §2.1.
+đủ ở `docs/superpowers/specs/2026-08-24-noi-dung-dong-va-quan-tri-design.md` §2.1, §5.
 
 `db/seed/*.json` là **bootstrap một chiều**, chạy bằng `npm run seed:content` rồi đưa SQL qua
 MCP `run-raw-sql`. Sửa file đó KHÔNG làm đổi nội dung đang chạy.
@@ -139,6 +142,16 @@ npm run design:build   # sinh lại tailwind.theme.json từ DESIGN.md
 npm run seed:content   # sinh SQL bootstrap db/seed/*.json -> bảng nội dung
 ```
 
+`npm run check` cần `.env.local` có mặt (xem `.env.example`) — KHÔNG còn chạy "ngoại tuyến
+hoàn toàn" được. `next build` (bước cuối của `check`) nạp `lib/insforge/client.ts`, file đó
+`throw` ngay lúc nạp module nếu thiếu `NEXT_PUBLIC_INSFORGE_BASE_URL` hoặc
+`NEXT_PUBLIC_INSFORGE_ANON_KEY` — đã kiểm thực nghiệm 2026-08-25: thiếu `.env.local` thì
+`next build` thoát mã 1 ngay ở bước "Collecting page data", dù `/` đã `force-dynamic` (bước đó
+vẫn phải nạp module để đọc `export const dynamic`, nên code chạy lúc nạp module vẫn chạy). Hai
+biến đó không cần trỏ tới backend đang sống — chỉ cần CÓ MẶT: cũng đã kiểm, build vẫn qua khi
+trỏ sai URL, vì không route nào (`/`, `/[shelf]`, `/dang-nhap` đều `force-dynamic`) còn gọi
+mạng lúc build nữa.
+
 `npm run check` cũng chạy tự động ở **pre-commit**: `.githooks/pre-commit`, được nối vào bằng
 `core.hooksPath` trong script `prepare` của npm (npm tự gọi `prepare` sau `npm install`, nên
 máy mới clone là có hook luôn — không cần husky). Cần bỏ qua một lần thì `git commit --no-verify`.
@@ -173,27 +186,31 @@ những cổng đó bắt lỗi tốt hơn một bộ test JSX:
 | Rủi ro | Ai bắt |
 |---|---|
 | Chuỗi mở khóa đứt gãy | Không xảy ra được — không có cột nào lưu nó |
-| Người dùng thường sửa được nội dung | `npm run db:check` (phép 10) |
-| Người dùng tự phong admin | `npm run db:check` (phép 8, 11) |
+| Người dùng thường sửa được nội dung | `npm run db:check` — ghi thử cả 4 bảng `shelves`/`items`/`books`/`pages` |
+| Người dùng tự phong admin | `npm run db:check` — thử lúc chưa đăng nhập lẫn khi đã đăng nhập |
 | Token màu/chữ sai, tương phản dưới AA | `design:lint` |
 | Sai kiểu, route không tồn tại | `build` (typegen + tsc) |
 | **RLS và quyền của `complete_book`** | **`npm run db:check`** |
 
 Hàng cuối là rủi ro lớn nhất của dự án. `scripts/db-check.mjs` gọi backend thật bằng đúng khóa
-`anon` mà trình duyệt cầm — **11 phép**, tất cả qua HTTP thật, không phải SQL qua MCP.
+`anon` mà trình duyệt cầm — **15 phép**, tất cả qua HTTP thật, không phải SQL qua MCP. (Số phép
+đổi theo thời gian khi hàng rào mới cần kiểm — đọc trực tiếp output của `npm run db:check` thay
+vì tin số này, nó chỉ để biết thứ tự lớn của bộ kiểm.)
 
 Chín phép đầu chạy khi **chưa đăng nhập**: xác nhận sách đã xuất bản vẫn đọc được, và khẳng
 định kẻ chưa đăng nhập **không** ghi được `user_items` hay `user_book_progress`, **không** gọi
 được `_complete_book_for` hay `complete_book`, **không** đọc được sách nháp, **không** ghi được
 `user_roles` hay `books`, và đọc `user_items` ra rỗng.
 
-Hai phép cuối cần tài khoản thật (`DB_CHECK_USER_EMAIL` / `DB_CHECK_USER_PASSWORD` trong
-`.env.local`) và kiểm **người đã đăng nhập nhưng không phải admin**: không ghi được `books`,
-và không tự phong admin được cũng không đọc trộm được vai trò người khác trong `user_roles`.
-Thiếu hai biến đó thì kết quả báo `9/9 ... (2 PHÉP BỊ BỎ QUA)` — đó là **bỏ qua, không phải
-đạt**.
+Sáu phép cuối cần tài khoản thật (`DB_CHECK_USER_EMAIL` / `DB_CHECK_USER_PASSWORD` trong
+`.env.local`) và kiểm **người đã đăng nhập nhưng không phải admin**: không ghi được từng bảng
+trong `shelves`/`items`/`books`/`pages` riêng lẻ (4 phép — cả 4 dùng chung policy "admin write"
+nhưng một sai lệch riêng ở một bảng sẽ không bị phép nào khác bắt), không tự trao được vật phẩm
+qua `user_items`, và không tự phong admin được cũng không đọc trộm được vai trò người khác
+trong `user_roles`. Thiếu hai biến đó thì kết quả báo `9/9 ... (6 PHÉP BỊ BỎ QUA)` — đó là
+**bỏ qua, không phải đạt**.
 
-**Phép ghi `books` khi đã đăng nhập bắt buộc phải hỏng vì POLICY chặn, không phải vì thiếu
+**Phép ghi nội dung khi đã đăng nhập bắt buộc phải hỏng vì POLICY chặn, không phải vì thiếu
 GRANT** — thiếu GRANT thì admin thật cũng ghi hỏng, phép kiểm không chứng minh được gì. Postgres
 trả CHUNG sqlstate `42501` cho cả hai trường hợp, khác nhau duy nhất ở message
 (`permission denied for table` so với `new row violates row-level security policy`); script bắt
@@ -201,12 +218,24 @@ buộc soi message, không được soi mã lỗi. Đây đã là bẫy thật m
 42501 permission denied" mà đơn giản hóa lại thành so mã lỗi thì phép kiểm mất khả năng phân
 biệt hai trường hợp đó, và hỏng âm thầm — không còn ai biết.
 
+Cùng một họ bẫy, xuất hiện lần thứ hai ở chỗ khác: phép gọi `_complete_book_for`/`complete_book`
+khi CHƯA đăng nhập bắt buộc phải dùng slug sách THẬT đã xuất bản, không phải slug bịa. Bản đầu
+dùng slug bịa (`"bach-dang-938"`, không tồn tại) và coi "có lỗi là đạt" — nếu quyền EXECUTE lỡ
+bị cấp cho `anon`, hàm vẫn luôn dừng ở "Book not found" (một lỗi có thật nhưng không nói lên gì
+về quyền), nên phép kiểm báo PASS đúng lúc lỗ nghiêm trọng nhất đã mở toang. Sửa bằng slug thật
+vẫn CHƯA đủ: đã kiểm thực nghiệm 2026-08-25 bằng cách cấp tạm EXECUTE cho `anon` rồi gọi lại —
+lời gọi không dừng ở "Book not found" mà đi tiếp tới `INSERT INTO user_book_progress` và hỏng vì
+vi phạm khóa ngoại (user giả không tồn tại trong `auth.users`), một lỗi THỨ BA không ai lường
+trước. Bài học chung cho cả hai bẫy: đừng liệt kê những lỗi bị coi là "đã lộ" (danh sách đó
+không bao giờ đủ), mà liệt kê CHÍNH XÁC lỗi được coi là "quyền còn nguyên" (ở đây: đúng sqlstate
+`42501` VÀ đúng message `permission denied for function`) rồi coi MỌI thứ khác là rò rỉ.
+
 Hai dòng seed tồn tại chỉ để làm mồi nhử, không phải nội dung thật: quyển nháp vĩnh viễn
-`__nhap-khong-bao-gio-xuat-ban` (cho phép 7) và dòng vai trò `admin` của tài khoản mồi nhử
-`22222222-2222-2222-2222-222222222222` trong `user_roles` (cho phép 11). Thiếu mồi nhử thì
-phép đó vẫn chạy, vẫn báo PASS, nhưng hết nghĩa — sách thật đều đã publish nên phép 7 luôn
-thấy 0 dòng, `user_roles` không còn dòng "người khác" nào nên phép 11 luôn thấy 0 dòng, kể cả
-khi RLS hỏng hoàn toàn. Đừng "dọn" hai dòng này.
+`__nhap-khong-bao-gio-xuat-ban` (cho phép đọc-sách-nháp) và dòng vai trò `admin` của tài khoản
+mồi nhử `22222222-2222-2222-2222-222222222222` trong `user_roles` (cho phép tự-phong-admin).
+Thiếu mồi nhử thì phép đó vẫn chạy, vẫn báo PASS, nhưng hết nghĩa — sách thật đều đã publish nên
+phép đọc-sách-nháp luôn thấy 0 dòng, `user_roles` không còn dòng "người khác" nào nên phép
+tự-phong-admin luôn thấy 0 dòng, kể cả khi RLS hỏng hoàn toàn. Đừng "dọn" hai dòng này.
 
 Cố ý **không** viết bằng SQL chạy qua MCP `run-raw-sql`: SQL chạy bằng quyền admin nên kiểm
 được `has_function_privilege` nhưng không kiểm được thứ thật sự quan trọng — cái mà một request
@@ -221,7 +250,7 @@ chạy được cả khi MCP không kết nối.
 | `.claude/settings.json` | Allowlist lệnh + deny rule `pen.dev/**` + đăng ký hook. |
 | `.claude/hooks/guard-pen-dev.mjs` | `PreToolUse(Bash)`, chặn mọi lệnh shell chạm `pen.dev`. |
 | `.githooks/pre-commit` | Chạy `npm run check` trước mỗi commit. Nối bằng `npm run prepare`. |
-| `scripts/db-check.mjs` | Self-check 11 ranh giới bảo mật tầng DB (`npm run db:check`). |
+| `scripts/db-check.mjs` | Self-check 15 ranh giới bảo mật tầng DB (`npm run db:check`). |
 | `docs/agents/` | Quy ước cho skill: `issue-tracker.md`, `domain.md`. |
 | `.scratch/<feature>/` | Issue tracker (repo chưa có remote nên không dùng GitHub Issues). |
 | `docs/superpowers/specs/` + `plans/` | Spec và kế hoạch dài theo cả subsystem. |

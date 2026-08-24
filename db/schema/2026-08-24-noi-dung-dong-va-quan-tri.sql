@@ -1,5 +1,9 @@
 -- Nội dung động + Quản trị — schema.
 -- Chạy qua MCP `run-raw-sql`. File này là nguồn sự thật, backend không tự version.
+-- Đã chạy và xác minh trên backend ngày 2026-08-24 (Task 1/2/4 tự kiểm đều pass), sửa lại và
+-- xác minh lần nữa ngày 2026-08-25 (whole-branch review finding B: policy "read published"
+-- trên books và _complete_book_for phải đòi CẢ kệ cha (shelves) published, không chỉ tự thân
+-- quyển — xem tự kiểm Task 2 và Task 4 trong file).
 -- Spec: docs/superpowers/specs/2026-08-24-noi-dung-dong-va-quan-tri-design.md
 --
 -- KIẾN TRÚC: nội dung bài học nằm TRONG DATABASE (đổi so với mô hình JSON cũ), vì
@@ -113,10 +117,25 @@ DROP POLICY IF EXISTS "admin write"    ON public.books;
 DROP POLICY IF EXISTS "admin write"    ON public.pages;
 
 CREATE POLICY "read published" ON public.shelves FOR SELECT USING (published OR public.is_admin());
-CREATE POLICY "read published" ON public.books   FOR SELECT USING (published OR public.is_admin());
+-- Không chỉ tự bản thân quyển: kệ cha cũng phải xuất bản (hoặc người gọi là admin).
+-- Thiếu vế này, một quyển published nằm trên một kệ CHƯA published vẫn đọc được thẳng
+-- qua bảng books/pages — trong khi readShelf() vẫn ẩn kệ đó khỏi UI, nên không có gì
+-- trên giao diện lộ ra sự mâu thuẫn. Đúng luồng biên tập trong spec (tạo kệ → thêm
+-- sách → publish từng quyển → publish kệ sau cùng) tạo ra trạng thái này một cách tự
+-- nhiên, không phải trường hợp hiếm.
+CREATE POLICY "read published" ON public.books   FOR SELECT USING (
+  (published OR public.is_admin())
+  AND EXISTS (SELECT 1 FROM public.shelves s
+               WHERE s.slug = books.shelf_slug AND (s.published OR public.is_admin()))
+);
 -- items chỉ là tên/mô tả/ảnh, không có gì để giấu — và trang kệ cần tên vật phẩm để
 -- hiện "Cần Trống đồng để mở" cho quyển đang khóa.
 CREATE POLICY "read items"     ON public.items   FOR SELECT USING (true);
+-- Không cần tự soi thêm `shelves` ở đây: subquery này SELECT từ `public.books`, và RLS
+-- của `books` (vừa thêm vế kệ cha ở trên) áp dụng LẠI cho chính subquery đó theo vai
+-- trò của người gọi — Postgres không có khái niệm "đã ở trong policy khác thì miễn RLS".
+-- Nên một quyển có kệ cha chưa xuất bản sẽ tự động biến mất khỏi vế EXISTS này, không
+-- cần lặp lại điều kiện kệ cha một lần nữa.
 CREATE POLICY "read pages"     ON public.pages   FOR SELECT USING (
   EXISTS (SELECT 1 FROM public.books b
            WHERE b.slug = pages.book_slug AND (b.published OR public.is_admin()))
@@ -246,6 +265,23 @@ BEGIN
     END IF;
   END LOOP;
 
+  -- Whole-branch review 2026-08-24, finding B: policy "read published" trên `books`
+  -- giờ phải đòi CẢ kệ cha published, không chỉ tự thân quyển — thiếu vế đó thì một
+  -- quyển published nằm trên kệ CHƯA published vẫn đọc thẳng được qua API, trong khi
+  -- readShelf() đã ẩn cả kệ đó khỏi UI nên không có gì trên giao diện lộ ra mâu thuẫn.
+  -- Soi thẳng biểu thức policy — lý do giống hệt "own role select" ở Task 1:
+  -- has_table_privilege không nói lên RLS đang lọc DÒNG NÀO.
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+     WHERE schemaname = 'public'
+       AND tablename  = 'books'
+       AND policyname = 'read published'
+       AND qual LIKE '%shelves%'
+       AND qual LIKE '%published%'
+  ) THEN
+    RAISE EXCEPTION 'policy "read published" trên books không còn đòi kệ cha (shelves) published';
+  END IF;
+
   RAISE NOTICE 'Task 2 OK';
 END $$;
 
@@ -275,7 +311,14 @@ BEGIN
     RAISE EXCEPTION 'Not authenticated';
   END IF;
 
-  SELECT * INTO v_book FROM public.books WHERE slug = p_book_slug AND published;
+  -- Join `shelves` và đòi `s.published`: hàm chạy SECURITY DEFINER nên KHÔNG chịu RLS
+  -- của policy "read published" ở trên — thiếu vế này, một quyển published nằm trên
+  -- một kệ chưa published vẫn hoàn thành được và vẫn phát vật phẩm thật, dù readShelf()
+  -- đã ẩn cả kệ khỏi giao diện từ trước.
+  SELECT b.* INTO v_book
+    FROM public.books b
+    JOIN public.shelves s ON s.slug = b.shelf_slug
+   WHERE b.slug = p_book_slug AND b.published AND s.published;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Book not found';
   END IF;
