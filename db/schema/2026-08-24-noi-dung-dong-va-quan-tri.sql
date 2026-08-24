@@ -457,3 +457,33 @@ BEGIN
 
   RAISE NOTICE 'Task 4 OK';
 END $$;
+
+-- ---------------------------------------------------------------------------
+-- Mồi nhử cho `npm run db:check` (Task 5) + dọn bảng xương cũ.
+-- ---------------------------------------------------------------------------
+
+-- Quyển nháp cố định làm mồi nhử cho `npm run db:check` phép 7. Xóa nó đi thì phép
+-- đó thành rỗng nghĩa: mọi sách thật đều đã xuất bản nên truy vấn sẽ trả 0 dòng dù
+-- RLS có hỏng hay không. position = 900 để không đụng thứ tự sách thật.
+INSERT INTO public.books (slug, shelf_slug, position, title, era, published)
+VALUES ('__nhap-khong-bao-gio-xuat-ban', 'lich-su-viet-nam', 900,
+        'Mồi nhử cho db:check — đừng xuất bản', '—', false)
+ON CONFLICT (slug) DO UPDATE SET published = false;
+
+-- Dòng vai trò admin "của người khác" làm mồi nhử cho `npm run db:check` phép 11 —
+-- cùng lý do với quyển nháp ở trên: xóa nó đi thì vế "không đọc trộm được vai trò
+-- của người khác" của phép 11 im lặng thành rỗng nghĩa, vì user_roles không còn dòng
+-- nào ngoài của chính tài khoản test. Tài khoản này không có mật khẩu nên không đăng
+-- nhập được — nó chỉ tồn tại để làm dòng dữ liệu mà tài khoản test phải không thấy.
+INSERT INTO auth.users (id, email, email_verified, is_project_admin, is_anonymous)
+VALUES ('22222222-2222-2222-2222-222222222222',
+        '__moi-nhu-vai-tro@example.invalid', false, false, false)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.user_roles (user_id, role)
+VALUES ('22222222-2222-2222-2222-222222222222', 'admin')
+ON CONFLICT (user_id) DO UPDATE SET role = 'admin';
+
+-- book_unlocks là bản chiếu của mô hình JSON cũ. Nội dung nay nằm thẳng trong `books`
+-- và `pages`, `_complete_book_for` đọc trực tiếp từ đó, nên bảng này không còn ai dùng.
+DROP TABLE IF EXISTS public.book_unlocks;
