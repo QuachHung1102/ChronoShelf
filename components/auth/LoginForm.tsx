@@ -4,23 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, MailCheck, Send } from "lucide-react";
 import { sendLoginCode, verifyLoginCode } from "@/lib/insforge/auth";
-
-const FIELD =
-  "w-full rounded-md bg-surface px-md py-sm font-body text-body-md text-primary-dark " +
-  "placeholder:text-secondary focus-visible:outline-none focus-visible:ring-2 " +
-  "focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-neutral";
-
-const PRIMARY_BUTTON =
-  "inline-flex items-center justify-center gap-sm rounded-full bg-tertiary-deep px-lg py-sm " +
-  "font-body text-label-md text-on-primary transition duration-200 ease-out hover:brightness-110 " +
-  "disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
-  "focus-visible:ring-offset-2 focus-visible:ring-offset-neutral";
-
-const QUIET_BUTTON =
-  "inline-flex items-center gap-xs rounded-sm font-body text-body-sm text-tertiary-deep " +
-  "underline underline-offset-2 disabled:opacity-60 focus-visible:outline-none " +
-  "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 " +
-  "focus-visible:ring-offset-neutral";
+import { FIELD, LABEL, PRIMARY_BUTTON, QUIET_BUTTON } from "@/components/ui/controls";
 
 /**
  * Đăng nhập không mật khẩu: nhập email → nhận mã 6 số → xong.
@@ -74,7 +58,7 @@ export function LoginForm({ next }: { next: string }) {
             void send();
           }}
         >
-          <label className="font-body text-label-md text-primary-dark" htmlFor="login-email">
+          <label className={LABEL} htmlFor="login-email">
             Email
           </label>
           <input
@@ -105,7 +89,7 @@ export function LoginForm({ next }: { next: string }) {
             });
           }}
         >
-          <label className="font-body text-label-md text-primary-dark" htmlFor="login-otp">
+          <label className={LABEL} htmlFor="login-otp">
             Mã xác minh
           </label>
           <input
