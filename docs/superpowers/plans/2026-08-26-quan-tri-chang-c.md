@@ -31,6 +31,19 @@
 - **Trước khi viết code InsForge, gọi MCP `fetch-docs`.** API đổi thường xuyên.
 - **MCP `run-raw-sql` từ chối `BEGIN;`/`COMMIT;`** và thỉnh thoảng trả `Changing SQL session configuration is not allowed` với batch lớn — lỗi đó **không tất định**, cứ chạy lại, đừng chia nhỏ file.
 
+## Thứ tự chạy — KHÔNG phải thứ tự đánh số
+
+Task 4 (`components/ui/controls.ts`) chạy **trước** Task 3. Lý do: `AdminGate` và
+`AdminShell` ở Task 3 cần đúng chuỗi class focus-ring mà Task 4 đặt tên là
+`FOCUS_RING` — viết thẳng chuỗi đó vào Task 3 rồi để Task 4 tạo hằng ngay sau là tự
+tay tạo hai bản của cùng một thứ, mà không có bước nào quay lại gộp chúng.
+
+Thứ tự thực thi: **2 → 4 → 3 → 5 → 1 → 6 → 7 → 8 → 9 → 10.**
+(Task 1 là DDL, chỉ cần xong trước Task 8 — task đầu tiên gọi RPC đổi thứ tự.)
+
+Trong Task 3, `AdminGate` và `AdminShell` import `FOCUS_RING` từ
+`components/ui/controls.ts` thay vì viết lại chuỗi `focus-visible:…`.
+
 ## Điều kiện tiên quyết
 
 Backend InsForge phải sống. Ngày 2026-08-26 nó đang trả `No backend services available for app: pk3kdyx2`, và MCP server `insforge` không kết nối được. Task 1 và mọi bước kiểm tay đều **chặn cứng** cho tới khi nó trở lại. Task 2, 3, 4, 5 (phần thuần) viết được ngoại tuyến.
@@ -346,7 +359,9 @@ Kỳ vọng: FAIL, `Cannot find module` cho `./slug.ts`.
 export function slugify(input: string): string {
   return input
     .normalize("NFD")
-    // Dải dấu kết hợp — sau NFD thì "ạ" thành "a" + U+0323.
+    // Dải dấu kết hợp U+0300–U+036F — sau NFD thì "ạ" thành "a" + U+0323.
+    // Viết bằng escape chứ không phải ký tự thô: ký tự kết hợp là VÔ HÌNH trong hầu
+    // hết editor, nên một lần copy-paste hỏng sẽ không ai nhìn ra.
     .replace(/[̀-ͯ]/g, "")
     // `đ` KHÔNG tách được bằng NFD: nó là ký tự riêng chứ không phải d + dấu, nên
     // không có dòng này thì "Bạch Đằng" ra "bach-ng" — chữ đ bị lọc mất luôn.
@@ -1018,7 +1033,7 @@ git commit -m "feat(admin): upload anh len bucket + hien credit CC BY-SA cho ngu
 ### Task 6: Quản lý kệ — `/quan-tri`
 
 **Files:**
-- Create: `lib/admin/shelves.ts`, `components/admin/ShelfAdmin.tsx`, `components/admin/RowActions.tsx`
+- Create: `lib/admin/fail.ts`, `lib/admin/shelves.ts`, `components/admin/ShelfAdmin.tsx`, `components/admin/RowActions.tsx`
 - Modify: `app/quan-tri/page.tsx`
 
 **Interfaces:**
@@ -1031,10 +1046,27 @@ git commit -m "feat(admin): upload anh len bucket + hien credit CC BY-SA cho ngu
   - `deleteShelf(slug: string): Promise<void>`
   - `<RowActions onUp onDown onEdit onDelete disabledUp disabledDown busy />` — bốn callback không tham số, ba boolean.
 
-- [ ] **Step 1: Viết `lib/admin/shelves.ts`**
+- [ ] **Step 1: Viết `lib/admin/fail.ts`**
+
+Bốn file `lib/admin/*.ts` đều cần đúng một hàm này. Chép nguyên văn bốn lần là cách
+chắc chắn nhất để bốn thông báo lỗi lệch nhau dần.
+
+```ts
+/**
+ * Biến `{ data, error }` của SDK thành exception có ngữ cảnh. Mọi hàm trong
+ * `lib/admin/*` đi qua đây để thông báo lỗi tới tay admin luôn có dạng
+ * "<việc đang làm>: <lời backend nói>".
+ */
+export function fail(error: { message?: string } | null, fallback: string): never {
+  throw new Error(error?.message ? `${fallback}: ${error.message}` : fallback);
+}
+```
+
+- [ ] **Step 1b: Viết `lib/admin/shelves.ts`**
 
 ```ts
 import { insforge } from "@/lib/insforge/client";
+import { fail } from "./fail";
 
 /**
  * Đọc/ghi bảng `shelves` cho màn quản trị. Chạy PHÍA CLIENT — bắt buộc, không phải
@@ -1054,10 +1086,6 @@ export interface AdminShelf {
 
 /** Segment tĩnh của app sẽ nuốt mất kệ mang slug này — Next ưu tiên route tĩnh. */
 export const RESERVED_SLUGS = new Set(["quan-tri", "dang-nhap"]);
-
-function fail(error: { message?: string } | null, fallback: string): never {
-  throw new Error(error?.message ? `${fallback}: ${error.message}` : fallback);
-}
 
 export async function listShelves(): Promise<AdminShelf[]> {
   const { data, error } = await insforge.database
@@ -1493,6 +1521,7 @@ Làm trước sách vì form sách cần chọn vật phẩm thưởng từ danh
 
 ```ts
 import { insforge } from "@/lib/insforge/client";
+import { fail } from "./fail";
 import type { ImageValue } from "@/lib/insforge/storage";
 
 export interface AdminItem {
@@ -1502,10 +1531,6 @@ export interface AdminItem {
   image: ImageValue;
   /** Slug những quyển đang lấy vật phẩm này làm phần thưởng — xóa sẽ bị FK chặn. */
   usedByBooks: string[];
-}
-
-function fail(error: { message?: string } | null, fallback: string): never {
-  throw new Error(error?.message ? `${fallback}: ${error.message}` : fallback);
 }
 
 export async function listItems(): Promise<AdminItem[]> {
@@ -1678,6 +1703,7 @@ Chuỗi mở khóa suy ra từ vị trí, không lưu ở đâu cả (spec §2.2
 
 ```ts
 import { insforge } from "@/lib/insforge/client";
+import { fail } from "./fail";
 
 export interface AdminBook {
   slug: string;
@@ -1687,10 +1713,6 @@ export interface AdminBook {
   rewardItemSlug: string | null;
   published: boolean;
   pageCount: number;
-}
-
-function fail(error: { message?: string } | null, fallback: string): never {
-  throw new Error(error?.message ? `${fallback}: ${error.message}` : fallback);
 }
 
 export async function listBooks(shelfSlug: string): Promise<AdminBook[]> {
@@ -1928,6 +1950,7 @@ Màn cuối và là lý do cả chặng tồn tại. Xem trước dùng **đúng
 
 ```ts
 import { insforge } from "@/lib/insforge/client";
+import { fail } from "./fail";
 import type { ImageValue } from "@/lib/insforge/storage";
 
 export interface AdminPage {
@@ -1938,10 +1961,6 @@ export interface AdminPage {
   caption: string | null;
   summary: string[];
   image: ImageValue;
-}
-
-function fail(error: { message?: string } | null, fallback: string): never {
-  throw new Error(error?.message ? `${fallback}: ${error.message}` : fallback);
 }
 
 export async function listPages(bookSlug: string): Promise<AdminPage[]> {
