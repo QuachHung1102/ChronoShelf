@@ -9,7 +9,7 @@ export function slugify(input: string): string {
     // Dải dấu kết hợp U+0300–U+036F — sau NFD thì "ạ" thành "a" + U+0323.
     // Viết bằng escape chứ không phải ký tự thô: ký tự kết hợp là VÔ HÌNH trong hầu
     // hết editor, nên một lần copy-paste hỏng sẽ không ai nhìn ra.
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     // `đ` KHÔNG tách được bằng NFD: nó là ký tự riêng chứ không phải d + dấu, nên
     // không có dòng này thì "Bạch Đằng" ra "bach-ng" — chữ đ bị lọc mất luôn.
     .replace(/đ/g, "d")
