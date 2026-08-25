@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // jQuery + turn.js là mã của bên thứ ba, nạp nguyên bản lúc chạy — đừng lint.
+    "public/vendor/**",
   ]),
 ]);
 

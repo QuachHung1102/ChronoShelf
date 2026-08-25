@@ -10,6 +10,10 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
+    // File test import nhau bằng đuôi ".ts" vì `node --test` chạy TypeScript trực tiếp
+    // (Node 24, type stripping) và bộ resolve của Node cần đuôi thật. Không bật cờ này
+    // thì tsc báo TS5097. An toàn vì "noEmit": true — không có file .js nào được sinh ra.
+    "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,

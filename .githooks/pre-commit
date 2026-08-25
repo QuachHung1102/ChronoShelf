@@ -1,0 +1,10 @@
+#!/bin/sh
+# Cổng trước khi commit — chạy đúng thứ mà CLAUDE.md bảo phải chạy, không hơn.
+#
+# Nằm ở .githooks/ (có version trong git) chứ không phải .git/hooks/ (không có).
+# `npm run prepare` trỏ core.hooksPath vào đây, và npm tự gọi `prepare` sau mỗi
+# `npm install`, nên máy mới clone về là có hook luôn — không cần husky.
+#
+# Bỏ qua một lần khi thật sự cần: git commit --no-verify
+echo "pre-commit: npm run check"
+exec npm run check

@@ -47,3 +47,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# claude local settings (contains live InsForge key)
+.claude/settings.local.json
+
+# ảnh chụp màn hình khi kiểm tra UI + output của Playwright MCP
+/*.png
+.playwright-mcp/
