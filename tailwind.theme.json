@@ -12,7 +12,9 @@
         "surface": "#fbf4e4",
         "surface-shelf": "#2a160c",
         "surface-reader": "#241209",
+        "surface-room": "#160b05",
         "surface-locked": "#5a3b22",
+        "secondary-light": "#c4a886",
         "on-primary": "#f6ecda",
         "ring": "#a83a10",
         "ring-on-dark": "#f6ecda",
@@ -46,6 +48,12 @@
         ],
         "caption": [
           "Lora"
+        ],
+        "body-book": [
+          "Lora"
+        ],
+        "drop-cap": [
+          "Playfair Display"
         ]
       },
       "fontSize": {
@@ -102,6 +110,18 @@
           "12px",
           {
             "fontWeight": "400"
+          }
+        ],
+        "body-book": [
+          "16px",
+          {
+            "fontWeight": "400"
+          }
+        ],
+        "drop-cap": [
+          "44px",
+          {
+            "fontWeight": "700"
           }
         ]
       },

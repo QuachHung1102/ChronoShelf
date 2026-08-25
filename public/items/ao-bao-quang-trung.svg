@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#F6ECDA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Áo bào: vai, hai ống tay rộng, vạt chéo, đai lưng. -->
+  <path d="M24 14h16l4 6-4 3 3 29H21l3-29-4-3z" />
+  <path d="M24 14l-11 8 3 12 6-3" />
+  <path d="M40 14l11 8-3 12-6-3" />
+  <path d="M28 14l4 9 4-9" />
+  <path d="M32 23v14" stroke-width="1.2" opacity=".6" />
+  <path d="M20.6 36h22.8" stroke="#E8622C" stroke-width="3" />
+  <path d="M23 45h18" stroke-width="1" opacity=".45" />
+</svg>

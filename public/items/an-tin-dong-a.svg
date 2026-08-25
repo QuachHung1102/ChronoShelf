@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#F6ECDA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Ấn tín: núm cầm, thân ấn, mặt ấn khắc nét triện. -->
+  <path d="M27 30v-7q0-4 5-6 5 2 5 6v7" />
+  <path d="M28.5 17.5h7" stroke-width="1.2" opacity=".7" />
+  <rect x="16" y="30" width="32" height="6" rx="1.5" />
+  <rect x="13" y="36" width="38" height="17" rx="2" />
+  <!-- Nét triện cách điệu trên mặt ấn — hoa văn, không phải chữ thật. -->
+  <g stroke="#E8622C" stroke-width="1.4" opacity=".95">
+    <path d="M19 41h7v8h-7z" />
+    <path d="M30 41h5M30 45h5M30 49h5" />
+    <path d="M39 41v8M43 41v8M39 45h4" />
+  </g>
+</svg>

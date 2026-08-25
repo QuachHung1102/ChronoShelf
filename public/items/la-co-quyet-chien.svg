@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#F6ECDA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Lá cờ Quyết chiến Quyết thắng đang bay trên cán. -->
+  <path d="M17 57V9" />
+  <circle cx="17" cy="7" r="2.2" fill="#F6ECDA" />
+  <path d="M17 11h33l-4 8 4 8H17z" fill="#E8622C" stroke="none" />
+  <path d="M17 11h33l-4 8 4 8H17" />
+  <path d="M38 12.6l.9 2.9h3l-2.4 1.8.9 2.9-2.4-1.8-2.4 1.8.9-2.9-2.4-1.8h3z" fill="#F6ECDA" stroke="none" />
+  <path d="M17 33c8 3 14 3 20 0" stroke-width="1.1" opacity=".4" />
+</svg>

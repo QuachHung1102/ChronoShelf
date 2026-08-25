@@ -1,16 +1,200 @@
-// Phần Tailwind không diễn đạt được: kích thước trang đôi và hai hoạt cảnh có
-// kịch bản (lật trang, nhận vật phẩm). Màu lấy từ token qua `theme()`.
+// Quyển sách 3D và hoạt cảnh nhận vật phẩm. Màu lấy từ token qua `theme()`.
+//
+// Lật trang chạy bằng `rotateY` thuần CSS chứ không phải thư viện JS. Lý do là triệu chứng
+// người dùng báo: "giật, không mượt". Animation chạy bằng JS từng frame (turn.js + jQuery)
+// vẽ lại gradient mỗi frame trên luồng chính, nên rớt frame ngay khi luồng chính bận; một
+// `transform` được trình duyệt đẩy xuống compositor thì về nguyên tắc không rớt kiểu đó.
+// Đổi lại là mất tính năng kéo góc trang — tính năng đó chưa từng được bật.
 
-// Trang đôi 920×560 căn giữa (DESIGN.md § Layout).
-.sheet {
-  width: 920px;
-  height: 560px;
+// Sách mở là trang đôi 980×580 (DESIGN.md § Layout).
+$book-width: 980px;
+$book-height: 580px;
+$half: 490px;
+
+.stage {
+  // DESIGN.md § Motion: lật trang 400–500ms, `ease-in-out`. Đường cong này vào chậm rồi
+  // buông dần ra — giấy thật có quán tính, `ease-in-out` cân đối hai đầu nên nghe như máy móc.
+  --flip-duration: 480ms;
+  --flip-ease: cubic-bezier(0.42, 0.05, 0.2, 1);
+
+  position: relative;
+  width: $book-width;
+  height: $book-height;
+  // Càng xa thì phối cảnh càng thoải. Gần hơn mức này thì tờ giấy đang lật bị kéo méo
+  // như ống kính góc rộng — trông "3D" nhưng không còn giống giấy.
+  perspective: 2400px;
+  perspective-origin: 50% 44%;
 }
 
-// Lật trang: mặc định là fade ≤150ms, chỉ nâng lên 3D flip khi người dùng
-// không bật giảm chuyển động (DESIGN.md § Motion).
-.flip {
-  animation: fade 150ms ease-out both;
+// Bóng của cả quyển sách đổ xuống sàn phòng. Là phần tử riêng vì .book bật preserve-3d,
+// mà preserve-3d thì `box-shadow` trên chính nó không vẽ ra gì (nó không có nền).
+.bookShadow {
+  position: absolute;
+  inset: auto -3% -40px -3%;
+  height: 96px;
+  border-radius: 50%;
+  // Nền phòng quanh đây đã gần như đen, nên vệt bóng này gần như không thấy — và đúng ra
+  // là vậy. Nó chỉ có việc dìm nốt phần sáng còn sót của luồng sáng ngay dưới chân sách,
+  // để mép dưới quyển sách không hòa vào nền. Đừng đổi nó thành quầng sáng ấm cho "nổi":
+  // trên màn hình này quầng sáng cam đã có nghĩa riêng (DESIGN.md § Elevation).
+  background: radial-gradient(
+    ellipse at center,
+    theme('colors.surface-room') 0%,
+    theme('colors.surface-room / 70%') 40%,
+    theme('colors.surface-room / 0%') 73%
+  );
+  filter: blur(10px);
+}
+
+.book {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  // Sách đóng chỉ thấy nửa phải, nên cả quyển phải trượt sang để nửa đó nằm giữa màn hình.
+  // Đây chính là chỗ turn.js nhảy 230px một phát (autoCenter): cùng phép dịch, nhưng cho nó
+  // trượt cùng nhịp với trang lật thì mắt đọc ra là "sách đang mở ra", không phải "sách nhảy".
+  transition: transform var(--flip-duration) var(--flip-ease);
+}
+
+// Khối giấy nhìn từ cạnh — dày lên ở bên đã đọc, mỏng đi ở bên chưa đọc.
+//
+// Bề rộng cố định ở mức dày nhất rồi co bằng `scaleX`, KHÔNG phải animate `width`. `width`
+// bắt trình duyệt tính lại layout mỗi khung hình, ngay trong đúng đường lật trang mà cả
+// bản này sinh ra để chữa cái tật giật. `transform` thì đi thẳng xuống compositor.
+// Sọc giấy chạy ngang nên co theo trục X không làm méo nó.
+.edge {
+  position: absolute;
+  top: 7px;
+  bottom: 7px;
+  width: 12px;
+  background: repeating-linear-gradient(
+    to bottom,
+    theme('colors.neutral') 0 1px,
+    theme('colors.secondary / 40%') 1px 3px
+  );
+  transition: transform var(--flip-duration) var(--flip-ease);
+}
+
+// Gốc co nằm ở cạnh giáp trang giấy, nên khối giấy dày lên theo hướng ra ngoài quyển sách.
+.edgeLeft {
+  right: calc(50% + #{$half});
+  transform-origin: right center;
+  border-radius: theme('borderRadius.sm') 0 0 theme('borderRadius.sm');
+  box-shadow: inset -2px 0 4px theme('colors.surface-room / 35%');
+}
+
+.edgeRight {
+  left: calc(50% + #{$half});
+  transform-origin: left center;
+  border-radius: 0 theme('borderRadius.sm') theme('borderRadius.sm') 0;
+  box-shadow: inset 2px 0 4px theme('colors.surface-room / 35%');
+}
+
+// Một tờ giấy: mặt trước là trang lẻ, mặt sau là trang chẵn kế nó. Trục quay nằm ở gáy,
+// nên tờ giấy luôn được đặt ở NỬA PHẢI và quay quanh cạnh trái của chính nó.
+.leaf {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 50%;
+  height: 100%;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  transition: transform var(--flip-duration) var(--flip-ease);
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  // Bắt buộc: thiếu nó thì mặt sau của tờ giấy hiện ngược qua mặt trước.
+  backface-visibility: hidden;
+  background: theme('colors.surface');
+  box-shadow: inset 0 0 0 1px theme('colors.primary-dark / 12%');
+}
+
+.back {
+  transform: rotateY(180deg);
+}
+
+// Tờ giấy đang bay phải TỐI DẦN rồi sáng lại: lúc dựng đứng nó gần như song song với tia
+// sáng nên hầu như không bắt được ánh nào. Thiếu chỗ này thì cú lật vẫn đúng hình học
+// nhưng đọc ra như một tấm bìa trượt qua, không phải một tờ giấy quay trong ánh sáng.
+// Chạy đúng bằng `--flip-duration` nên nó luôn khớp với cú xoay, kể cả khi đổi thời lượng.
+@media (prefers-reduced-motion: no-preference) {
+  .turning .face::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background: theme('colors.surface-room');
+    animation: page-shade var(--flip-duration) ease-in-out both;
+  }
+}
+
+@keyframes page-shade {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+// Rãnh gáy: giấy chui vào gáy thì tối dần. Mặt trước là trang bên phải nên gáy ở CẠNH TRÁI;
+// mặt sau bị xoay 180° nên cạnh gáy của nó nằm ở phía đối diện trong hệ tọa độ riêng.
+.face::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 58px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.front::before {
+  left: 0;
+  background: linear-gradient(
+    to right,
+    theme('colors.surface-room / 30%') 0%,
+    theme('colors.surface-room / 8%') 45%,
+    theme('colors.surface-room / 0%') 100%
+  );
+}
+
+.back::before {
+  right: 0;
+  background: linear-gradient(
+    to left,
+    theme('colors.surface-room / 30%') 0%,
+    theme('colors.surface-room / 8%') 45%,
+    theme('colors.surface-room / 0%') 100%
+  );
+}
+
+// Bìa cứng: da nâu, khung nhũ chìm — cùng ngôn ngữ với bìa trên kệ sách.
+.hardCover {
+  background:
+    repeating-linear-gradient(
+      116deg,
+      theme('colors.on-primary / 3%') 0 1px,
+      theme('colors.surface-room / 3%') 1px 6px
+    ),
+    linear-gradient(
+      152deg,
+      theme('colors.secondary') 0%,
+      theme('colors.primary') 38%,
+      theme('colors.primary-dark') 100%
+    );
+  box-shadow:
+    inset 0 0 0 1px theme('colors.surface-room / 45%'),
+    inset 0 0 0 12px theme('colors.tertiary-light / 0%'),
+    inset 0 0 0 13px theme('colors.tertiary-light / 20%'),
+    inset 0 0 0 14px theme('colors.surface-room / 25%');
 }
 
 .itemGlow {
@@ -21,14 +205,9 @@
   );
 }
 
+// Hoạt cảnh nhận vật phẩm chạy TUẦN TỰ: vật phẩm rơi → chữ → thông báo mở khóa.
+// Tổng 1000ms, dưới trần 1200ms của DESIGN.md. Giảm chuyển động thì hiện thẳng kết quả.
 @media (prefers-reduced-motion: no-preference) {
-  .flip {
-    transform-origin: left center;
-    animation: flip 450ms ease-in-out both;
-  }
-
-  // Hoạt cảnh nhận vật phẩm chạy TUẦN TỰ: vật phẩm rơi → chữ → thông báo mở khóa.
-  // Tổng 1000ms, dưới trần 1200ms của DESIGN.md.
   .dropItem {
     animation: drop 400ms ease-out both;
   }
@@ -51,17 +230,6 @@
   }
 }
 
-@keyframes flip {
-  from {
-    opacity: 0;
-    transform: perspective(1600px) rotateY(-14deg);
-  }
-  to {
-    opacity: 1;
-    transform: perspective(1600px) rotateY(0);
-  }
-}
-
 @keyframes drop {
   from {
     opacity: 0;
@@ -71,4 +239,152 @@
     opacity: 1;
     transform: translateY(0) rotate(0);
   }
+}
+
+// --- Trang sách theo lối sách in ------------------------------------------------------
+// Tất cả những gì dưới đây tồn tại vì một lý do: bản trước xếp trang theo lối thẻ giao diện
+// (tiêu đề → ô ảnh → đoạn văn), nên tờ giấy đọc ra là một cái card dán lên nền giấy. Sách in
+// có bốn dấu hiệu riêng, và đây là chúng.
+
+// Tên sách chạy đầu trang. Cố tình KHÔNG viết hoa toàn bộ: tên sách tiếng Việt có dấu, viết
+// hoa cả cụm thì mất dấu mũ và khó đọc (DESIGN.md § Typography).
+.runningHead {
+  padding-bottom: theme('spacing.xs');
+  border-bottom: 1px solid theme('colors.secondary / 25%');
+  letter-spacing: 0.1em;
+}
+
+// Nét khắc dưới tiêu đề: một hình thoi ở đầu dòng rồi nét mảnh tắt dần.
+.headingRule {
+  position: relative;
+  display: block;
+  height: 1px;
+  margin: theme('spacing.sm') 0 theme('spacing.md');
+  background: linear-gradient(
+    to right,
+    theme('colors.tertiary-deep / 50%') 0%,
+    theme('colors.tertiary-deep / 0%') 68%
+  );
+}
+
+.headingRule::after {
+  content: '';
+  position: absolute;
+  top: -2.5px;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  transform: rotate(45deg);
+  background: theme('colors.tertiary-deep / 75%');
+}
+
+// Chữ cái đầu thả xuống hai dòng. `::first-letter` xử lý đúng chữ tiếng Việt có dấu vì Đ, Ấ,
+// Ổ… đều là MỘT ký tự ở dạng tổ hợp sẵn — đừng thay bằng cách cắt `body[0]` trong JS, cách đó
+// sẽ tách rời dấu nếu chuỗi rơi vào dạng tổ hợp rời.
+.body {
+  text-align: justify;
+  // Tiếng Việt không ngắt từ bằng gạch nối; bật hyphens ở đây sẽ cắt sai âm tiết.
+  hyphens: none;
+}
+
+.body::first-letter {
+  float: left;
+  margin: 4px theme('spacing.sm') 0 0;
+  font-family: var(--font-heading), serif;
+  font-size: theme('fontSize.drop-cap[0]');
+  font-weight: 700;
+  line-height: 0.82;
+  color: theme('colors.tertiary-deep');
+}
+
+// Ý chính ở trang tổng kết: dấu triện hình thoi thay cho gạch đầu dòng của giao diện.
+.summary li {
+  position: relative;
+  padding-left: theme('spacing.lg');
+}
+
+.summary li::before {
+  content: '';
+  position: absolute;
+  top: 7px;
+  left: theme('spacing.xs');
+  width: 6px;
+  height: 6px;
+  transform: rotate(45deg);
+  background: theme('colors.tertiary-deep');
+}
+
+// Số trang giữa chân trang, hai bên là nét gạch. Gạch vẽ bằng nền chứ không phải `content`
+// có chữ: vài trình đọc màn hình đọc cả nội dung của `::before`.
+.folio {
+  position: relative;
+  align-self: center;
+  padding-inline: 20px;
+  font-family: var(--font-body), serif;
+  font-size: 12px;
+  color: theme('colors.secondary');
+}
+
+.folio::before,
+.folio::after {
+  content: '';
+  position: absolute;
+  bottom: 8px;
+  width: 13px;
+  height: 1px;
+  background: theme('colors.secondary / 55%');
+}
+
+.folio::before {
+  left: 0;
+}
+
+.folio::after {
+  right: 0;
+}
+
+// --- Khung modal ----------------------------------------------------------------------
+// `<dialog>` mở bằng `showModal()` lo sẵn ba thứ mà bản trước phải tự viết hoặc còn thiếu:
+// bẫy focus trong hộp thoại, Escape để đóng, và làm trơ phần nền phía sau. Đổi lại phải gỡ
+// hết style mặc định của thẻ — trình duyệt cho nó viền, nền và bề rộng vừa nội dung.
+.dialog {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  padding: 0;
+  border: none;
+  background: transparent;
+  overflow: hidden;
+}
+
+.dialog::backdrop {
+  background: theme('colors.surface-room');
+}
+
+// Nét khắc giữa tên sách và niên đại trên bìa cứng — hình thoi ở giữa, nét tắt dần hai đầu.
+.coverRule {
+  position: relative;
+  display: block;
+  width: 140px;
+  height: 1px;
+  margin: theme('spacing.sm') 0;
+  background: linear-gradient(
+    to right,
+    theme('colors.tertiary-light / 0%'),
+    theme('colors.tertiary-light / 55%'),
+    theme('colors.tertiary-light / 0%')
+  );
+}
+
+.coverRule::after {
+  content: '';
+  position: absolute;
+  top: -2.5px;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  transform: rotate(45deg);
+  background: theme('colors.tertiary-light / 70%');
 }

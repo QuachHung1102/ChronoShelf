@@ -1,60 +1,73 @@
-import { Image as ImageIcon } from "lucide-react";
 import type { ContentPage } from "@/lib/content/types";
 import s from "./reader.module.scss";
 
 /**
- * Một trang đôi giấy da. Trang thường: ảnh minh họa bên trái, nội dung bên phải.
- * Trang cuối (có `summary`) bỏ cột ảnh, dành cả trang cho phần tổng kết.
+ * Nội dung một mặt giấy. Nền giấy, rãnh gáy và bóng đổ do `.face` trong reader.module.scss
+ * lo — ở đây chỉ có chữ, để cùng một khối nội dung dùng được cho cả mặt trước lẫn mặt sau
+ * của tờ giấy.
+ *
+ * Trang được xếp theo lối sách in chứ không theo lối thẻ giao diện: tên sách chạy đầu trang,
+ * chữ cái đầu đoạn được thả to xuống hai dòng, số trang nằm giữa chân trang. Bản trước xếp
+ * theo lối thẻ (tiêu đề → ảnh → đoạn văn) nên tờ giấy đọc ra là một cái card đặt trên nền
+ * giấy, không phải một trang sách.
+ *
+ * Lề phía gáy phải rộng hơn: chữ sát vào rãnh gáy sẽ chìm vào bóng. Mặt trước của tờ giấy
+ * là trang bên phải nên gáy ở bên trái; mặt sau bị xoay 180° nên trong hệ tọa độ riêng của
+ * nó, cạnh gáy lại nằm ở bên phải.
  */
-export function PageSpread({ page }: { page: ContentPage }) {
-  const isSummary = Boolean(page.summary?.length);
-
+export function BookPage({
+  page,
+  pageNumber,
+  gutter,
+  bookTitle,
+}: {
+  page: ContentPage;
+  pageNumber: number;
+  gutter: "left" | "right";
+  bookTitle: string;
+}) {
   return (
-    <article
-      className={`${s.sheet} ${s.flip} flex overflow-hidden rounded-sm bg-surface shadow-2xl`}
+    <div
+      className={`flex h-full w-full flex-col overflow-hidden py-lg ${
+        gutter === "left" ? "pl-[64px] pr-xl" : "pl-xl pr-[64px]"
+      }`}
     >
-      {!isSummary && (
-        <div className="flex w-1/2 flex-col gap-sm border-r border-primary-dark/10 p-xl">
-          {page.image ? (
-            // eslint-disable-next-line @next/next/no-img-element -- ảnh nội dung tĩnh, kích thước do layout quyết định
-            <img
-              src={page.image}
-              alt={page.caption ?? page.heading}
-              className="aspect-[4/3] w-full rounded-sm object-cover"
-            />
-          ) : (
-            <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-sm rounded-sm bg-neutral">
-              <ImageIcon aria-hidden className="h-10 w-10 text-secondary" />
-              <p className="font-body text-caption italic text-secondary">
-                Ảnh minh họa sẽ được bổ sung
-              </p>
-            </div>
-          )}
+      <p className={`${s.runningHead} font-body text-caption text-secondary`}>{bookTitle}</p>
+
+      <h2 className="mt-md font-heading text-headline-sm text-primary-dark">{page.heading}</h2>
+      <span aria-hidden className={s.headingRule} />
+
+      {page.image && (
+        <figure className="mb-md flex flex-col gap-xs">
+          {/* eslint-disable-next-line @next/next/no-img-element -- ảnh nội dung tĩnh trong public/ */}
+          <img
+            src={page.image}
+            alt={page.caption ?? page.heading}
+            className="aspect-[4/3] w-full rounded-sm object-cover"
+          />
           {page.caption && (
-            <p className="font-body text-caption italic text-secondary">{page.caption}</p>
+            <figcaption className="font-body text-caption italic text-secondary">
+              {page.caption}
+            </figcaption>
           )}
-        </div>
+        </figure>
       )}
 
-      <div
-        className={`flex flex-col gap-md overflow-y-auto p-xl ${isSummary ? "w-full" : "w-1/2"}`}
-      >
-        <h2 className="font-heading text-headline-md text-primary-dark">{page.heading}</h2>
-        <p className="font-body text-body-md text-primary-dark">{page.body}</p>
+      <p className={`${s.body} font-body text-body-book leading-[1.75] text-primary-dark`}>
+        {page.body}
+      </p>
 
-        {page.summary && (
-          <ul className="flex flex-col gap-sm">
-            {page.summary.map((line) => (
-              <li
-                key={line}
-                className="border-l-2 border-tertiary-deep pl-md font-body text-body-md text-primary-dark"
-              >
-                {line}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </article>
+      {page.summary && (
+        <ul className={`${s.summary} mt-md flex flex-col gap-sm`}>
+          {page.summary.map((line) => (
+            <li key={line} className="font-body text-body-md leading-[1.7] text-primary-dark">
+              {line}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <span className={`${s.folio} mt-auto pt-md`}>{pageNumber}</span>
+    </div>
   );
 }

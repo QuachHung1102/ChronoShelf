@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#F6ECDA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Trống đồng Đông Sơn nhìn nghiêng: mặt trống, tang phình, thân thắt, chân loe. -->
+  <path d="M12 18c-3 4-3 8 1 12 3 4 2 10-2 17" />
+  <path d="M52 18c3 4 3 8-1 12-3 4-2 10 2 17" />
+  <path d="M11 47a21 6 0 0 0 42 0" />
+  <ellipse cx="32" cy="18" rx="20" ry="6" />
+  <ellipse cx="32" cy="18" rx="13" ry="3.9" stroke-width="1" opacity=".65" />
+  <!-- Ngôi sao 12 cánh giữa mặt trống, dẹt theo phối cảnh. -->
+  <g transform="translate(32 18) scale(1 .3)" fill="#E8622C" stroke="none">
+    <path d="M0-9 .91-3.38 4.5-7.79 2.47-2.47 7.79-4.5 3.38-.91 9 0 3.38 .91 7.79 4.5 2.47 2.47 4.5 7.79 .91 3.38 0 9-.91 3.38-4.5 7.79-2.47 2.47-7.79 4.5-3.38 .91-9 0-3.38-.91-7.79-4.5-2.47-2.47-4.5-7.79-.91-3.38Z" />
+  </g>
+  <!-- Vành hoa văn răng lược trên tang trống. -->
+  <path d="M10.6 27h42.8M11.8 33h40.4" stroke-width="1" opacity=".5" />
+  <path d="M16 36v4M24 37v4M32 37.5v4M40 37v4M48 36v4" stroke-width="1" opacity=".45" />
+</svg>

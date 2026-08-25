@@ -1,17 +1,201 @@
-// Chỉ giữ phần Tailwind không diễn đạt gọn được: kích thước bìa và quầng sáng.
-// Màu vẫn lấy từ token qua `theme()` — đừng viết mã hex ở đây.
+// Bìa sách như một VẬT THỂ, không phải cái thẻ (DESIGN.md § Elevation / Tầng đồ nội thất).
+// Ba thứ tạo ra khối: cạnh gáy bên trái, mép giấy bên phải, bóng tiếp đất dưới chân.
+// Bỏ bất kỳ cái nào trong ba là bìa quay về trạng thái lơ lửng.
+// Màu vẫn lấy từ token qua `theme()` — không hex.
 
-// 168px không có trong thang spacing của Tailwind (w-42 không tồn tại — class đó
-// im lặng không sinh ra gì), nên chiều rộng bìa đặt tay ở đây.
+// 190px không có trong thang spacing của Tailwind (w-42 im lặng không sinh ra gì).
 .slot {
-  width: 168px;
+  width: 190px;
+}
+
+// Sách thật trên một cái kệ không cao bằng nhau và không cùng một sắc da. Hai biến này
+// do BookShelf đặt theo vị trí quyển sách; giá trị ở đây chỉ là mặc định phòng khi thiếu.
+.cover {
+  --book-height: 240px;
+  --book-shade: 1;
+
+  position: relative;
+  // Trần theo chiều cao khung nhìn: ở laptop 1280×800 mà giữ nguyên chiều cao px thì cả tủ
+  // tràn khỏi màn hình và hàng chú thích bị đẩy ra ngoài. Bìa co lại là đúng thứ tự ưu tiên —
+  // nó vẫn đọc được, còn chú thích trạng thái mà biến mất thì mất thông tin.
+  height: min(var(--book-height), 30vh);
+  // Bìa da: nguồn sáng chếch trên-trái, nên góc trên-trái sáng và đáy phải tối.
+  background:
+    // vân da — thưa và mờ. Dày hơn mức này thì mặt bìa trông như vải nhung kẻ sọc.
+    repeating-linear-gradient(
+      116deg,
+      theme('colors.on-primary / 3%') 0 1px,
+      theme('colors.surface-room / 3%') 1px 6px
+    ),
+    linear-gradient(
+      152deg,
+      theme('colors.neutral / 55%') 0%,
+      theme('colors.secondary') 22%,
+      theme('colors.primary') 58%,
+      theme('colors.primary-dark') 100%
+    );
+  filter: brightness(var(--book-shade));
+  // Khung nhũ chìm hai nét, kiểu bìa sách đóng cổ.
+  box-shadow:
+    inset 0 0 0 1px theme('colors.surface-room / 45%'),
+    inset 0 0 0 7px theme('colors.tertiary-light / 0%'),
+    inset 0 0 0 8px theme('colors.tertiary-light / 18%'),
+    inset 0 0 0 9px theme('colors.surface-room / 22%'),
+    inset 0 -18px 26px -14px theme('colors.surface-room / 55%');
+}
+
+// Cạnh gáy — mặt bên trái của quyển sách, mặt KHÔNG bắt sáng.
+.cover::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 10px;
+  border-radius: theme('borderRadius.md') 0 0 theme('borderRadius.md');
+  background: linear-gradient(
+    to right,
+    theme('colors.surface-room / 85%') 0%,
+    theme('colors.primary-dark') 45%,
+    theme('colors.surface-room / 60%') 100%
+  );
+}
+
+// Mép giấy — chồng trang nhìn từ cạnh phải. Đây là thứ nói "bên trong có ruột sách".
+// Sọc phải mảnh và ngả vàng: kem nguyên bản ở đây cho ra một hàng răng cưa trắng chói.
+.cover::after {
+  content: '';
+  position: absolute;
+  inset: 5px 0 5px auto;
+  right: 0;
+  width: 4px;
+  border-radius: 0 theme('borderRadius.sm') theme('borderRadius.sm') 0;
+  background:
+    linear-gradient(
+      to right,
+      theme('colors.surface-room / 45%') 0%,
+      theme('colors.surface-room / 0%') 60%
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      theme('colors.neutral / 62%') 0 1px,
+      theme('colors.secondary / 45%') 1px 3px
+    );
+}
+
+// Bìa quyển đang khóa: vẫn là da nhưng xỉn và tối hơn một bậc (token `surface-locked`),
+// KHÔNG phải bìa thường bị `saturate()` — lọc bão hòa kéo nó về xám và mất hẳn họ nâu.
+.locked {
+  background:
+    repeating-linear-gradient(
+      116deg,
+      theme('colors.on-primary / 2%') 0 1px,
+      theme('colors.surface-room / 4%') 1px 6px
+    ),
+    linear-gradient(
+      152deg,
+      theme('colors.surface-locked') 0%,
+      theme('colors.primary-dark') 46%,
+      theme('colors.surface-room') 100%
+    );
+}
+
+// Bóng tiếp đất. Nằm ở .slot chứ không ở .cover: khi hover bìa nhô lên thì bóng phải
+// Ở LẠI trên tấm ván — bóng đi theo sách là dấu hiệu kinh điển của vật thể lơ lửng.
+// Đặt thấp hơn đáy sách hẳn 12px để phần lớn vệt bóng rơi xuống MẶT VÁN đang bắt sáng —
+// bóng rơi vào hậu tủ vốn đã tối bằng nó thì coi như không có bóng.
+.groundShadow {
+  position: absolute;
+  inset: auto -6px -12px -6px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    theme('colors.surface-room') 0%,
+    theme('colors.surface-room / 70%') 40%,
+    theme('colors.surface-room / 0%') 74%
+  );
+  transition: opacity 200ms ease-out, transform 200ms ease-out;
+}
+
+// Sách nhô lên thì bóng loang rộng và nhạt đi — đúng cách bóng thật hành xử.
+.slot:hover .groundShadow {
+  opacity: 0.65;
+  transform: scaleX(1.1);
+}
+
+// Đai sắt chắn ngang quyển đang khóa (DESIGN.md § Components: "ổ khóa và dây xích").
+// Đinh tán hai đầu là thứ làm nó đọc ra "đai sắt" chứ không phải một vệt tối ngẫu nhiên.
+.ironBand {
+  position: absolute;
+  // Neo theo % chứ không theo đáy bìa: năm quyển cao thấp khác nhau, neo theo đáy thì đai
+  // trượt lên đúng chỗ tên sách ở quyển cao nhất và cắt ngang chữ.
+  inset: 38% -2px auto -2px;
+  height: 15px;
+  background:
+    radial-gradient(circle 2.5px at 14px 50%, theme('colors.neutral / 60%') 60%, transparent 62%),
+    radial-gradient(
+      circle 2.5px at calc(100% - 14px) 50%,
+      theme('colors.neutral / 60%') 60%,
+      transparent 62%
+    ),
+    linear-gradient(
+      to bottom,
+      theme('colors.surface-room / 55%') 0%,
+      theme('colors.secondary / 85%') 34%,
+      theme('colors.primary-dark') 72%,
+      theme('colors.surface-room') 100%
+    );
+  box-shadow: 0 3px 6px -1px theme('colors.surface-room / 80%');
+}
+
+// Gợi ý "Cần X để mở" — nổi PHÍA TRÊN quyển sách. Trước đây nó là một dòng chữ chen
+// giữa bìa và tấm ván, làm sách trông như đang lơ lửng bên trên ván.
+.tooltip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  width: max-content;
+  max-width: 190px;
+  transform: translate(-50%, 4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease-out, transform 200ms ease-out;
+}
+
+.tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border: 5px solid transparent;
+  border-top-color: theme('colors.primary-dark');
+}
+
+.slot:hover .tooltip,
+.slot:focus-within .tooltip {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tooltip,
+  .groundShadow {
+    transition: none;
+  }
+  .slot:hover .tooltip,
+  .slot:focus-within .tooltip {
+    transform: translate(-50%, 0);
+  }
 }
 
 // Quyển tiếp theo cần đọc — điểm phát sáng DUY NHẤT của màn hình kệ sách.
 // Giảm chuyển động: quầng sáng đứng yên, viền cam tĩnh vẫn còn (DESIGN.md § Motion).
 .glow {
-  border: 2px solid theme('colors.tertiary');
-  box-shadow: 0 0 24px 2px theme('colors.tertiary / 55%');
+  box-shadow:
+    inset 0 0 0 2px theme('colors.tertiary'),
+    inset 0 0 0 9px theme('colors.tertiary-light / 18%'),
+    inset 0 -18px 26px -14px theme('colors.surface-room / 55%'),
+    0 0 28px 2px theme('colors.tertiary / 50%');
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -22,6 +206,45 @@
 
 @keyframes pulse-glow {
   50% {
-    box-shadow: 0 0 32px 6px theme('colors.tertiary / 80%');
+    box-shadow:
+      inset 0 0 0 2px theme('colors.tertiary'),
+      inset 0 0 0 9px theme('colors.tertiary-light / 18%'),
+      inset 0 -18px 26px -14px theme('colors.surface-room / 55%'),
+      0 0 40px 7px theme('colors.tertiary / 78%');
   }
+}
+
+// Số hiệu quyển sách, DẬP VÀO mặt bìa chứ không phải huy hiệu dán lên: vòng nhũ là hai nét
+// chìm, và nét sáng duy nhất nằm ở mép dưới — đúng cách một khuôn dập nóng ăn vào da.
+.emblem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: theme('borderRadius.full');
+  font-family: var(--font-heading), serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: theme('colors.tertiary-light / 80%');
+  box-shadow:
+    inset 0 0 0 1px theme('colors.tertiary-light / 24%'),
+    inset 0 0 0 4px theme('colors.tertiary-light / 0%'),
+    inset 0 0 0 5px theme('colors.tertiary-light / 13%'),
+    0 1px 0 theme('colors.tertiary-light / 9%');
+}
+
+// Đường kẻ mảnh giữa tên sách và niên đại, kiểu trang bìa sách in. Tắt dần ở hai đầu để nó
+// đọc ra là nét khắc trên da chứ không phải cái gạch chân.
+.eraRule {
+  width: 40px;
+  height: 1px;
+  margin: theme('spacing.xs') auto;
+  background: linear-gradient(
+    to right,
+    theme('colors.tertiary-light / 0%'),
+    theme('colors.tertiary-light / 45%'),
+    theme('colors.tertiary-light / 0%')
+  );
 }

@@ -1,8 +1,10 @@
 "use client";
 
 import { Check, Lock } from "lucide-react";
+import { Room } from "@/components/Room";
 import type { ShelfView } from "@/lib/insforge/types";
 import { BookCover } from "./BookCover";
+import s from "./BookShelf.module.scss";
 
 export function BookShelf({
   shelf,
@@ -14,46 +16,62 @@ export function BookShelf({
   const opened = shelf.books.filter((b) => b.state !== "locked").length;
 
   return (
-    <section className="px-page-margin py-xl">
-      <p className="font-body text-label-caps uppercase text-tertiary-deep">Kệ sách</p>
-      <h1 className="mt-sm font-heading text-headline-lg text-primary-dark">{shelf.name}</h1>
-      <p className="mt-xs font-body text-body-md text-secondary">
-        Bạn đã mở {opened}/{shelf.books.length} quyển
-      </p>
+    <Room className="flex flex-1 flex-col">
+      {/* justify-center: tủ sách nằm giữa khung nhìn thay vì dồn lên đỉnh trang và
+          bỏ trống hai phần ba phía dưới như bản trước. */}
+      <section className="mx-auto flex w-full max-w-[1180px] flex-1 flex-col justify-center gap-lg px-page-margin py-xl">
+        <header>
+          <p className="font-body text-label-caps uppercase text-tertiary-light">Kệ sách</p>
+          <h1 className="mt-sm font-heading text-headline-lg text-on-primary">{shelf.name}</h1>
+          <p className="mt-xs font-body text-body-md text-secondary-light">
+            Bạn đã mở {opened}/{shelf.books.length} quyển
+          </p>
+        </header>
 
-      <div className="mt-lg rounded-lg bg-primary-dark pt-xl">
-        {/* items-start chứ không phải items-end: mọi bìa cao bằng nhau nên chúng vẫn
-            đứng thẳng hàng trên ván, còn dòng gợi ý dài ngắn khác nhau không đội bìa lên. */}
-        <ul className="flex list-none items-start justify-center gap-shelf-gap px-xl">
-          {shelf.books.map((view) => (
-            <li key={view.book.slug}>
-              <BookCover view={view} onOpen={onOpenBook} />
-            </li>
-          ))}
+        <div className={s.cabinet}>
+          <div aria-hidden className={s.cornice} />
+          <div className={s.bay}>
+            <ul className={s.row}>
+              {shelf.books.map((view, index) => (
+                <li key={view.book.slug}>
+                  <BookCover view={view} index={index} onOpen={onOpenBook} />
+                </li>
+              ))}
+            </ul>
+            <div aria-hidden className={s.plank} />
+
+            {/* Tầng dưới là trang trí: không quyển nào bấm được, không quyển nào mang
+                thông tin — nên cả tầng bị ẩn khỏi trình đọc màn hình. */}
+            <div aria-hidden className={s.shelfLower}>
+              {Array.from({ length: 22 }, (_, i) => (
+                <span key={i} className={s.tome} />
+              ))}
+              <span className={s.stack} />
+            </div>
+            <div aria-hidden className={`${s.plank} ${s.plankLower}`} />
+          </div>
+        </div>
+
+        <ul className="flex list-none flex-wrap items-center gap-lg font-body text-caption text-secondary-light">
+          <li className="flex items-center gap-xs">
+            <Lock aria-hidden className="h-4 w-4" />
+            Đang khóa — cần vật phẩm của quyển trước
+          </li>
+          <li className="flex items-center gap-xs">
+            <span aria-hidden className="h-4 w-4 rounded-sm border-2 border-tertiary" />
+            Sẵn sàng để đọc
+          </li>
+          <li className="flex items-center gap-xs">
+            <span
+              aria-hidden
+              className="flex h-4 w-4 items-center justify-center rounded-full bg-tertiary-deep"
+            >
+              <Check className="h-2.5 w-2.5 text-on-primary" />
+            </span>
+            Đã đọc xong
+          </li>
         </ul>
-        {/* Tấm ván kệ để góc vuông — nó là thanh gỗ, không phải cái thẻ (DESIGN.md § Shapes). */}
-        <div className="mt-md h-md w-full bg-surface-shelf" />
-      </div>
-
-      <ul className="mt-md flex list-none flex-wrap items-center gap-lg font-body text-caption text-secondary">
-        <li className="flex items-center gap-xs">
-          <Lock aria-hidden className="h-4 w-4" />
-          Đang khóa — cần vật phẩm của quyển trước
-        </li>
-        <li className="flex items-center gap-xs">
-          <span aria-hidden className="h-4 w-4 rounded-sm border-2 border-tertiary" />
-          Sẵn sàng để đọc
-        </li>
-        <li className="flex items-center gap-xs">
-          <span
-            aria-hidden
-            className="flex h-4 w-4 items-center justify-center rounded-full bg-tertiary-deep"
-          >
-            <Check className="h-2.5 w-2.5 text-on-primary" />
-          </span>
-          Đã đọc xong
-        </li>
-      </ul>
-    </section>
+      </section>
+    </Room>
   );
 }

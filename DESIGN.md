@@ -13,7 +13,9 @@ colors:
   surface: "#FBF4E4"
   surface-shelf: "#2A160C"
   surface-reader: "#241209"
+  surface-room: "#160B05"
   surface-locked: "#5A3B22"
+  secondary-light: "#C4A886"
   on-primary: "#F6ECDA"
   ring: "#A83A10"
   ring-on-dark: "#F6ECDA"
@@ -66,6 +68,16 @@ typography:
     fontSize: 12px
     fontWeight: 400
     lineHeight: 1.4
+  body-book:
+    fontFamily: Lora
+    fontSize: 16px
+    fontWeight: 400
+    lineHeight: 1.75
+  drop-cap:
+    fontFamily: Playfair Display
+    fontSize: 44px
+    fontWeight: 700
+    lineHeight: 0.82
 spacing:
   xs: 4px
   sm: 8px
@@ -95,6 +107,18 @@ components:
   nav-item-active:
     textColor: "{colors.tertiary-light}"
     typography: "{typography.label-md}"
+  room:
+    backgroundColor: "{colors.surface-room}"
+    textColor: "{colors.on-primary}"
+    typography: "{typography.body-md}"
+  room-caption:
+    backgroundColor: "{colors.surface-room}"
+    textColor: "{colors.secondary-light}"
+    typography: "{typography.caption}"
+  room-eyebrow:
+    backgroundColor: "{colors.surface-room}"
+    textColor: "{colors.tertiary-light}"
+    typography: "{typography.label-caps}"
   shelf:
     backgroundColor: "{colors.primary-dark}"
     rounded: "{rounded.lg}"
@@ -102,6 +126,12 @@ components:
   shelf-plank:
     backgroundColor: "{colors.surface-shelf}"
     height: "{spacing.md}"
+  book-tooltip:
+    backgroundColor: "{colors.primary-dark}"
+    textColor: "{colors.secondary-light}"
+    typography: "{typography.caption}"
+    rounded: "{rounded.sm}"
+    padding: "{spacing.sm}"
   book-cover-unlocked:
     backgroundColor: "{colors.primary}"
     textColor: "{colors.on-primary}"
@@ -193,9 +223,13 @@ Bảng màu xoay quanh ba vai trò trong content.md: **nâu đất/nâu gỗ** c
   nền chiếm diện tích lớn nhất sau `neutral`.
 - **Primary Dark (#3B2415) — Nâu sẫm:** lưng kệ sách, và là màu chữ chính trên nền giấy da.
   Một màu đóng hai vai để bảng màu không phình ra.
-- **Secondary (#7A6248) — Nâu nhạt:** chữ phụ, caption, metadata. Đã được làm đậm hơn màu
-  nâu nhạt ban đầu (`#8A7259`) để đạt 4.5:1 trên nền `neutral` — chữ caption cỡ nhỏ nên
-  không được phép mờ hơn mức này.
+- **Secondary (#7A6248) — Nâu nhạt:** chữ phụ, caption, metadata **trên nền sáng**. Đã được
+  làm đậm hơn màu nâu nhạt ban đầu (`#8A7259`) để đạt 4.5:1 trên nền `neutral` — chữ caption
+  cỡ nhỏ nên không được phép mờ hơn mức này.
+- **Secondary Light (#C4A886) — Nâu kem:** cùng vai trò `secondary` nhưng **trên nền tối**.
+  `secondary` trên `surface-room` chỉ đạt 2.9:1, không đọc được. Đây là cặp bắt buộc: chữ phụ
+  đặt trên gỗ tối phải dùng token này, đừng hạ opacity của `on-primary` để giả nó — opacity
+  không khai báo được trong `components` nên `design:lint` không kiểm tra được.
 - **Tertiary (#E8622C) — Cam lửa:** *chỉ dùng cho đồ họa*, không dùng làm nền có chữ. Viền
   phát sáng của quyển đã mở khóa, ngọn lửa Streak, luồng sáng khi vật phẩm rơi ra, icon.
 - **Tertiary Deep (#A83A10) — Cam đất:** biến thể đậm dùng khi accent phải làm **nền cho
@@ -205,8 +239,12 @@ Bảng màu xoay quanh ba vai trò trong content.md: **nâu đất/nâu gỗ** c
   ví dụ mục điều hướng đang chọn. Cam lửa trên nâu chỉ đạt 2.3:1, không đọc được.
 - **Neutral (#EFE3CB):** nền trang mặc định, giấy cũ ngả vàng.
 - **Surface (#FBF4E4):** mặt trang sách khi đang đọc, sáng hơn nền trang để tờ giấy nổi lên.
-- **Surface Shelf (#2A160C) / Surface Reader (#241209):** hai tông gỗ tối nhất, dùng cho tấm
-  ván kệ và nền tối phía sau quyển sách đang mở.
+- **Surface Shelf (#2A160C) / Surface Reader (#241209):** hai tông gỗ tối, dùng cho tấm ván
+  kệ và nền tối phía sau quyển sách đang mở.
+- **Surface Room (#160B05) — Đáy phòng:** tông tối nhất trong hệ, dùng cho **nền căn phòng
+  thư viện** phía sau tủ sách: hậu cảnh, bốn góc vignette, chân trời của luồng sáng. Nó tối
+  hơn `surface-shelf` để tủ gỗ vẫn tách được khỏi phòng — nếu hai màu bằng nhau thì cả màn
+  hình dẹp lại thành một mảng đen.
 - **Surface Locked (#5A3B22):** bìa sách đang khóa — nâu xỉn, thấp hơn `primary` một bậc để
   đọc ra ngay là "chưa mở được" mà vẫn cùng họ màu.
 - **On Primary (#F6ECDA) — Kem:** chữ trên mọi nền nâu.
@@ -227,6 +265,11 @@ người dùng chính là học sinh và phần lớn nội dung là văn xuôi 
 `label-caps` là nhãn viết hoa có giãn chữ, dùng cho tiêu đề phụ kiểu "KỆ SÁCH". Chỉ dùng cho
 chuỗi ngắn — tiếng Việt viết hoa toàn bộ kèm dấu rất khó đọc ở đoạn dài.
 
+`drop-cap` 44px là chữ cái đầu đoạn được thả xuống hai dòng ở trang sách. Nó không thuộc thang
+chữ đọc — nó là **đồ họa chữ**, và tồn tại vì trang sách phải đọc ra là sách in chứ không phải
+một thẻ giao diện. Chỉ dùng cho ký tự đầu tiên của đoạn mở đầu, qua `::first-letter`, và không
+bao giờ dùng cho một cụm từ.
+
 ## Layout
 
 Bố cục desktop dùng lưới cố định, nội dung căn giữa, lề trang 48px (`page-margin`). Header cao
@@ -236,22 +279,65 @@ Thang khoảng cách theo bội số 8px (`xs` 4 / `sm` 8 / `md` 16 / `lg` 24 / 
 hai giá trị theo ngữ cảnh: `shelf-gap` 28px là khoảng cách giữa các quyển sách trên kệ, và
 `page-margin` 48px là lề ngoài của trang.
 
-Kệ sách là một hàng ngang duy nhất, các bìa căn theo **đáy** (`alignItems: end`) để chúng
-đứng trên tấm ván như sách thật. Màn hình đọc sách là một trang đôi 920×560 căn giữa, chiếm
-trọn tiêu điểm, mọi thứ khác lùi về nền tối.
+Kệ sách là một hàng ngang duy nhất, các bìa căn theo **đáy** để chúng đứng trên tấm ván như
+sách thật; dưới hàng đó là một tầng sách trang trí để tủ đọc ra là đồ nội thất chứ không phải
+một hàng nút bấm. Màn hình đọc sách là một trang đôi 980×580 căn giữa, chiếm trọn tiêu điểm, mọi thứ
+khác lùi về nền tối.
+
+### Căn phòng thư viện
+
+Màn hình kệ sách và màn hình đọc sách đều diễn ra **trong cùng một căn phòng**, dựng bằng bốn
+lớp xếp từ xa tới gần:
+
+| Lớp | Nội dung |
+|---|---|
+| 0 — Phòng | Nền `surface-room`, vignette bốn góc, một luồng sáng ấm chếch từ trên-trái. |
+| 1 — Hậu cảnh | Vài kệ sách mờ đã làm nhòe, tối, độ tương phản thấp. Không bao giờ sắc nét. |
+| 2 — Bụi | Hạt bụi trong luồng sáng (xem ngoại lệ ở mục Motion). |
+| 3 — Tiền cảnh | Tủ sách và quyển sách — thứ duy nhất sắc nét và bắt sáng đầy đủ. |
+
+Chỉ lớp 3 được sắc nét. Đây là thứ giữ cho căn phòng là *bối cảnh* chứ không thành *nội dung*:
+mắt không có chỗ nào khác để bám ngoài tủ sách.
+
+Chữ tiêu đề màn hình đặt thẳng lên lớp 0, nên nó dùng `on-primary` và `secondary-light`, **không**
+dùng `primary-dark`/`secondary` như trên nền `neutral`.
 
 ## Elevation & Depth
 
-Chiều sâu đến từ **lớp tông màu**, không phải đổ bóng dày. Nền trang là `neutral`, đồ nội thất
-là `primary`/`primary-dark`, và trang sách là `surface` — sáng dần theo mức độ quan trọng.
+Hệ này có **hai tầng, luật khác nhau**. Nhầm luật của tầng này sang tầng kia là lỗi thiết kế
+hay gặp nhất ở đây.
 
-Chỉ có hai chỗ được dùng đổ bóng thật:
+### Tầng nội dung — phẳng
 
-- **Quyển sách đang mở**: bóng ngoài lớn, tối, để tờ giấy tách hẳn khỏi nền `surface-reader`.
-- **Quyển đã mở khóa chưa đọc**: quầng sáng cam (`tertiary`) tỏa ra từ bìa — đây là hiệu ứng
-  *mời gọi*, không phải bóng đổ, và là thứ duy nhất phát sáng trên màn hình kệ sách.
+Chữ, nút, thẻ, ô nội dung trong trang sách, biểu mẫu. Chiều sâu ở đây đến từ **lớp tông màu**,
+không phải đổ bóng: nền trang `neutral`, trang sách `surface`. **Không đổ bóng lên chữ, icon,
+hay nút.** Một cái nút có `box-shadow` là một cái nút sai.
 
-Không đổ bóng lên chữ, icon, hay nút.
+### Tầng đồ nội thất — có khối thật
+
+Căn phòng, tủ sách, tấm ván, bìa sách, quyển sách đang mở. Đây là **vật thể trong không gian**,
+và vật thể thì có bóng, có bề dày, có mặt bắt sáng. Cố vẽ chúng phẳng thì được đúng cái kết quả
+đã phải bỏ đi một lần: năm hình chữ nhật nâu lơ lửng trong một hộp nâu.
+
+Bốn công cụ, dùng đúng chỗ:
+
+- **Bóng tiếp đất.** Mỗi vật đứng trên ván phải có bóng đổ xuống ngay dưới chân nó. Đây là thứ
+  duy nhất nói cho mắt biết quyển sách *đứng trên* tấm ván chứ không *lơ lửng trước* nó.
+- **Bề dày.** Bìa sách có cạnh gáy và mép giấy; tấm ván có mặt trên nhìn thấy được. Vật thể
+  không có bề dày thì vẫn là cái thẻ, dù có bóng.
+- **Ánh sáng một hướng.** Cả màn hình có **một** nguồn sáng ấm, chếch từ trên xuống. Mặt trên
+  bắt sáng, mặt dưới tối. Hai nguồn sáng ngược nhau làm cảnh dẹp lại ngay.
+- **Vignette.** Bốn góc phòng tối dần để mắt dồn vào giữa. Vignette là *nền*, không bao giờ
+  phủ lên chữ.
+
+Không dùng bóng để "làm nổi" một thứ vốn không phải vật thể. Nếu đang định đổ bóng cho một cái
+thẻ thông tin, câu trả lời là đổi tông màu chứ không phải thêm bóng.
+
+### Quầng sáng mời gọi
+
+**Quyển đã mở khóa chưa đọc** có quầng sáng cam (`tertiary`) tỏa ra từ bìa. Đây không phải bóng
+đổ và không thuộc hai tầng trên — nó là *chỉ dẫn hành động*, và là thứ duy nhất phát sáng trên
+màn hình kệ sách. Một màn hình có hai quầng sáng là một màn hình không có chỉ dẫn nào.
 
 ## Motion
 
@@ -262,6 +348,21 @@ người học: quyển này mở được chưa, tôi đang ở trang mấy, t�
 có đúng một thứ nhấp nháy — quyển tiếp theo cần đọc. Hoạt cảnh nhận vật phẩm ở trang cuối là
 một chuỗi **tuần tự**, không phải năm thứ động cùng lúc: vật phẩm rơi và xoay → bay vào túi
 hành trang → (sang màn kệ sách) ổ khóa bật mở. Đừng chạy chồng chúng lên nhau.
+
+### Ngoại lệ: chuyển động nền
+
+Hạt bụi bay trong luồng sáng của căn phòng **không tính vào ngân sách trên**, với điều kiện nó
+đạt đủ cả bốn ràng buộc — thiếu một cái là nó thành thành phần động thứ hai và phải bỏ:
+
+1. Nằm dưới mọi nội dung, `pointer-events: none`, `aria-hidden`.
+2. Opacity tối đa 0.18 và không bao giờ đi qua vùng có chữ đang đọc.
+3. Chu kỳ ≥ 12 giây — chậm tới mức mắt không bắt được nó là "một hoạt cảnh".
+4. `prefers-reduced-motion: reduce` thì **dừng hẳn**, không phải làm chậm lại.
+
+Lý do có ngoại lệ này: nó là *không khí của căn phòng*, không phải phản hồi cho hành động nào
+của người học. Ngân sách 1–2 thành phần tồn tại để người học biết nhìn vào đâu; một thứ chậm và
+mờ tới mức không cướp được sự chú ý thì không phá vỡ mục đích đó. Bất cứ chuyển động nền nào
+nhanh hơn hoặc rõ hơn ngưỡng trên đều phá — và đó là lý do bốn con số kia là ngưỡng cứng.
 
 | Loại | Thời lượng | Easing |
 | --- | --- | --- |
@@ -332,7 +433,12 @@ thành phần accent duy nhất mang chữ; mọi chỗ accent khác đều là 
 - **Don't** quên rằng icon và thành phần giao diện **mang thông tin** cũng có ngưỡng riêng —
   3:1 theo WCAG 1.4.11. `design:lint` chỉ kiểm tra được các cặp đã khai báo trong `components`,
   nên khi thêm một icon-trên-nền-màu mới thì phải khai báo nó ở đó, đừng để ngoài hệ.
-- **Don't** thêm đổ bóng ngoài hai chỗ đã nêu ở mục Elevation — hệ này dựa vào lớp tông màu.
+- **Don't** đổ bóng lên chữ, icon, nút, hay thẻ nội dung — tầng nội dung dựa vào lớp tông màu.
+  Bóng, bề dày và mặt bắt sáng chỉ dành cho tầng đồ nội thất (xem mục Elevation & Depth).
+- **Do** cho mọi vật đứng trên tấm ván một bóng tiếp đất. Bìa sách không có bóng dưới chân thì
+  nó lơ lửng, và cả cái kệ lập tức trông như một hàng thẻ bấm được.
+- **Don't** dùng `secondary` hay `primary-dark` làm màu chữ trên nền tối của căn phòng. Cặp
+  đúng là `on-primary` cho chữ chính và `secondary-light` cho chữ phụ.
 - **Do** chọn font thay thế có đủ dấu tiếng Việt nếu phải đổi; Playfair Display và Lora đều
   đạt yêu cầu này. Kiểm tra bằng khối `unicode-range` chứa `U+1EA0-1EF9` trong CSS mà Google
   Fonts trả về — ví dụ Kalam **không** có khối này nên không dùng được cho dự án.
