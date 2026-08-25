@@ -68,10 +68,16 @@ không giả lập được `auth.uid()` nên hàm một-mảnh không test đư
 - **Code**: `lib/content/` (đọc JSON), `lib/insforge/` (client + data layer), `components/Header.tsx`,
   `components/shelf/BookCover.tsx`.
 - **Kệ sách + đọc sách (2026-08-13)**: `BookShelf`, `ShelfPageClient`, `app/lich-su-viet-nam/page.tsx`,
-  `components/reader/` (`BookReaderModal`, `PageSpread`, `ItemDropOverlay`). `app/page.tsx` không
-  còn là trang create-next-app; ảnh trong JSON đã đổi sang `null` và UI dùng nền phẳng.
+  `components/reader/` (`BookReaderModal`, `BookPage`, `ItemDropOverlay`). `app/page.tsx` không
+  còn là trang create-next-app; ảnh trong JSON đã đổi sang `null`.
   Đã chạy thật đủ 3 nhánh (chưa đăng nhập → báo cần đăng nhập; đọc xong → nhận Trống đồng và mở
   khóa quyển 2; đọc lại → `alreadyCompleted`, `user_items` vẫn đúng 1 dòng).
+- **Dựng lại giao diện kệ + reader (2026-08-17)**: bản đầu bị đánh giá "layout, animation cực tệ".
+  Nền phẳng đã thay bằng **căn phòng thư viện** dùng chung — `components/Room.tsx` (4 lớp: phòng,
+  hậu cảnh mờ, bụi, tiền cảnh), tủ gỗ có gờ + hai trụ + ván dày, bìa sách có cạnh gáy / mép giấy /
+  bóng tiếp đất. `DESIGN.md` đã tách § Elevation thành hai tầng (nội dung phẳng, đồ nội thất có
+  khối) vì quy tắc "không đổ bóng" cũ chính là thứ chặn chiều sâu. Thêm token `surface-room` và
+  `secondary-light` (chữ phụ trên nền tối — `secondary` chỉ đạt 2.9:1 ở đó).
 
 ## 3. Chưa xong — việc của phase tiếp theo
 
@@ -80,7 +86,8 @@ không giả lập được `auth.uid()` nên hàm một-mảnh không test đư
 | 1 | Auth | Chưa có màn đăng nhập/đăng ký. Chưa đăng nhập thì kệ vẫn xem được nhưng chỉ quyển đầu mở, và nút "Đọc xong" báo "Bạn cần đăng nhập…". Là subsystem riêng, và là thứ chặn nhiều nhất hiện giờ. |
 | 2 | Ảnh thật | `cover`/`image` trong JSON đang là `null` → UI hiện khối phẳng + "Ảnh minh họa sẽ được bổ sung". Có ảnh thì đặt vào `public/` rồi điền lại đường dẫn, component đã xử lý sẵn cả hai nhánh. |
 | 3 | Túi hành trang + streak | Số 12/7 trên header vẫn là placeholder. Hoạt cảnh "vật phẩm bay vào túi" (spec màn C) chưa làm vì chưa có túi thật. |
-| 4 | Chi tiết đọc sách còn thiếu | Âm thanh lật trang + nút tắt tiếng (spec §2 màn B), kéo góc trang, focus trap trong modal (hiện đã có Escape + mũi tên + `role="dialog"`). |
+| 4 | Chi tiết đọc sách còn thiếu | Âm thanh lật trang + nút tắt tiếng (spec §2 màn B), focus trap trong modal (hiện đã có Escape + mũi tên + `role="dialog"`). **Kéo góc trang** giờ phải tự viết: turn.js đã bị gỡ (xem §4). |
+| 6 | Bản đồ thế giới (2026-08-17, chưa spec) | Người dùng muốn trang vào là **bản đồ thế giới**, bấm vào quốc gia/vùng đất thì sang kệ sách của nơi đó. Là subsystem riêng, cần spec: nguồn dữ liệu bản đồ (SVG tĩnh hay thư viện), danh sách vùng có nội dung vs chưa có, và **route động** thay cho `app/lich-su-viet-nam/page.tsx` đang hardcode. `BookShelf` đã nhận `shelfSlug` qua prop nên tầng component không chặn. |
 | 5 | Trang chủ thật | `app/page.tsx` mới chỉ là lối vào kệ sách, timeline "Ngày ấy – Bây giờ" là subsystem riêng. |
 
 ### Ràng buộc UI đã chốt trong DESIGN.md, phải tuân thủ
@@ -95,6 +102,31 @@ không giả lập được `auth.uid()` nên hàm một-mảnh không test đư
 ---
 
 ## 4. Bẫy đã gặp — đừng vấp lại
+
+### Lật trang 3D (2026-08-17)
+
+**turn.js đã bị gỡ.** Người dùng báo cú lật "giật, không mượt" và "timing sai". Nguyên nhân gốc
+là turn.js chạy animation bằng jQuery từng frame kèm vẽ lại gradient trên luồng chính, nên rớt
+frame ngay khi luồng chính bận; cộng thêm `autoCenter` dịch cả quyển 230px **một phát** lúc
+chuyển từ bìa sang trang đôi. Bản mới là `rotateY` CSS thuần, trình duyệt đẩy xuống compositor.
+`public/vendor/jquery.js` + `turn.js` giờ **không còn được tham chiếu** — xóa được, nhưng đó là
+bản thương mại do người dùng cung cấp nên để nguyên tại chỗ.
+
+Ba cái bẫy trong bản CSS 3D, cái nào cũng hỏng theo một kiểu riêng và không hiện ra ở `tsc`:
+
+- **`preserve-3d` không nghe `z-index`.** Nó xếp lớp theo vị trí trong không gian. Mọi tờ giấy
+  nằm đúng cùng mặt phẳng thì trình duyệt chọn tùy ý — và nó chọn sai: trang 2 hiện xuyên qua
+  bìa. Phải đẩy mỗi tờ lùi thêm một chút trên trục Z (`SHEET_GAP` trong `BookReaderModal`).
+- **Danh sách hàm transform phải khớp ở hai đầu.** `translateZ(0)` → `rotateY(-180deg)
+  translateZ(0)` lệch danh sách nên CSS rơi về nội suy ma trận, mà nội suy ma trận của cú xoay
+  180° là suy biến — tờ giấy bẹp lại giữa chừng. Luôn viết đủ `rotateY(0deg) translateZ(...)`.
+- **`transition-duration: 0ms` có thể không phát `transitionend`.** State `flying` sẽ kẹt lại.
+  Ở chế độ giảm chuyển động thì đừng đặt `flying` ngay từ đầu.
+
+Giảm chuyển động tắt ở **một** chỗ duy nhất: biến CSS `--flip-duration` trên `.stage`. Nó chi
+phối cả cú xoay, cú trượt căn giữa lẫn bề dày khối giấy. Tắt lẻ từng cái thì sót — bản nháp
+sót đúng cú trượt 230px.
+
 
 - **Pencil MCP không ghi xuống đĩa ngay.** `Get`/`GetVariables` đọc bộ nhớ editor nên trả về
   giá trị mới trong khi file còn nguyên. Luôn kiểm `git status` trước khi commit `.pen`.
