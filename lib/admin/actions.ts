@@ -5,6 +5,7 @@ import { QueryTypes } from "sequelize";
 import { sequelize } from "@/lib/db/sequelize";
 import { withRole } from "@/lib/db/tx";
 import { requireAdmin } from "./gate";
+import { readImageFields } from "./image-fields";
 import { slugify, uniqueSlug } from "./slug";
 
 /**
@@ -33,21 +34,79 @@ const EMPTY: ActionState = {};
 /** Lấy một trường chuỗi đã trim từ FormData; `""` khi thiếu. */
 const field = (fd: FormData, key: string): string => String(fd.get(key) ?? "").trim();
 
-/** Bọc phần thân để mọi lỗi thành một `ActionState` thay vì một trang lỗi trắng. */
+/** Tiền tố kỹ thuật trong thông điệp các hàm SQL của ta tự `RAISE EXCEPTION`. */
+const OUR_SQL_PREFIX = /^(reorder_shelves|reorder_books|reorder_pages):\s*/;
+
+/**
+ * Lôi sqlstate và tên ràng buộc ra khỏi lỗi Sequelize.
+ *
+ * Sequelize bọc lỗi gốc của `pg` vào `.parent`/`.original`, nên `e.code` ở tầng ngoài là
+ * `undefined` — phải đi xuống một tầng.
+ */
+function pgInfo(e: unknown): { code: string; constraint: string; message: string } {
+  const err = e as { message?: string; parent?: unknown; original?: unknown };
+  const inner = (err?.parent ?? err?.original ?? e) as { code?: string; constraint?: string };
+  return {
+    code: typeof inner?.code === "string" ? inner.code : "",
+    constraint: typeof inner?.constraint === "string" ? inner.constraint : "",
+    message: e instanceof Error ? e.message : "",
+  };
+}
+
+/**
+ * Bọc phần thân để mọi lỗi thành một `ActionState` thay vì một trang lỗi trắng.
+ *
+ * PHÂN LOẠI BẰNG SQLSTATE, KHÔNG BẰNG VĂN XUÔI. Bản trước so chuỗi tiếng Anh và sai
+ * thật: Postgres báo `violates RESTRICT setting of foreign key constraint`, có chữ
+ * "RESTRICT setting of" chen vào giữa nên `/violates foreign key/` không khớp — lỗi "vật
+ * phẩm đang có người sở hữu" rơi xuống nhánh cuối và hiện thành "Không lưu được. Thử
+ * lại.", đúng loại thông báo khiến người ta đi tìm sai chỗ.
+ *
+ * Đây là cùng một bài học đã ghi trong CLAUDE.md cho `42501`: neo vào tín hiệu chính xác
+ * và ổn định, đừng so khớp câu chữ. Văn xuôi của Postgres đổi theo phiên bản và theo
+ * `lc_messages`; sqlstate thì không.
+ */
 async function guard(fn: () => Promise<ActionState>): Promise<ActionState> {
   try {
     return await fn();
   } catch (e) {
-    const message = e instanceof Error ? e.message : "";
-    // Thông điệp do CHÍNH TA ném ra thì hiện thẳng; lỗi của Postgres thì không —
-    // chúng lộ tên bảng, tên policy, tên ràng buộc.
-    if (message && !/^[a-z_]+:|violates|permission denied|duplicate key/i.test(message)) {
-      return { error: message };
+    const { code, constraint, message } = pgInfo(e);
+
+    switch (code) {
+      // Hàm SQL của ta tự ném (`RAISE EXCEPTION` trong plpgsql). Thông điệp viết cho
+      // người đọc và không lộ gì về cấu trúc, nên hiện thẳng sau khi bỏ tiền tố.
+      case "P0001":
+        return { error: message.replace(OUR_SQL_PREFIX, "") };
+
+      // 23001 restrict_violation — ON DELETE RESTRICT chặn.
+      // 23503 foreign_key_violation — họ hàng gần, gộp chung một câu.
+      case "23001":
+      case "23503":
+        return {
+          error:
+            "Không xóa được: thứ này đang được dữ liệu khác tham chiếu. " +
+            (constraint.includes("user_items")
+              ? "Đã có người sở hữu vật phẩm này, nên nó phải ở lại."
+              : "Gỡ những chỗ đang dùng nó trước."),
+        };
+
+      case "23505": // unique_violation
+        return { error: "Giá trị này đã tồn tại." };
+
+      case "23514": // check_violation
+        return constraint.endsWith("_credit_ck")
+          ? { error: "Có ảnh thì bắt buộc điền cả nguồn và tác giả + giấy phép." }
+          : { error: "Dữ liệu không hợp lệ." };
+
+      case "42501": // insufficient_privilege — RLS hoặc thiếu GRANT
+        return { error: "Bạn không có quyền thực hiện việc này." };
     }
-    if (/duplicate key/i.test(message)) return { error: "Giá trị này đã tồn tại." };
-    if (/violates|permission denied/i.test(message)) {
-      return { error: "Bạn không có quyền thực hiện việc này." };
-    }
+
+    // Không có sqlstate ⇒ lỗi ném từ JS của chính ta (validate đầu vào), hiện thẳng.
+    if (!code && message) return { error: message };
+
+    // Còn lại là lỗi Postgres ta chưa lường trước: nuốt vì nó lộ tên bảng/policy/ràng
+    // buộc, nhưng ghi log đầy đủ để còn lần ra.
     console.error("admin action:", e);
     return { error: "Không lưu được. Thử lại." };
   }
@@ -223,5 +282,121 @@ export async function moveShelf(_prev: ActionState, fd: FormData): Promise<Actio
     revalidatePath("/quan-tri");
     revalidatePath("/");
     return EMPTY;
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Vật phẩm
+//
+// `items` không có cột `position` cũng không có `published`, nên màn này KHÔNG có đổi
+// thứ tự và KHÔNG có xuất bản — không có gì để hai hành động đó bám vào.
+// ---------------------------------------------------------------------------
+
+export async function createItem(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  return guard(async () => {
+    const userId = await requireAdmin();
+    const name = field(fd, "name");
+    if (!name) return { error: "Tên vật phẩm không được để trống." };
+
+    const base = slugify(name);
+    if (!base) return { error: "Tên vật phẩm phải có ít nhất một chữ cái hoặc chữ số." };
+
+    const img = readImageFields(fd, "image");
+    if ("error" in img) return { error: img.error };
+
+    await withRole(userId, async (t) => {
+      const taken = await sequelize.query<{ slug: string }>("SELECT slug FROM public.items", {
+        transaction: t,
+        type: QueryTypes.SELECT,
+      });
+      const slug = uniqueSlug(base, new Set(taken.map((r) => r.slug)));
+
+      await sequelize.query(
+        `INSERT INTO public.items (slug, name, description, image_url, image_source, image_credit)
+              VALUES ($1, $2, $3, $4, $5, $6)`,
+        {
+          bind: [slug, name, field(fd, "description"), img.url, img.source, img.credit],
+          transaction: t,
+          type: QueryTypes.INSERT,
+        },
+      );
+    });
+
+    revalidatePath("/quan-tri/vat-pham");
+    return { ok: `Đã tạo vật phẩm "${name}".` };
+  });
+}
+
+export async function updateItem(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  return guard(async () => {
+    const userId = await requireAdmin();
+    const slug = field(fd, "slug");
+    const name = field(fd, "name");
+    if (!slug) return { error: "Thiếu vật phẩm cần sửa." };
+    if (!name) return { error: "Tên vật phẩm không được để trống." };
+
+    const img = readImageFields(fd, "image");
+    if ("error" in img) return { error: img.error };
+
+    const [, affected] = (await withRole(userId, (t) =>
+      sequelize.query(
+        `UPDATE public.items
+            SET name = $2, description = $3, image_url = $4, image_source = $5, image_credit = $6
+          WHERE slug = $1`,
+        {
+          bind: [slug, name, field(fd, "description"), img.url, img.source, img.credit],
+          transaction: t,
+        },
+      ),
+    )) as [unknown, number];
+
+    if (affected === 0) {
+      return { error: "Không sửa được vật phẩm này (không tồn tại, hoặc thiếu quyền)." };
+    }
+
+    revalidatePath("/quan-tri/vat-pham");
+    // Tên và ảnh vật phẩm hiện trên trang kệ (ô "Cần … để mở") và trong hoạt cảnh nhận
+    // thưởng, nên trang học sinh cũng phải làm mới.
+    revalidatePath("/", "layout");
+    return { ok: "Đã lưu." };
+  });
+}
+
+export async function deleteItem(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  return guard(async () => {
+    const userId = await requireAdmin();
+    const slug = field(fd, "slug");
+    if (!slug) return { error: "Thiếu vật phẩm cần xóa." };
+
+    return withRole(userId, async (t) => {
+      // Hàng rào 1 — CHẶN TRƯỚC và nêu đích danh. `books.reward_item_slug` là ON DELETE
+      // RESTRICT nên Postgres sẽ chặn dù sao, nhưng thông điệp của nó nói về tên ràng
+      // buộc chứ không nói admin phải đi sửa quyển nào.
+      const used = await sequelize.query<{ title: string }>(
+        "SELECT title FROM public.books WHERE reward_item_slug = $1 ORDER BY shelf_slug, position",
+        { bind: [slug], transaction: t, type: QueryTypes.SELECT },
+      );
+      if (used.length > 0) {
+        const names = used.map((b) => `"${b.title}"`).join(", ");
+        return {
+          error:
+            `Không xóa được: ${used.length} quyển đang lấy vật phẩm này làm phần thưởng ` +
+            `(${names}). Đổi phần thưởng của những quyển đó trước.`,
+        };
+      }
+
+      // Hàng rào 2 — `user_items.item_slug` cũng là ON DELETE RESTRICT, nhưng ở đây KHÔNG
+      // chặn trước được: admin không có policy nào cho phép đọc `user_items` của người
+      // khác. Phải để khóa ngoại ném rồi dịch — `guard()` có nhánh riêng cho việc đó, và
+      // nhánh ấy phải đứng TRƯỚC nhánh "violates" (xem chú thích ở guard).
+      const [, affected] = (await sequelize.query("DELETE FROM public.items WHERE slug = $1", {
+        bind: [slug],
+        transaction: t,
+      })) as [unknown, number];
+      if (affected === 0) return { error: "Không xóa được vật phẩm này." };
+
+      revalidatePath("/quan-tri/vat-pham");
+      return { ok: "Đã xóa vật phẩm." };
+    });
   });
 }

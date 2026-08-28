@@ -9,6 +9,14 @@ export interface Crumb {
   href?: string;
 }
 
+/** Các khu vực của trang quản trị. Thêm màn mới thì thêm một dòng ở đây. */
+const SECTIONS = [
+  { href: "/quan-tri", label: "Kệ sách" },
+  { href: "/quan-tri/vat-pham", label: "Vật phẩm" },
+] as const;
+
+export type AdminSection = (typeof SECTIONS)[number]["href"];
+
 /**
  * Khung chung cho mọi màn quản trị: `Header` + breadcrumb + tiêu đề.
  *
@@ -23,12 +31,15 @@ export interface Crumb {
 export async function AdminShell({
   title,
   description,
+  section,
   crumbs = [],
   actions,
   children,
 }: {
   title: string;
   description?: string;
+  /** Khu vực đang mở — quyết định tab nào sáng. */
+  section: AdminSection;
   crumbs?: Crumb[];
   actions?: React.ReactNode;
   children: React.ReactNode;
@@ -64,7 +75,7 @@ export async function AdminShell({
           </ol>
         </nav>
 
-        <div className="mb-lg flex flex-wrap items-start justify-between gap-md">
+        <div className="mb-md flex flex-wrap items-start justify-between gap-md">
           <div>
             <h1 className="font-heading text-headline-md text-primary-dark">{title}</h1>
             {description && (
@@ -75,6 +86,31 @@ export async function AdminShell({
           </div>
           {actions && <div className="flex items-center gap-sm">{actions}</div>}
         </div>
+
+        {/* Breadcrumb chỉ đi LÊN, không đi ngang — thiếu hàng này thì `/quan-tri/vat-pham`
+            không có đường vào nào từ giao diện. */}
+        <nav aria-label="Khu vực quản trị" className="mb-lg border-b border-surface-locked">
+          <ul className="flex flex-wrap gap-lg">
+            {SECTIONS.map((s) => {
+              const active = s.href === section;
+              return (
+                <li key={s.href}>
+                  <Link
+                    href={s.href}
+                    aria-current={active ? "page" : undefined}
+                    className={`-mb-px inline-block border-b-2 pb-sm font-body text-label-md transition-colors duration-200 ease-out ${FOCUS_RING} ${
+                      active
+                        ? "border-tertiary-deep text-tertiary-deep"
+                        : "border-transparent text-secondary hover:text-primary-dark"
+                    }`}
+                  >
+                    {s.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
 
         {children}
       </main>

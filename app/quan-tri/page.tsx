@@ -15,6 +15,7 @@ export default async function AdminHomePage() {
   return (
     <AdminGate>
       <AdminShell
+        section="/quan-tri"
         title="Kệ sách"
         description="Tạo kệ, đổi thứ tự và xuất bản. Thay đổi hiện ra với học sinh ngay khi bạn xuất bản — không cần build lại."
       >
