@@ -2,6 +2,32 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+
+> ## ⚠️ NỀN TẢNG ĐÃ ĐỔI — ĐỌC TRƯỚC KHI THEO PLAN NÀY (2026-08-28)
+>
+> Plan này viết khi backend còn là InsForge. **InsForge đã bị bỏ.** Stack hiện tại là
+> PostgreSQL 18 cục bộ + Sequelize + Next.js Route Handlers. Xem `CLAUDE.md` mục
+> "Backend — PostgreSQL cục bộ" và `db/schema/README.md`.
+>
+> **Còn dùng được nguyên vẹn:** Task 2 (`slugify`/`uniqueSlug`), Task 4 (`controls.ts`) —
+> cả hai là module thuần, không dính backend. Task 6–9 (giao diện `/quan-tri`) vẫn đúng về
+> mặt UI và luồng biên tập.
+>
+> **Đã xong theo cách khác:** Task 1 (RPC đổi thứ tự) nay nằm ở `db/schema/08-reorder.sql`,
+> không phải `2026-08-26-reorder-rpc.sql`; phần khẳng định cấu trúc chuyển sang
+> `db/schema/90-verify.sql`, phần kiểm hành vi cần seed thì chưa viết.
+>
+> **Phải viết lại:** mọi chỗ nhắc `@insforge/sdk`, `insforge.database`, `insforge.auth`,
+> MCP `run-raw-sql`, role `anon`/`authenticated`, `auth.uid()`, hay InsForge storage.
+> Cụ thể: Task 3 (`isAdmin()` nay gọi `public.is_admin()` qua `withRole`), Task 5 (upload
+> ảnh — InsForge storage không còn, phải lưu xuống đĩa).
+>
+> **Không còn đúng:** ràng buộc "toàn bộ giao diện quản trị chạy phía client" ở phần
+> Architecture. Lý do của nó là phiên InsForge nằm ở localStorage nên server không đọc được.
+> Nay phiên là cookie `httpOnly`, server component ĐỌC ĐƯỢC bản nháp (`readShelf` đã chạy
+> dưới danh tính người xem). Quyết định lại khi tới Task 3.
+
+
 **Goal:** Admin đăng nhập vào `/quan-tri` tạo được một kệ mới, một quyển sách mới, soạn các trang của nó, xuất bản — rồi học sinh đọc được quyển đó, tất cả mà không chạm vào SQL và không build lại.
 
 **Architecture:** Toàn bộ giao diện quản trị chạy **phía client**. Lý do bắt buộc, không phải sở thích: backend không có `service_role`, quyền admin đến từ JWT, mà phiên InsForge nằm ở trình duyệt — server component dùng khóa anon không có phiên nên nó *không thể* đọc bản nháp hay ghi bất cứ thứ gì. Đây đúng là ranh giới `ShelfPageClient` đã dùng. Route file chỉ là vỏ mỏng bọc `<AdminGate>`. Hàng rào thật vẫn là RLS `admin write` ở tầng DB; `AdminGate` chỉ là cổng giao diện. Thêm hai RPC `reorder_books`/`reorder_pages` vì đổi thứ tự cần **một** transaction (ràng buộc `UNIQUE` là `DEFERRABLE INITIALLY DEFERRED`, mà PostgREST cho mỗi request một transaction riêng).
@@ -298,7 +324,7 @@ Chú ý một bẫy Unicode: `đ` **không** tách được bằng NFD (nó là 
 - Consumes: không gì.
 - Produces: `slugify(input: string): string`, `uniqueSlug(base: string, taken: Set<string>): string`.
 
-- [ ] **Step 1: Viết test hỏng**
+- [x] **Step 1: Viết test hỏng**
 
 Tạo `lib/admin/slug.test.ts`:
 
@@ -343,12 +369,12 @@ test("nhảy qua mọi hậu tố đã bị chiếm", () => {
 });
 ```
 
-- [ ] **Step 2: Chạy test để thấy nó hỏng**
+- [x] **Step 2: Chạy test để thấy nó hỏng**
 
 Run: `npm test`
 Kỳ vọng: FAIL, `Cannot find module` cho `./slug.ts`.
 
-- [ ] **Step 3: Viết `lib/admin/slug.ts`**
+- [x] **Step 3: Viết `lib/admin/slug.ts`**
 
 ```ts
 /**
@@ -387,12 +413,12 @@ export function uniqueSlug(base: string, taken: Set<string>): string {
 }
 ```
 
-- [ ] **Step 4: Chạy test để thấy nó xanh**
+- [x] **Step 4: Chạy test để thấy nó xanh**
 
 Run: `npm test`
 Kỳ vọng: PASS, tổng số test tăng thêm 8.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/admin/slug.ts lib/admin/slug.test.ts
@@ -657,7 +683,7 @@ git commit -m "feat(admin): cong /quan-tri — isAdmin, AdminGate, AdminShell, l
 - Consumes: không gì.
 - Produces: hằng chuỗi `FIELD`, `PRIMARY_BUTTON`, `QUIET_BUTTON`, `DANGER_BUTTON`, `LABEL`, `FOCUS_RING`.
 
-- [ ] **Step 1: Tạo `components/ui/controls.ts`**
+- [x] **Step 1: Tạo `components/ui/controls.ts`**
 
 ```ts
 /**
@@ -693,7 +719,7 @@ export const DANGER_BUTTON =
   `underline underline-offset-2 disabled:opacity-60 ${FOCUS_RING}`;
 ```
 
-- [ ] **Step 2: Sửa `components/auth/LoginForm.tsx`**
+- [x] **Step 2: Sửa `components/auth/LoginForm.tsx`**
 
 Xóa ba khối hằng `FIELD`, `PRIMARY_BUTTON`, `QUIET_BUTTON` ở đầu file (dòng 8-27) và thay bằng:
 
@@ -703,13 +729,13 @@ import { FIELD, PRIMARY_BUTTON, QUIET_BUTTON } from "@/components/ui/controls";
 
 Phần JSX **không đổi một ký tự nào** — tên hằng giữ nguyên. Hai `<label>` đang viết class thẳng thì đổi sang `className={LABEL}` và thêm `LABEL` vào danh sách import.
 
-- [ ] **Step 3: Chạy cổng và so bằng mắt**
+- [x] **Step 3: Chạy cổng và so bằng mắt**
 
 Run: `npm run check`
 Kỳ vọng: xanh.
 Rồi `npm run dev`, mở `/dang-nhap`: trang phải trông **y hệt** trước khi sửa. Task này không được đổi một pixel nào.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add components/ui/controls.ts components/auth/LoginForm.tsx

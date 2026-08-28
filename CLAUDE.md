@@ -6,9 +6,11 @@ quyển thì nhận được một vật phẩm, và chính vật phẩm đó m�
 
 **Trả lời người dùng bằng tiếng Việt.**
 
-> ⚠️ **Đừng viết hướng dẫn dự án vào `AGENTS.md`.** File đó do installer InsForge sở hữu và
-> bị ghi đè toàn bộ mỗi lần chạy lại `npx @insforge/install`. Mọi kiến thức về dự án thuộc về
-> file này. `AGENTS.md` được import ở cuối để giữ phần tham chiếu SDK của InsForge.
+> ⚠️ **`AGENTS.md` đã lỗi thời — đừng đọc theo, đừng viết vào.** Nó do installer InsForge sinh
+> ra và chỉ chứa tài liệu SDK của một backend dự án **không còn dùng** từ 2026-08-28. File này
+> đã bỏ dòng `@AGENTS.md` ở cuối, nên nội dung đó không còn được nạp vào mỗi phiên. Giữ file
+> lại chỉ vì nó nằm trong git; xóa được lúc nào cũng được. Mọi kiến thức về dự án thuộc về
+> `CLAUDE.md`.
 
 ## Nguồn sự thật — đọc trước khi làm
 
@@ -44,14 +46,18 @@ spec → plan → code riêng: **kệ sách + đọc sách** (cơ chế lõi), t
   trả về giá trị mới trong khi file trên đĩa còn y nguyên. Đã suýt commit hụt một loạt thay
   đổi vì tin vào `Get`. Nếu `git status` chưa thấy `pen.dev/design.pen` bị sửa, chạy thêm một
   `execute` nữa (ví dụ `SetVariables` lặp lại đúng giá trị cũ) để đẩy phần đang treo xuống đĩa.
-- **Tailwind CSS 3.4, không nâng lên v4.** InsForge yêu cầu; version đã pin cứng trong
-  `package.json`.
+- **Tailwind CSS 3.4, không nâng lên v4.** Ràng buộc ban đầu đến từ InsForge, mà InsForge thì
+  đã bỏ — nhưng version vẫn pin cứng trong `package.json` và nâng lên v4 là một task riêng
+  (v4 đổi cả cách cấu hình theme, tức là đụng vào đường sinh `DESIGN.md → tailwind.theme.json`).
+  Đừng nâng kèm theo việc khác.
 - **Logic mở khóa phải nằm ở phía server.** Client chỉ báo "đã đọc xong quyển X"; việc trao vật
   phẩm và mở khóa quyển kế tiếp do RPC `complete_book` (`SECURITY DEFINER`) quyết định. Không bao
   giờ chuyển logic này xuống client, và không cấp quyền INSERT/UPDATE trực tiếp lên `user_items`
-  hay cột `user_book_progress.completed` cho role `authenticated`.
-- **Bí mật không vào git.** API key InsForge nằm trong `.mcp.json` và `.env.local`, cả hai đã
-  được `.gitignore`. Đừng chép key sang file được commit.
+  hay cột `user_book_progress.completed` cho role `chronoshelf_auth`.
+- **Bí mật không vào git.** `.env.local` giữ `DATABASE_URL` và `SESSION_SECRET`; nó đã bị dòng
+  `.env*` trong `.gitignore` chặn. Đừng chép giá trị thật sang `.env.example` hay bất kỳ file
+  được commit nào. Mật khẩu superuser của Postgres **không nằm trong dự án** — truyền qua
+  `PGADMIN_URL` theo từng lệnh khi cần.
 
 ## Thiết kế — DESIGN.md là nguồn duy nhất
 
@@ -77,80 +83,141 @@ npm run design:build    # DESIGN.md -> tailwind.theme.json
 ## Nội dung nằm trong database
 
 Nội dung bài học (kệ, sách, trang, vật phẩm) nằm ở 4 bảng `shelves`, `items`, `books`,
-`pages`. **`/quan-tri` CHƯA được xây** — đó là chặng C (xem spec §11), nhánh này mới xong
-chặng A+B (schema + tầng đọc). Cho tới khi `/quan-tri` có, cách DUY NHẤT để đổi nội dung
-đang chạy là viết SQL `INSERT`/`UPDATE` tay rồi đưa qua MCP `run-raw-sql` — **không sửa bằng
-cách đụng vào file** (`db/seed/*.json` là bootstrap một chiều, xem đoạn dưới). Đây là thay đổi
-so với mô hình JSON cũ: admin phải tạo được sách lúc chạy mà không cần build lại. Lý do đầy
-đủ ở `docs/superpowers/specs/2026-08-24-noi-dung-dong-va-quan-tri-design.md` §2.1, §5.
+`pages`. **`/quan-tri` CHƯA được xây** — đó là chặng C. Cho tới khi nó có, cách DUY NHẤT để đổi
+nội dung đang chạy là viết SQL `INSERT`/`UPDATE` tay rồi chạy bằng `psql` dưới quyền superuser —
+**không sửa bằng cách đụng vào file** (`db/seed/*.json` là bootstrap một chiều, xem đoạn dưới).
+Admin phải tạo được sách lúc chạy mà không cần build lại. Lý do đầy đủ ở
+`docs/superpowers/specs/2026-08-24-noi-dung-dong-va-quan-tri-design.md` §2.1, §5.
 
-`db/seed/*.json` là **bootstrap một chiều**, chạy bằng `npm run seed:content` rồi đưa SQL qua
-MCP `run-raw-sql`. Sửa file đó KHÔNG làm đổi nội dung đang chạy.
+`db/seed/*.json` là **bootstrap một chiều**: `npm run seed:content` ghi thẳng vào database (cần
+`PGADMIN_URL`). Sửa file đó KHÔNG làm đổi nội dung đang chạy.
+
+Seed cũng tạo **hai dòng mồi nhử** mà `npm run db:check` phụ thuộc: quyển nháp vĩnh viễn
+`__nhap-khong-bao-gio-xuat-ban` và dòng vai trò `admin` của tài khoản mồi nhử
+`22222222-2222-2222-2222-222222222222`. **Đừng "dọn" chúng.** Thiếu mồi nhử thì hai phép kiểm
+vẫn chạy, vẫn báo đạt, nhưng hết nghĩa — mọi sách thật đều đã xuất bản nên phép đọc-sách-nháp
+luôn thấy 0 dòng, và `user_roles` không còn dòng "của người khác" nào nên phép đọc-trộm-vai-trò
+cũng luôn thấy 0 dòng, kể cả khi RLS hỏng hoàn toàn.
 
 **Không có cột "vật phẩm cần để mở".** Quyển `i` mở bằng vật phẩm thưởng của quyển `i-1`,
 suy ra từ vị trí chứ không lưu — nên chuỗi mở khóa không thể đứt. Đánh đổi và đường nâng cấp
-ghi ở `lib/insforge/unlock.ts`.
+ghi ở `lib/api/unlock.ts`.
 
 Vai trò nằm ở `public.user_roles`: không có dòng nghĩa là `user`, chỉ admin mới có dòng.
-`authenticated` không có GRANT ghi nào lên bảng đó, nên không ai tự phong admin được. Cấp
-admin bằng SQL qua MCP.
+`chronoshelf_auth` không có GRANT ghi nào lên bảng đó, nên không ai tự phong admin được. Cấp
+admin bằng SQL chạy dưới quyền superuser:
 
-## Backend — InsForge
+```bash
+PGPASSWORD=... "/c/Program Files/PostgreSQL/18/bin/psql.exe" -U postgres -h 127.0.0.1 -d chronoshelf \
+  -c "INSERT INTO public.user_roles (user_id, role)
+      SELECT id, 'admin' FROM public.users WHERE email = 'ai-do@example.com'
+      ON CONFLICT (user_id) DO UPDATE SET role = 'admin'"
+```
 
-Base URL: `https://pk3kdyx2.ap-southeast.insforge.app`
+## Backend — PostgreSQL cục bộ, không còn InsForge
 
-- **Code ứng dụng dùng SDK** (`@insforge/sdk`): auth, CRUD, `rpc()`, storage, functions.
-- **Hạ tầng dùng MCP tool**: `run-raw-sql` (schema), `get-table-schema`, `create-bucket`,
-  `bulk-upsert` (seed), `create-function`. Không gọi MCP từ code ứng dụng.
-- **Trước khi viết code InsForge, gọi `fetch-docs`** — API đổi thường xuyên, đừng viết theo trí nhớ.
+**Bỏ InsForge ngày 2026-08-28.** Backend của nó trả `503 No backend services available` nhiều
+ngày liền và MCP server không kết nối được. Toàn bộ `@insforge/sdk` đã gỡ khỏi `package.json`;
+schema thời InsForge nằm ở `db/schema/_legacy-insforge/` kèm bản đồ port — **đừng chạy chúng**,
+chúng tham chiếu `auth.users`, `auth.uid()` và hai role `anon`/`authenticated` không còn tồn tại.
+
+Stack hiện tại: **PostgreSQL 18 cục bộ + Sequelize + Next.js Route Handlers**. Không có server
+Express riêng — app đã là Next.js nên thêm một process nữa chỉ tốn CORS, hai chỗ deploy và logic
+phiên viết hai lần. Đã cân nhắc MySQL và loại; lý do ở `db/schema/README.md`.
+
+### Ba role, và vì sao không phải một
+
+`DATABASE_URL` nối bằng `chronoshelf_app` — role **`NOINHERIT` không có quyền gì cả**. Mỗi request
+mở một transaction rồi `SET LOCAL ROLE` sang `chronoshelf_anon` hoặc `chronoshelf_auth`, kèm
+`SET LOCAL app.user_id`. Tất cả đi qua đúng một hàm: `withRole()` ở `lib/db/tx.ts`.
+
+- **Quên truyền `transaction` xuống một truy vấn là hỏng TO và hỏng NGAY** — nó chạy dưới
+  `chronoshelf_app` và Postgres trả `permission denied`. Fail đóng, không âm thầm chạy với quyền
+  rộng hơn. Đó là lý do **không** cần CLS/AsyncLocalStorage để tự gắn transaction.
+- **Đừng nối bằng `postgres`.** Superuser bỏ qua toàn bộ RLS: mọi policy sẽ ngừng tác dụng trong
+  im lặng, ứng dụng vẫn chạy y như thường, và không có gì báo cho ai biết.
+- `app.current_user_id()` thay `auth.uid()`; `public.users` thay `auth.users`.
 
 ### Đổi schema
 
-1. Viết SQL vào `db/schema/<ngày>-<mô-tả>.sql` — file này là nguồn sự thật, có version trong git.
-2. Chạy qua MCP `run-raw-sql`.
-3. Xác minh bằng một block `DO $$ ... RAISE EXCEPTION ... $$;` tự kiểm tra chạy thẳng trên DB.
-   RLS và logic mở khóa phải được test ở tầng DB, không tin vào việc "UI nhìn thấy đúng".
+1. Sửa **đúng file** trong `db/schema/` — tách theo *một mối quan tâm một file*, không phải một
+   file khổng lồ theo ngày. Mọi file viết để chạy lặp được.
+2. `PGADMIN_URL=postgres://postgres:...@127.0.0.1:5432/chronoshelf npm run db:migrate`
+3. `npm run db:check` (hàng rào nhìn từ ứng dụng) **và** `npm run db:mutation` (chứng minh
+   `90-verify.sql` biết kêu).
 
-`auth.uid()` có sẵn trong Postgres và trả về user của JWT gọi request; RLS và `complete_book` đều
-dựa vào nó. Backend chỉ có role `anon` và `authenticated` — **không có `service_role`**, nên logic
-đặc quyền đi qua hàm Postgres `SECURITY DEFINER` chứ không phải edge function cầm service key.
+Logic đặc quyền vẫn đi qua hàm Postgres `SECURITY DEFINER` — `complete_book`, `is_admin`,
+`app.issue_login_code`, `app.consume_login_code`. Ranh giới đó không đổi khi bỏ InsForge, chỉ có
+nguồn danh tính là đổi (từ claim JWT sang `SET LOCAL app.user_id`).
+
+### Đăng nhập
+
+OTP 6 số qua email, tự xây. Mã sinh bằng `crypto.randomInt`, database **chỉ nhận bản băm**; hạn
+10 phút, tối đa 5 lần thử và 5 mã / 15 phút / email — tất cả nằm trong hai hàm SECURITY DEFINER,
+không route nào lách được.
+
+Phiên là cookie `httpOnly` chứa payload JSON ký HMAC-SHA256 (`lib/auth/token.ts`). **Cố ý không
+phải JWT**: định dạng này không có trường `alg`, nên không có gì để kẻ tấn công thương lượng.
+
+**Gửi mail chưa cấu hình.** Ở dev, mã in ra console server. Ở production, `deliver()` NỔ — mã
+đăng nhập nằm trong log máy chủ là lỗ hổng thật, và "quên gắn nhà cung cấp mail" phải là lỗi ồn
+ào lúc deploy. Gắn Nodemailer/Resend vào `lib/auth/otp.ts`.
 
 ## Bẫy đã gặp
 
-- **MCP `run-raw-sql` từ chối `BEGIN;`/`COMMIT;` tường minh — và không cần chúng.** Proxy
-  đã tự bọc mỗi batch trong một transaction. Đã kiểm: batch gồm `CREATE TABLE` rồi một
-  `INSERT` trùng khóa làm cả batch roll back, bảng vừa tạo cũng biến mất. Script sinh SQL
-  đừng phát hai lệnh đó, nếu không output không dán thẳng vào MCP được.
-- **`run-raw-sql` thỉnh thoảng trả `Changing SQL session configuration is not allowed`
-  với batch lớn — và nó KHÔNG tất định.** Cùng một query byte-for-byte, chạy lại ngay sau
-  đó thì thành công. Đã bisect cả file schema 459 dòng: không có tổ hợp câu lệnh nào tái
-  hiện được ổn định; mọi tổ hợp con đều pass, chỉ full batch mới thỉnh thoảng hỏng.
-  Đây là flakiness phía proxy. **Cứ chạy lại**, đừng ngồi chia nhỏ file hay sắp xếp lại
-  câu lệnh — đã có người mất một lượt bisect đầy đủ để kết luận đúng điều này. Batch hỏng
-  thì roll back sạch (đã xác minh), nên retry an toàn.
-- **`SET ROLE` / `SET LOCAL ROLE` bị chặn**, cùng họ với `set_config`. Không giả lập được
-  `anon`/`authenticated` qua MCP — muốn kiểm quyền thật thì phải đi HTTP bằng khóa anon,
-  đó là lý do `scripts/db-check.mjs` tồn tại.
+- **`sequelize` KHÔNG nằm trong danh sách Next tự loại khỏi bundle, `pg` thì có.** Sequelize
+  nạp dialect bằng `require()` động nên bundler không lần ra. Thiếu
+  `serverExternalPackages: ["sequelize"]` trong `next.config.ts` là hỏng lúc chạy, không phải
+  lúc build.
+- **Thư mục có tiền tố `_` trong `app/` là private folder — Next bỏ qua hoàn toàn.** Đã mất một
+  lượt vì đặt route thử ở `app/api/_probe/`: `next build` vẫn xanh, route không hề tồn tại, và
+  phép thử rỗng nghĩa mà trông y như đạt. Nhìn bảng Route sau khi build để biết route có thật.
+- **`next start`/`next dev` không chết theo `TaskStop`.** Tiến trình cũ còn giữ cổng, nên lần
+  chạy sau nhận `EADDRINUSE` và mọi request bắn vào **server cũ với bản build cũ** — triệu chứng
+  là "route mới trả 404" trong khi nó có trong bảng Route. Kiểm bằng
+  `Get-NetTCPConnection -LocalPort <cổng>` rồi `Stop-Process`.
+- **`Model.upsert()` của Sequelize ghi LẠI MỌI CỘT.** `chronoshelf_auth` chỉ có
+  `GRANT UPDATE (current_page)` trên `user_book_progress`, nên upsert sẽ đâm vào quyền cột. Dùng
+  `INSERT … ON CONFLICT DO UPDATE SET current_page` viết tay (`app/api/me/progress/route.ts`).
+- **`has_function_privilege('role', 'schema.fn()', …)` phải phân giải tên, việc đó đòi USAGE
+  trên schema.** Hỏi về một role không có USAGE thì chính phép kiểm nổ thay vì trả lời. Tra OID
+  trong `pg_proc` khi cần hỏi về `chronoshelf_app`.
+- **`Promise.all` trên hai truy vấn cùng một transaction Sequelize sẽ hỏng** — chúng chồng lên
+  nhau trên một connection. Trong `withRole` thì chạy tuần tự.
+- **Không bao giờ gọi `sequelize.sync()`.** Nó không biết gì về RLS, policy, ràng buộc
+  DEFERRABLE hay hàm SECURITY DEFINER — bảng nó tạo ra là bảng không có hàng rào nào.
 
 ## Lệnh
 
 ```bash
-npm run check          # CỔNG DUY NHẤT — chạy cái này trước khi nói "xong". ~13s
-npm run db:check       # ranh giới bảo mật tầng DB, cần mạng. Sau mỗi lần đổi db/schema/
+npm run check          # CỔNG DUY NHẤT cho code — chạy trước khi nói "xong". ~13s
+npm run db:check       # 27 phép hàng rào, nối bằng đúng role ứng dụng. Sau mỗi lần đổi db/schema/
+npm run db:mutation    # phá 7 hàng rào rồi đòi 90-verify.sql phải kêu. Cần PGADMIN_URL
+npm run db:migrate     # chạy db/schema/*.sql theo thứ tự. Cần PGADMIN_URL
+npm run seed:content   # bootstrap db/seed/*.json -> bảng nội dung. Cần PGADMIN_URL
 npm run dev            # dev server
 npm run design:build   # sinh lại tailwind.theme.json từ DESIGN.md
-npm run seed:content   # sinh SQL bootstrap db/seed/*.json -> bảng nội dung
 ```
 
-`npm run check` cần `.env.local` có mặt (xem `.env.example`) — KHÔNG còn chạy "ngoại tuyến
-hoàn toàn" được. `next build` (bước cuối của `check`) nạp `lib/insforge/client.ts`, file đó
-`throw` ngay lúc nạp module nếu thiếu `NEXT_PUBLIC_INSFORGE_BASE_URL` hoặc
-`NEXT_PUBLIC_INSFORGE_ANON_KEY` — đã kiểm thực nghiệm 2026-08-25: thiếu `.env.local` thì
-`next build` thoát mã 1 ngay ở bước "Collecting page data", dù `/` đã `force-dynamic` (bước đó
-vẫn phải nạp module để đọc `export const dynamic`, nên code chạy lúc nạp module vẫn chạy). Hai
-biến đó không cần trỏ tới backend đang sống — chỉ cần CÓ MẶT: cũng đã kiểm, build vẫn qua khi
-trỏ sai URL, vì không route nào (`/`, `/[shelf]`, `/dang-nhap` đều `force-dynamic`) còn gọi
-mạng lúc build nữa.
+Ba lệnh cần `PGADMIN_URL` (chuỗi kết nối superuser) vì chúng tạo role, đổi schema và sửa policy.
+**Ứng dụng không bao giờ dùng nó** — `.env.local` chỉ có `DATABASE_URL` (role `chronoshelf_app`)
+và `SESSION_SECRET`. Truyền theo từng lệnh, đừng cất trong file:
+
+```bash
+PGADMIN_URL=postgres://postgres:...@127.0.0.1:5432/chronoshelf npm run db:migrate
+```
+
+`npm run check` cần `.env.local` có mặt (xem `.env.example`) — KHÔNG chạy "ngoại tuyến hoàn
+toàn" được. `next build` (bước cuối của `check`) nạp `lib/db/sequelize.ts`, file đó `throw`
+ngay lúc nạp module nếu thiếu `DATABASE_URL`. Đã kiểm lại thực nghiệm 2026-08-28 sau khi bỏ
+InsForge: giấu `.env.local` đi thì `next build` thoát mã 1 ở bước "Collecting page data" với
+`Failed to collect configuration for /api/auth/code`, dù mọi route đều `force-dynamic` — bước
+đó vẫn phải nạp module để đọc `export const dynamic`, nên code chạy lúc nạp module vẫn chạy.
+
+`DATABASE_URL` **không cần trỏ tới database đang sống** để build qua; chỉ cần CÓ MẶT — đã kiểm
+2026-08-28 bằng cách trỏ nó vào `127.0.0.1:59999/khong-co-that`, `next build` vẫn thoát mã 0.
+Không route nào gọi database lúc build vì tất cả đều `force-dynamic`. Nhưng `npm run db:check`,
+`db:migrate`, `db:mutation` và `seed:content` thì cần database thật.
 
 `npm run check` cũng chạy tự động ở **pre-commit**: `.githooks/pre-commit`, được nối vào bằng
 `core.hooksPath` trong script `prepare` của npm (npm tự gọi `prepare` sau `npm install`, nên
@@ -177,7 +244,7 @@ Hai cái bẫy đã bị đóng lại, đừng mở ra:
 
 Bề mặt test JS chỉ gồm module **thuần, import tương đối**: alias `@/` không resolve được dưới
 test runner của Node (đã thử — `ERR_MODULE_NOT_FOUND`), nên bất cứ thứ gì chạm vào `@/` là
-không test kiểu này được. Đó là lý do `resolveState` nằm riêng ở `lib/insforge/unlock.ts` chứ
+không test kiểu này được. Đó là lý do `resolveState` nằm riêng ở `lib/api/unlock.ts` chứ
 không ở trong `shelf.ts`, và `safeNext` nằm riêng ở `lib/safe-next.ts`.
 
 Đừng cài Vitest/Jest chỉ để lách chuyện alias. Phần còn lại của repo đã có cổng riêng và
@@ -192,61 +259,55 @@ những cổng đó bắt lỗi tốt hơn một bộ test JSX:
 | Sai kiểu, route không tồn tại | `build` (typegen + tsc) |
 | **RLS và quyền của `complete_book`** | **`npm run db:check`** |
 
-Hàng cuối là rủi ro lớn nhất của dự án. `scripts/db-check.mjs` gọi backend thật bằng đúng khóa
-`anon` mà trình duyệt cầm — **15 phép**, tất cả qua HTTP thật, không phải SQL qua MCP. (Số phép
-đổi theo thời gian khi hàng rào mới cần kiểm — đọc trực tiếp output của `npm run db:check` thay
-vì tin số này, nó chỉ để biết thứ tự lớn của bộ kiểm.)
+Hàng cuối là rủi ro lớn nhất của dự án, và nó được canh bằng **ba** cổng khác nhau chứ
+không phải một:
 
-Chín phép đầu chạy khi **chưa đăng nhập**: xác nhận sách đã xuất bản vẫn đọc được, và khẳng
-định kẻ chưa đăng nhập **không** ghi được `user_items` hay `user_book_progress`, **không** gọi
-được `_complete_book_for` hay `complete_book`, **không** đọc được sách nháp, **không** ghi được
-`user_roles` hay `books`, và đọc `user_items` ra rỗng.
+| Cổng | Chạy bằng quyền | Trả lời câu hỏi |
+|---|---|---|
+| `db/schema/90-verify.sql` (trong `db:migrate`) | superuser | Catalog có đúng như thiết kế không? (`has_table_privilege`, biểu thức policy, `condeferred`) |
+| `npm run db:check` | `chronoshelf_app`, đúng role Route Handler dùng | Một request THẬT làm được những gì? |
+| `npm run db:mutation` | superuser | `90-verify.sql` có thật sự biết kêu không? |
 
-Sáu phép cuối cần tài khoản thật (`DB_CHECK_USER_EMAIL` / `DB_CHECK_USER_PASSWORD` trong
-`.env.local`) và kiểm **người đã đăng nhập nhưng không phải admin**: không ghi được từng bảng
-trong `shelves`/`items`/`books`/`pages` riêng lẻ (4 phép — cả 4 dùng chung policy "admin write"
-nhưng một sai lệch riêng ở một bảng sẽ không bị phép nào khác bắt), không tự trao được vật phẩm
-qua `user_items`, và không tự phong admin được cũng không đọc trộm được vai trò người khác
-trong `user_roles`. Thiếu hai biến đó thì kết quả báo `9/9 ... (6 PHÉP BỊ BỎ QUA)` — đó là
-**bỏ qua, không phải đạt**.
+Cần cả ba vì mỗi cái mù ở chỗ cái kia nhìn thấy. SQL chạy bằng quyền admin kiểm được
+`has_function_privilege` nhưng không kiểm được thứ quan trọng hơn — cái mà một request thật
+làm được. Ngược lại, `db:check` không thấy được `condeferred` hay biểu thức policy.
 
-**Phép ghi nội dung khi đã đăng nhập bắt buộc phải hỏng vì POLICY chặn, không phải vì thiếu
-GRANT** — thiếu GRANT thì admin thật cũng ghi hỏng, phép kiểm không chứng minh được gì. Postgres
-trả CHUNG sqlstate `42501` cho cả hai trường hợp, khác nhau duy nhất ở message
-(`permission denied for table` so với `new row violates row-level security policy`); script bắt
-buộc soi message, không được soi mã lỗi. Đây đã là bẫy thật một lần: ai tin "chặn nào cũng ra
-42501 permission denied" mà đơn giản hóa lại thành so mã lỗi thì phép kiểm mất khả năng phân
-biệt hai trường hợp đó, và hỏng âm thầm — không còn ai biết.
+`scripts/db-check.mjs` hiện có **27 phép** (đọc output thay vì tin con số này — nó chỉ để biết
+thứ tự lớn). Script tự tạo tài khoản test qua chính luồng OTP nên **không cần biến môi trường
+nào ngoài `DATABASE_URL`** — khác bản InsForge cũ, vốn đòi `DB_CHECK_USER_EMAIL`/`PASSWORD` và
+âm thầm BỎ QUA 6 phép khi thiếu.
 
-Cùng một họ bẫy, xuất hiện lần thứ hai ở chỗ khác: phép gọi `_complete_book_for`/`complete_book`
-khi CHƯA đăng nhập bắt buộc phải dùng slug sách THẬT đã xuất bản, không phải slug bịa. Bản đầu
-dùng slug bịa (`"bach-dang-938"`, không tồn tại) và coi "có lỗi là đạt" — nếu quyền EXECUTE lỡ
-bị cấp cho `anon`, hàm vẫn luôn dừng ở "Book not found" (một lỗi có thật nhưng không nói lên gì
-về quyền), nên phép kiểm báo PASS đúng lúc lỗ nghiêm trọng nhất đã mở toang. Sửa bằng slug thật
-vẫn CHƯA đủ: đã kiểm thực nghiệm 2026-08-25 bằng cách cấp tạm EXECUTE cho `anon` rồi gọi lại —
-lời gọi không dừng ở "Book not found" mà đi tiếp tới `INSERT INTO user_book_progress` và hỏng vì
-vi phạm khóa ngoại (user giả không tồn tại trong `auth.users`), một lỗi THỨ BA không ai lường
-trước. Bài học chung cho cả hai bẫy: đừng liệt kê những lỗi bị coi là "đã lộ" (danh sách đó
-không bao giờ đủ), mà liệt kê CHÍNH XÁC lỗi được coi là "quyền còn nguyên" (ở đây: đúng sqlstate
-`42501` VÀ đúng message `permission denied for function`) rồi coi MỌI thứ khác là rò rỉ.
+### Ba bài học phải giữ
 
-Hai dòng seed tồn tại chỉ để làm mồi nhử, không phải nội dung thật: quyển nháp vĩnh viễn
-`__nhap-khong-bao-gio-xuat-ban` (cho phép đọc-sách-nháp) và dòng vai trò `admin` của tài khoản
-mồi nhử `22222222-2222-2222-2222-222222222222` trong `user_roles` (cho phép tự-phong-admin).
-Thiếu mồi nhử thì phép đó vẫn chạy, vẫn báo PASS, nhưng hết nghĩa — sách thật đều đã publish nên
-phép đọc-sách-nháp luôn thấy 0 dòng, `user_roles` không còn dòng "người khác" nào nên phép
-tự-phong-admin luôn thấy 0 dòng, kể cả khi RLS hỏng hoàn toàn. Đừng "dọn" hai dòng này.
+**1. Liệt kê trạng thái "còn nguyên", đừng liệt kê trạng thái "đã hỏng."** Danh sách lỗi-được-
+coi-là-đã-lộ không bao giờ đủ. Phép gọi `complete_book` khi chưa đăng nhập chỉ đạt khi nhận
+ĐÚNG sqlstate `42501` VÀ message bắt đầu bằng `permission denied for function`; mọi thứ khác
+là rò rỉ. Bản InsForge từng dùng slug bịa và coi "có lỗi là đạt" — nếu EXECUTE lỡ bị cấp, hàm
+vẫn dừng ở "Book not found" và phép kiểm báo PASS đúng lúc lỗ nghiêm trọng nhất mở toang. Sửa
+bằng slug thật vẫn chưa đủ: lần thử tiếp theo lộ ra một lỗi THỨ BA (vi phạm khóa ngoại) không
+ai lường trước. Vì vậy phải neo vào cái đúng, không phải liệt kê cái sai.
 
-Cố ý **không** viết bằng SQL chạy qua MCP `run-raw-sql`: SQL chạy bằng quyền admin nên kiểm
-được `has_function_privilege` nhưng không kiểm được thứ thật sự quan trọng — cái mà một request
-thật từ ngoài Internet làm được. Script này đi đúng đường của kẻ tấn công, và không cần MCP nên
-chạy được cả khi MCP không kết nối.
+**2. `42501` nói HAI chuyện khác nhau — phải soi message.** `permission denied for table` là
+thiếu GRANT; `new row violates row-level security policy` là policy chặn. Với bốn bảng nội
+dung, phép kiểm đòi ĐÚNG loại thứ hai: thiếu GRANT thì admin thật cũng ghi hỏng và phép kiểm
+không chứng minh được gì.
+
+**3. Nhưng `user_items` thì ngược lại — và đó là chủ ý.** Ở đó hàng rào là chính GRANT: KHÔNG
+role nào ghi được, cửa duy nhất là `complete_book` chạy SECURITY DEFINER. Nên thông điệp đúng
+ở đó là `permission denied for table user_items`, và nếu một ngày nó đổi thành "violates
+row-level security policy" thì nghĩa là ai đó vừa CẤP THÊM GRANT INSERT — đúng thứ phải nổ.
+Bài học: mỗi hàng rào phải khẳng định theo đúng cơ chế của CHÍNH NÓ, đừng áp một khuôn chung.
+(Đã vấp thật ngày 2026-08-28: dùng khuôn "phải bị policy chặn" cho `user_items` và phép kiểm
+báo hỏng — nhưng schema đúng, khuôn mới sai.)
 
 ## Agent harness — cái gì nằm ở đâu
 
 | Đường dẫn | Vai trò |
 |---|---|
-| `CLAUDE.md` (file này) | Toàn bộ kiến thức dự án. **Không** viết vào `AGENTS.md` — installer InsForge ghi đè file đó. |
+| `CLAUDE.md` (file này) | Toàn bộ kiến thức dự án. |
+| `db/schema/README.md` | Thứ tự chạy schema, ba role và lý do. Đọc trước khi đụng SQL. |
+| `scripts/db-migrate.mjs` | Chạy `db/schema/NN-*.sql` theo thứ tự, mỗi file một transaction. |
+| `scripts/db-mutation-check.mjs` | Phá 7 hàng rào rồi đòi `90-verify.sql` phải kêu. |
 | `.claude/settings.json` | Allowlist lệnh + deny rule `pen.dev/**` + đăng ký hook. |
 | `.claude/hooks/guard-pen-dev.mjs` | `PreToolUse(Bash)`, chặn mọi lệnh shell chạm `pen.dev`. |
 | `.githooks/pre-commit` | Chạy `npm run check` trước mỗi commit. Nối bằng `npm run prepare`. |
@@ -281,6 +342,3 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
----
-
-@AGENTS.md
