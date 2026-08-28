@@ -171,3 +171,54 @@ BEGIN
 
   RAISE NOTICE 'C. complete_book + reorder OK';
 END $$;
+
+-- === D. Kho ảnh ===
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE schemaname='public' AND tablename='media' AND rowsecurity) THEN
+    RAISE EXCEPTION 'media chưa tồn tại hoặc chưa bật RLS';
+  END IF;
+
+  -- Ảnh phải đọc được khi CHƯA đăng nhập, nếu không sách sẽ mất hình với đúng đối tượng
+  -- chính của sản phẩm.
+  IF NOT has_table_privilege('chronoshelf_anon', 'public.media', 'SELECT') THEN
+    RAISE EXCEPTION 'người chưa đăng nhập không đọc được media — ảnh sẽ vỡ hết';
+  END IF;
+  IF has_table_privilege('chronoshelf_anon', 'public.media', 'INSERT') THEN
+    RAISE EXCEPTION 'người chưa đăng nhập ghi được media';
+  END IF;
+
+  -- Bảng CHỈ-GHI-THÊM. Đây là thứ khiến `Cache-Control: immutable` ở /media/[id] đúng
+  -- theo cấu tạo: nội dung tại một sha256 không đổi được vì không ai sửa/xóa được dòng.
+  -- Nới GRANT ở đây là biến header đó thành nói dối, nên khẳng định này phải nổ.
+  IF has_table_privilege('chronoshelf_auth', 'public.media', 'UPDATE')
+  OR has_table_privilege('chronoshelf_auth', 'public.media', 'DELETE') THEN
+    RAISE EXCEPTION 'media không còn chỉ-ghi-thêm — Cache-Control immutable thành nói dối';
+  END IF;
+  IF NOT has_table_privilege('chronoshelf_auth', 'public.media', 'INSERT') THEN
+    RAISE EXCEPTION 'thiếu GRANT INSERT trên media — admin thật cũng không tải ảnh lên được';
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_policies
+                  WHERE schemaname='public' AND tablename='media' AND policyname='admin write'
+                    AND qual='is_admin()' AND with_check='is_admin()' AND cmd='ALL') THEN
+    RAISE EXCEPTION 'policy "admin write" trên media thiếu hoặc không còn là is_admin()';
+  END IF;
+
+  -- SVG không được nằm trong allowlist mime. Nó là XML — phục vụ cùng origin thì script
+  -- bên trong chạy thật, thành stored XSS.
+  IF EXISTS (SELECT 1 FROM pg_constraint
+              WHERE conrelid = 'public.media'::regclass
+                AND pg_get_constraintdef(oid) ILIKE '%svg%') THEN
+    RAISE EXCEPTION 'media chấp nhận SVG — đường thẳng tới stored XSS';
+  END IF;
+
+  -- Ba ràng buộc ảnh-phải-có-credit (điều kiện CC BY-SA, spec §6).
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'items_image_credit_ck')
+  OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'books_cover_credit_ck')
+  OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'pages_image_credit_ck') THEN
+    RAISE EXCEPTION 'thiếu ràng buộc ảnh-phải-có-nguồn-và-tác-giả trên items/books/pages';
+  END IF;
+
+  RAISE NOTICE 'D. kho ảnh OK';
+END $$;

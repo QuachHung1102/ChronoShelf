@@ -230,6 +230,67 @@ for (const [table, sql] of [
     `thấy ${roles.rowCount} dòng: ${JSON.stringify(roles.rows)}`);
 }
 
+console.log("\n-- Kho ảnh (media) --");
+{
+  // Ảnh là nội dung công khai — policy `read media USING (true)` là chủ ý. Phép này xác
+  // nhận điều đó THẬT SỰ đúng, vì nếu nó hỏng thì mọi ảnh trong sách vỡ với đúng đối
+  // tượng chính của sản phẩm: học sinh chưa đăng nhập.
+  const seen = await asRole("chronoshelf_anon", null, ["SELECT count(*) AS n FROM public.media"]);
+  check(seen.rowCount === 1, "người chưa đăng nhập ĐỌC được media (ảnh phải hiện)",
+    `truy vấn hỏng: ${JSON.stringify(seen.rows)}`);
+}
+
+const FAKE_SHA = "f".repeat(64);
+await denied("người chưa đăng nhập không ghi được media", "chronoshelf_anon",
+  `INSERT INTO public.media (sha256, mime, bytes, byte_len)
+        VALUES ('${FAKE_SHA}', 'image/png', '\\x00'::bytea, 1)`,
+  "permission denied for table media");
+
+await deniedByPolicy(
+  "người thường không ghi được media",
+  userA,
+  `INSERT INTO public.media (sha256, mime, bytes, byte_len)
+        VALUES ('${FAKE_SHA}', 'image/png', '\\x00'::bytea, 1)`,
+);
+
+for (const [name, sql] of [
+  ["không SỬA được dòng media đã có", "UPDATE public.media SET mime = 'image/gif'"],
+  ["không XÓA được dòng media đã có", "DELETE FROM public.media"],
+]) {
+  // Khác hai phép trên: ở đây hàng rào là chính GRANT (bảng chỉ-ghi-thêm), không phải
+  // policy. Đó là thứ giữ cho `Cache-Control: immutable` ở /media/[id] khỏi thành nói dối.
+  try {
+    await asRole("chronoshelf_auth", userA, [sql]);
+    bad(name, "LÀM ĐƯỢC — media khong con chi-ghi-them");
+  } catch (e) {
+    await c.query("ROLLBACK").catch(() => {});
+    const intact = e.code === "42501" && e.message === "permission denied for table media";
+    check(intact, `${name} — chặn ở tầng GRANT`,
+      `chờ 42501 "permission denied for table media", nhận ${e.code} "${e.message}"`);
+  }
+}
+
+console.log("\n-- Ảnh bắt buộc có nguồn + tác giả (điều kiện CC BY-SA) --");
+{
+  // Ràng buộc CHECK là lớp duy nhất còn đứng trước một UPDATE gõ tay qua psql. Phép này
+  // chạy bằng role ứng dụng nên nó chứng minh lớp đó áp cho cả đường đi thật.
+  const name = "không ghi được ảnh thiếu credit vào items";
+  try {
+    await asRole("chronoshelf_auth", userA, [
+      `INSERT INTO public.items (slug, name, image_url) VALUES ('__dbcheck-img', 'x', '/media/${FAKE_SHA}')`,
+    ]);
+    bad(name, "GHI ĐƯỢC — ràng buộc ảnh-phải-có-credit không chặn");
+  } catch (e) {
+    await c.query("ROLLBACK").catch(() => {});
+    // Người thường bị policy "admin write" chặn TRƯỚC khi tới CHECK — đó vẫn là chặn
+    // đúng, chỉ là ở lớp khác. Chấp nhận cả hai, nhưng KHÔNG chấp nhận thứ gì khác.
+    const byPolicy = /row-level security policy/.test(e.message);
+    const byCheck = /items_image_credit_ck/.test(e.message);
+    check(byPolicy || byCheck, `${name} (${byCheck ? "CHECK" : "policy"} chặn)`,
+      `hỏng vì lý do khác: ${e.code} "${e.message}"`);
+  }
+}
+
 console.log("\n-- complete_book khi CHƯA đăng nhập --");
 // Dùng slug sách THẬT đã xuất bản, không phải slug bịa. Với slug bịa, kể cả khi quyền
 // EXECUTE lỡ bị cấp cho người chưa đăng nhập thì hàm vẫn dừng ở "Book not found" — một
