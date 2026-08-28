@@ -362,6 +362,64 @@ $half: 490px;
   background: theme('colors.surface-room');
 }
 
+// Mở/đóng mềm cho hộp thoại đọc sách.
+//
+// Cả sản phẩm xoay quanh việc "mở một quyển sách", mà trước đây quyển sách bật ra tức
+// thì — đây là chỗ thiếu chuyển động rõ nhất trong toàn app.
+//
+// Làm bằng CSS thuần, KHÔNG thư viện. <dialog> là phần tử discrete: nó nhảy thẳng từ
+// display:none sang display:block nên transition thường không bám vào được. Ba mảnh dưới
+// đây là cơ chế nền tảng dựng riêng cho đúng việc này:
+//   - @starting-style cho trình duyệt một trạng thái ĐẦU để nội suy từ đó
+//   - transition-behavior allow-discrete cho phép transition trên `display`
+//   - `overlay` giữ hộp thoại ở lớp trên cùng suốt lúc đóng, nếu không nó biến mất ngay
+//
+// 240ms nằm trong dải 200-300ms mà DESIGN.md quy cho "chuyển trạng thái".
+@media (prefers-reduced-motion: no-preference) {
+  .dialog {
+    opacity: 1;
+    scale: 1;
+    transition:
+      opacity 240ms ease-out,
+      scale 240ms ease-out,
+      display 240ms allow-discrete,
+      overlay 240ms allow-discrete;
+  }
+
+  // Trạng thái lúc chưa mở và lúc đang đóng dùng CÙNG một cặp giá trị, nên hai chiều
+  // đối xứng mà không phải viết hai bộ.
+  @starting-style {
+    .dialog[open] {
+      opacity: 0;
+      scale: 0.97;
+    }
+  }
+
+  .dialog:not([open]) {
+    opacity: 0;
+    scale: 0.97;
+  }
+
+  .dialog::backdrop {
+    opacity: 1;
+    transition:
+      opacity 240ms ease-out,
+      display 240ms allow-discrete,
+      overlay 240ms allow-discrete;
+  }
+
+  @starting-style {
+    .dialog[open]::backdrop {
+      opacity: 0;
+    }
+  }
+
+  .dialog:not([open])::backdrop {
+    opacity: 0;
+  }
+}
+
+
 // Nét khắc giữa tên sách và niên đại trên bìa cứng — hình thoi ở giữa, nét tắt dần hai đầu.
 .coverRule {
   position: relative;

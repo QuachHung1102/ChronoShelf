@@ -248,3 +248,43 @@
     theme('colors.tertiary-light / 0%')
   );
 }
+
+// Chặng THỨ BA của chuỗi nhận thưởng: đai sắt bật ra khỏi quyển vừa mở khóa.
+//
+// DESIGN.md đặc tả chuỗi ba chặng tuần tự — vật phẩm rơi và xoay, bay vào túi hành
+// trang, rồi (sang màn kệ sách) ổ khóa bật mở. Hai chặng đầu đã có; thiếu chặng này thì
+// phần thưởng đọc xong không nối được với cái kệ, đúng chỗ vòng lặp học tập cần khép lại.
+//
+// 380ms nằm dưới trần 400ms/chặng của DESIGN.md, và cả chuỗi ba chặng vẫn dưới 1200ms.
+// `forwards` để đai ở lại trạng thái cuối (đã biến mất) thay vì nháy trở lại.
+@media (prefers-reduced-motion: no-preference) {
+  .bandBreak {
+    animation: band-break 380ms cubic-bezier(0.34, 1.2, 0.64, 1) forwards;
+    // Bản lề ở mép trái: đai bung ra như một cái khóa bật, không phải mờ dần tại chỗ.
+    transform-origin: 0% 50%;
+  }
+}
+
+// Không có @media reduced-motion ở đây: người tắt chuyển động vẫn phải thấy đai BIẾN MẤT,
+// nếu không quyển sách trông như vẫn còn khóa. Chỉ bỏ phần chuyển động, không bỏ kết quả.
+@media (prefers-reduced-motion: reduce) {
+  .bandBreak {
+    opacity: 0;
+  }
+}
+
+@keyframes band-break {
+  // Căng ra một nhịp rất ngắn trước khi đứt — không có nhịp này thì nó chỉ là mờ dần.
+  0% {
+    transform: rotate(0deg) translateY(0);
+    opacity: 1;
+  }
+  22% {
+    transform: rotate(-1.2deg) translateY(-2px) scaleX(1.02);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(9deg) translateY(26px) scaleX(0.96);
+    opacity: 0;
+  }
+}

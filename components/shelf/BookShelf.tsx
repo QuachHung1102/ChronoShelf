@@ -9,9 +9,12 @@ import s from "./BookShelf.module.scss";
 export function BookShelf({
   shelf,
   onOpenBook,
+  justUnlockedSlugs,
 }: {
   shelf: ShelfView;
   onOpenBook: (bookSlug: string) => void;
+  /** Slug những quyển vừa chuyển từ khóa sang mở trong lượt refresh vừa rồi. */
+  justUnlockedSlugs?: Set<string>;
 }) {
   const opened = shelf.books.filter((b) => b.state !== "locked").length;
 
@@ -34,7 +37,12 @@ export function BookShelf({
             <ul className={s.row}>
               {shelf.books.map((view, index) => (
                 <li key={view.book.slug}>
-                  <BookCover view={view} index={index} onOpen={onOpenBook} />
+                  <BookCover
+                    view={view}
+                    index={index}
+                    onOpen={onOpenBook}
+                    justUnlocked={justUnlockedSlugs?.has(view.book.slug) ?? false}
+                  />
                 </li>
               ))}
             </ul>

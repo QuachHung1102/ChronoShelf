@@ -25,11 +25,16 @@ export function BookCover({
   view,
   index,
   onOpen,
+  justUnlocked = false,
 }: {
   view: BookView;
   /** Vị trí trên kệ — quyết định chiều cao và sắc da của quyển này. */
   index: number;
   onOpen: (bookSlug: string) => void;
+  /** Quyển này VỪA mở khóa trong lượt vừa rồi — chạy một lần hoạt cảnh đai sắt bật ra.
+   *  Đây là chặng thứ BA của chuỗi nhận thưởng mà DESIGN.md đặc tả (vật phẩm rơi → bay
+   *  vào túi → ổ khóa bật mở); hai chặng đầu đã có sẵn. */
+  justUnlocked?: boolean;
 }) {
   const { book, state, requiredItem } = view;
   const isLocked = state === "locked";
@@ -80,7 +85,12 @@ export function BookCover({
           </span>
         )}
 
-        {isLocked && <span aria-hidden className={s.ironBand} />}
+        {/* Đai vẫn render thêm MỘT nhịp sau khi mở khóa, để có thứ mà bật ra. Không có
+            nhánh justUnlocked thì nó biến mất tức thì cùng lúc state đổi, và chặng thứ ba
+            của chuỗi nhận thưởng không có gì để diễn. */}
+        {(isLocked || justUnlocked) && (
+          <span aria-hidden className={`${s.ironBand} ${justUnlocked ? s.bandBreak : ""}`} />
+        )}
 
         {/* Khoảng giữa co giãn: ổ khóa hoặc số hiệu nằm chính giữa mặt bìa, tên sách luôn ở
             đáy — cùng một khung cho cả ba trạng thái nên tên sách không nhảy chỗ khi mở khóa. */}
