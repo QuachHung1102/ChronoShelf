@@ -130,7 +130,11 @@ export async function createShelf(_prev: ActionState, fd: FormData): Promise<Act
         transaction: t,
         type: QueryTypes.SELECT,
       });
-      const slug = uniqueSlug(base, new Set(taken.map((r) => r.slug)));
+      // `vat-pham` bị coi như đã dùng: đoạn tĩnh `/quan-tri/vat-pham` thắng đoạn động
+      // `/quan-tri/[shelf]` trong App Router, nên một kệ mang slug đó sẽ có màn quản trị
+      // bị che mất. Admin đặt tên kệ là "Vật phẩm" là ra đúng slug này — không hiếm như
+      // nó tưởng. `uniqueSlug` sẽ tự đổi thành `vat-pham-2`.
+      const slug = uniqueSlug(base, new Set([...taken.map((r) => r.slug), "vat-pham"]));
 
       // Kệ mới xếp cuối, và LUÔN ở trạng thái nháp: xuất bản là một hành động riêng,
       // có ý thức. Tạo xong đã hiện ngay cho học sinh là cách chắc chắn nhất để một
@@ -398,5 +402,223 @@ export async function deleteItem(_prev: ActionState, fd: FormData): Promise<Acti
       revalidatePath("/quan-tri/vat-pham");
       return { ok: "Đã xóa vật phẩm." };
     });
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Sách trong kệ
+//
+// KHÔNG có ô nhập "vật phẩm cần để mở" ở bất kỳ đâu, và không phải vì quên: cột đó
+// KHÔNG TỒN TẠI. Quyển `i` mở bằng vật phẩm thưởng của quyển `i-1`, suy ra từ vị trí —
+// nên chuỗi không thể đứt, vì không có gì lưu để mà sai. Spec §2.2.
+// ---------------------------------------------------------------------------
+
+export async function createBook(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  return guard(async () => {
+    const userId = await requireAdmin();
+    const shelfSlug = field(fd, "shelfSlug");
+    const title = field(fd, "title");
+    const era = field(fd, "era");
+    if (!shelfSlug) return { error: "Thiếu kệ." };
+    if (!title) return { error: "Tiêu đề không được để trống." };
+    // `era` là NOT NULL và không có DEFAULT trong schema, nên bỏ trống là vỡ ở tầng DB
+    // với một thông điệp khó hiểu. Chặn ở đây cho câu rõ ràng.
+    if (!era) return { error: "Niên đại không được để trống (ví dụ: Năm 938)." };
+
+    const base = slugify(title);
+    if (!base) return { error: "Tiêu đề phải có ít nhất một chữ cái hoặc chữ số." };
+
+    await withRole(userId, async (t) => {
+      // Slug là khóa chính TOÀN CỤC của `books`, không phải chỉ trong kệ — nên phải soi
+      // cả bảng, không chỉ kệ này.
+      const taken = await sequelize.query<{ slug: string }>("SELECT slug FROM public.books", {
+        transaction: t,
+        type: QueryTypes.SELECT,
+      });
+      const slug = uniqueSlug(base, new Set(taken.map((r) => r.slug)));
+
+      await sequelize.query(
+        `INSERT INTO public.books (slug, shelf_slug, position, title, era, published)
+              VALUES ($1, $2,
+                      coalesce((SELECT max(position) FROM public.books WHERE shelf_slug = $2), 0) + 1,
+                      $3, $4, false)`,
+        { bind: [slug, shelfSlug, title, era], transaction: t, type: QueryTypes.INSERT },
+      );
+    });
+
+    revalidatePath(`/quan-tri/${shelfSlug}`);
+    return { ok: `Đã tạo "${title}" ở dạng nháp. Soạn trang rồi mới xuất bản được.` };
+  });
+}
+
+export async function updateBook(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  return guard(async () => {
+    const userId = await requireAdmin();
+    const slug = field(fd, "slug");
+    const shelfSlug = field(fd, "shelfSlug");
+    const title = field(fd, "title");
+    const era = field(fd, "era");
+    // Chuỗi rỗng ⇒ NULL: "Không thưởng gì" là một lựa chọn hợp lệ và nó cắt chuỗi mở
+    // khóa một cách CÓ CHỦ Ý (quyển sau thành mở sẵn).
+    const rewardItemSlug = field(fd, "rewardItemSlug") || null;
+
+    if (!slug) return { error: "Thiếu quyển cần sửa." };
+    if (!title) return { error: "Tiêu đề không được để trống." };
+    if (!era) return { error: "Niên đại không được để trống (ví dụ: Năm 938)." };
+
+    const [, affected] = (await withRole(userId, (t) =>
+      sequelize.query(
+        `UPDATE public.books
+            SET title = $2, era = $3, reward_item_slug = $4, updated_at = now()
+          WHERE slug = $1`,
+        { bind: [slug, title, era, rewardItemSlug], transaction: t },
+      ),
+    )) as [unknown, number];
+
+    if (affected === 0) {
+      return { error: "Không sửa được quyển này (không tồn tại, hoặc thiếu quyền)." };
+    }
+
+    revalidatePath(`/quan-tri/${shelfSlug}`);
+    revalidatePath(`/${shelfSlug}`);
+    return { ok: "Đã lưu." };
+  });
+}
+
+export async function setBookPublished(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  return guard(async () => {
+    const userId = await requireAdmin();
+    const slug = field(fd, "slug");
+    const shelfSlug = field(fd, "shelfSlug");
+    const publish = field(fd, "publish") === "1";
+    if (!slug) return { error: "Thiếu quyển sách." };
+
+    if (publish) {
+      // Quyển 0 trang mà xuất bản thì học sinh mở ra thấy sách rỗng — và `complete_book`
+      // sẽ ném `Book has no pages` khi họ cố đọc xong. Chặn ở đây cho khớp, thay vì để
+      // lỗi đó nổ ra ở phía học sinh.
+      const rows = await withRole(userId, (t) =>
+        sequelize.query<{ n: string }>(
+          "SELECT count(*) AS n FROM public.pages WHERE book_slug = $1",
+          { bind: [slug], transaction: t, type: QueryTypes.SELECT },
+        ),
+      );
+      if (Number(rows[0]?.n ?? 0) === 0) {
+        return { error: "Quyển này chưa có trang nào — soạn ít nhất một trang trước khi xuất bản." };
+      }
+    }
+
+    const [, affected] = (await withRole(userId, (t) =>
+      sequelize.query("UPDATE public.books SET published = $2, updated_at = now() WHERE slug = $1", {
+        bind: [slug, publish],
+        transaction: t,
+      }),
+    )) as [unknown, number];
+    if (affected === 0) return { error: "Không đổi được trạng thái quyển này." };
+
+    revalidatePath(`/quan-tri/${shelfSlug}`);
+    revalidatePath(`/${shelfSlug}`);
+    revalidatePath("/quan-tri");
+
+    // Gỡ xuất bản quyển ĐÃ XUẤT BẢN CUỐI CÙNG của một kệ đang xuất bản tạo ra đúng cái
+    // trạng thái mà `setShelfPublished` cất công chặn: kệ hiện ra với học sinh nhưng
+    // trống trơn. Không chặn (đây là thao tác hợp lệ khi đang biên tập), chỉ nói ra.
+    if (!publish) {
+      const rest = await withRole(userId, (t) =>
+        sequelize.query<{ n: string }>(
+          `SELECT count(*) AS n FROM public.books b
+            WHERE b.shelf_slug = $1 AND b.published
+              AND EXISTS (SELECT 1 FROM public.shelves s WHERE s.slug = $1 AND s.published)`,
+          { bind: [shelfSlug], transaction: t, type: QueryTypes.SELECT },
+        ),
+      );
+      if (Number(rest[0]?.n ?? 0) === 0) {
+        return {
+          ok:
+            "Đã chuyển về nháp. Lưu ý: kệ này đang xuất bản mà không còn quyển nào — " +
+            "học sinh sẽ thấy một kệ trống.",
+        };
+      }
+    }
+
+    return { ok: publish ? "Đã xuất bản." : "Đã chuyển về nháp." };
+  });
+}
+
+export async function deleteBook(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  return guard(async () => {
+    const userId = await requireAdmin();
+    const slug = field(fd, "slug");
+    const shelfSlug = field(fd, "shelfSlug");
+    if (!slug) return { error: "Thiếu quyển cần xóa." };
+
+    return withRole(userId, async (t) => {
+      // Xóa một quyển cuốn theo TOÀN BỘ trang của nó VÀ tiến độ đọc của MỌI người dùng,
+      // qua ON DELETE CASCADE — im lặng và không hoàn tác được. Tệ hơn: admin không có
+      // cách nào biết trước bao nhiêu người đang đọc dở, vì `user_book_progress` chỉ có
+      // policy "own progress select", không có vế is_admin().
+      //
+      // Vì vậy đòi quyển phải ở dạng NHÁP trước. Đó là một bước tường minh, giải thích
+      // được, và nó chặn đúng tai nạn hay xảy ra nhất: xóa nhầm một quyển đang chạy.
+      const rows = await sequelize.query<{ published: boolean; title: string }>(
+        "SELECT published, title FROM public.books WHERE slug = $1",
+        { bind: [slug], transaction: t, type: QueryTypes.SELECT },
+      );
+      const book = rows[0];
+      if (!book) return { error: "Không tìm thấy quyển này." };
+      if (book.published) {
+        return {
+          error:
+            `"${book.title}" đang xuất bản. Chuyển về nháp trước khi xóa — ` +
+            "xóa sẽ cuốn theo mọi trang và tiến độ đọc của học sinh.",
+        };
+      }
+
+      const [, affected] = (await sequelize.query("DELETE FROM public.books WHERE slug = $1", {
+        bind: [slug],
+        transaction: t,
+      })) as [unknown, number];
+      if (affected === 0) return { error: "Không xóa được quyển này." };
+
+      revalidatePath(`/quan-tri/${shelfSlug}`);
+      revalidatePath(`/${shelfSlug}`);
+      return { ok: "Đã xóa quyển sách." };
+    });
+  });
+}
+
+/** Đổi chỗ quyển sách với quyển liền kề. `direction` là -1 (lên) hoặc 1 (xuống). */
+export async function moveBook(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  return guard(async () => {
+    const userId = await requireAdmin();
+    const slug = field(fd, "slug");
+    const shelfSlug = field(fd, "shelfSlug");
+    const direction = Number(field(fd, "direction"));
+    if (!slug || !shelfSlug || (direction !== -1 && direction !== 1)) {
+      return { error: "Yêu cầu không hợp lệ." };
+    }
+
+    await withRole(userId, async (t) => {
+      const rows = await sequelize.query<{ slug: string }>(
+        "SELECT slug FROM public.books WHERE shelf_slug = $1 ORDER BY position",
+        { bind: [shelfSlug], transaction: t, type: QueryTypes.SELECT },
+      );
+      const order = rows.map((r) => r.slug);
+      const i = order.indexOf(slug);
+      const j = i + direction;
+      if (i === -1 || j < 0 || j >= order.length) return;
+
+      [order[i], order[j]] = [order[j], order[i]];
+      await sequelize.query("SELECT public.reorder_books($1, $2::text[])", {
+        bind: [shelfSlug, order],
+        transaction: t,
+        type: QueryTypes.SELECT,
+      });
+    });
+
+    revalidatePath(`/quan-tri/${shelfSlug}`);
+    // Đổi thứ tự là ĐỔI CẢ CHUỖI MỞ KHÓA — trang kệ của học sinh phải tính lại.
+    revalidatePath(`/${shelfSlug}`);
+    return EMPTY;
   });
 }

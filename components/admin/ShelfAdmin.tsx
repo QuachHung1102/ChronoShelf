@@ -1,4 +1,5 @@
-import { ChevronDown, ChevronUp, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { BookOpen, ChevronDown, ChevronUp, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
 import { ActionForm, SubmitButton } from "./ActionForm";
 import {
   createShelf,
@@ -8,7 +9,14 @@ import {
   updateShelf,
 } from "@/lib/admin/actions";
 import type { AdminShelfRow } from "@/lib/admin/shelves";
-import { DANGER_BUTTON, FIELD, LABEL, PRIMARY_BUTTON, QUIET_BUTTON } from "@/components/ui/controls";
+import {
+  DANGER_BUTTON,
+  FIELD,
+  FOCUS_RING,
+  LABEL,
+  PRIMARY_BUTTON,
+  QUIET_BUTTON,
+} from "@/components/ui/controls";
 
 const ICON_BUTTON =
   "inline-flex h-8 w-8 items-center justify-center rounded-sm text-secondary transition-colors " +
@@ -165,6 +173,14 @@ export function ShelfAdmin({ shelves }: { shelves: AdminShelfRow[] }) {
             </ActionForm>
 
             <footer className="mt-md flex flex-wrap items-center gap-md border-t border-surface-locked pt-sm">
+              <Link
+                href={`/quan-tri/${shelf.slug}`}
+                className={`inline-flex items-center gap-xs rounded-sm font-body text-body-sm text-tertiary-deep underline underline-offset-2 ${FOCUS_RING}`}
+              >
+                <BookOpen aria-hidden className="h-4 w-4" />
+                Quản lý sách ({shelf.bookCount})
+              </Link>
+
               <ActionForm action={setShelfPublished}>
                 <input type="hidden" name="slug" value={shelf.slug} />
                 <input type="hidden" name="publish" value={shelf.published ? "0" : "1"} />
