@@ -154,12 +154,18 @@ BEGIN
                   WHERE n.nspname='public' AND p.proname='reorder_pages' AND NOT p.prosecdef) THEN
     RAISE EXCEPTION 'reorder_pages thiếu, hoặc là SECURITY DEFINER — RLS "admin write" bị bỏ qua';
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+                  WHERE n.nspname='public' AND p.proname='reorder_shelves' AND NOT p.prosecdef) THEN
+    RAISE EXCEPTION 'reorder_shelves thiếu, hoặc là SECURITY DEFINER — RLS "admin write" bị bỏ qua';
+  END IF;
   IF has_function_privilege('chronoshelf_anon', 'public.reorder_books(text, text[])', 'EXECUTE')
-  OR has_function_privilege('chronoshelf_anon', 'public.reorder_pages(text, uuid[])', 'EXECUTE') THEN
+  OR has_function_privilege('chronoshelf_anon', 'public.reorder_pages(text, uuid[])', 'EXECUTE')
+  OR has_function_privilege('chronoshelf_anon', 'public.reorder_shelves(text[])', 'EXECUTE') THEN
     RAISE EXCEPTION 'người chưa đăng nhập gọi được RPC đổi thứ tự';
   END IF;
   IF NOT has_function_privilege('chronoshelf_auth', 'public.reorder_books(text, text[])', 'EXECUTE')
-  OR NOT has_function_privilege('chronoshelf_auth', 'public.reorder_pages(text, uuid[])', 'EXECUTE') THEN
+  OR NOT has_function_privilege('chronoshelf_auth', 'public.reorder_pages(text, uuid[])', 'EXECUTE')
+  OR NOT has_function_privilege('chronoshelf_auth', 'public.reorder_shelves(text[])', 'EXECUTE') THEN
     RAISE EXCEPTION 'người đã đăng nhập không gọi được RPC đổi thứ tự — admin thật cũng không đổi được';
   END IF;
 

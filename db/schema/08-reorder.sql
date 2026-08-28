@@ -70,3 +70,38 @@ REVOKE ALL ON FUNCTION public.reorder_books(text, text[]) FROM PUBLIC, chronoshe
 REVOKE ALL ON FUNCTION public.reorder_pages(text, uuid[]) FROM PUBLIC, chronoshelf_anon;
 GRANT EXECUTE ON FUNCTION public.reorder_books(text, text[]) TO chronoshelf_auth;
 GRANT EXECUTE ON FUNCTION public.reorder_pages(text, uuid[]) TO chronoshelf_auth;
+
+-- Kệ cũng cần đổi thứ tự, cùng lý do và cùng hình dạng. `shelves_position_key` là
+-- UNIQUE (position) DEFERRABLE INITIALLY DEFERRED.
+--
+-- Ghi chú cho người đọc sau: ba hàm này ra đời khi mỗi request là một transaction
+-- riêng nên tầng ứng dụng KHÔNG thể gom hai UPDATE lại. Ràng buộc đó đã hết —
+-- `withRole()` ở lib/db/tx.ts cho ta một transaction. Nhưng chúng vẫn đáng giữ vì
+-- hai khẳng định bên trong: "phải gửi TOÀN BỘ" và phép so ROW_COUNT biến "im lặng
+-- không làm gì" (RLS chặn) thành một lỗi nhìn thấy được. Đó mới là phần đắt.
+CREATE OR REPLACE FUNCTION public.reorder_shelves(p_slugs text[])
+RETURNS void
+LANGUAGE plpgsql
+SET search_path = public
+AS $fn$
+DECLARE v_updated integer;
+BEGIN
+  IF EXISTS (SELECT 1 FROM public.shelves WHERE NOT (slug = ANY(p_slugs))) THEN
+    RAISE EXCEPTION 'reorder_shelves: phải gửi TOÀN BỘ kệ';
+  END IF;
+
+  UPDATE public.shelves s
+     SET position = x.ord
+    FROM unnest(p_slugs) WITH ORDINALITY AS x(slug, ord)
+   WHERE s.slug = x.slug;
+
+  GET DIAGNOSTICS v_updated = ROW_COUNT;
+  IF v_updated <> coalesce(array_length(p_slugs, 1), 0) THEN
+    RAISE EXCEPTION 'reorder_shelves: nhận % slug nhưng chỉ ghi được % dòng (thiếu quyền?)',
+      coalesce(array_length(p_slugs, 1), 0), v_updated;
+  END IF;
+END;
+$fn$;
+
+REVOKE ALL ON FUNCTION public.reorder_shelves(text[]) FROM PUBLIC, chronoshelf_anon;
+GRANT EXECUTE ON FUNCTION public.reorder_shelves(text[]) TO chronoshelf_auth;
