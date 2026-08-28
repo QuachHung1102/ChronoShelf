@@ -446,3 +446,43 @@ $half: 490px;
   transform: rotate(45deg);
   background: theme('colors.tertiary-light / 70%');
 }
+
+// Thu cả cụm đọc sách cho vừa khung nhìn nhỏ.
+//
+// LỖI ĐƯỢC SỬA (đo thật, không suy đoán): cụm này rộng 1116px cố định — sân khấu 980
+// cộng hai nút lật trang 44 cộng hai khoảng gap-lg. Ở màn 1024px, hai nút bị đẩy HẲN ra
+// ngoài khung nhìn:
+//     Trang trước   x = -46 .. -2
+//     Trang sau     x = 1026 .. 1070
+// Sân khấu vẫn nguyên nên nhìn qua tưởng không sao, nhưng học sinh mở được sách mà
+// KHÔNG LẬT ĐƯỢC TRANG. 1024x768 là cỡ máy phòng tin học phổ thông ở Việt Nam.
+//
+// Dùng `zoom` chứ KHÔNG `transform: scale()`: sân khấu bên trong dựng bằng `preserve-3d`,
+// mà một transform ở tổ tiên tạo containing block mới và có thể làm bẹp không gian 3D đó.
+// `zoom` đổi kích thước dùng-để-bố-trí nên không đụng vào ngữ cảnh 3D.
+//
+// Bậc rời rạc bằng media query thay vì công thức liên tục: CSS không chia được
+// length/length nên `min(1, calc(100vw / 1116px))` là cú pháp không hợp lệ. Ba bậc là đủ
+// — không ai nhận ra khác biệt giữa 0.82 và 0.84. Dấu phẩy là HOẶC, và mỗi luật sau chặt
+// hơn luật trước trên CẢ HAI trục, nên luật khớp cuối cùng luôn là luật hạn chế nhất.
+.fitViewport {
+  transform-origin: center center;
+}
+
+@media (max-width: 1180px), (max-height: 760px) {
+  .fitViewport {
+    zoom: 0.9;
+  }
+}
+
+@media (max-width: 1080px), (max-height: 700px) {
+  .fitViewport {
+    zoom: 0.82;
+  }
+}
+
+@media (max-width: 1000px), (max-height: 650px) {
+  .fitViewport {
+    zoom: 0.72;
+  }
+}

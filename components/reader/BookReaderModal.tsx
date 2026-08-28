@@ -240,7 +240,10 @@ export function BookReaderModal({
           // màn hình, cách quyển sách cả trăm pixel, nên nó đọc ra như thanh trạng thái
           // của trình duyệt chứ không phải số trang của quyển sách đang cầm.
           <div className="flex flex-1 flex-col items-center justify-center gap-lg">
-            <div className="flex items-center gap-lg">
+            {/* `fitViewport` thu cả cụm (sân khấu + hai nút lật) cho vừa màn hẹp. Không có
+                nó thì ở 1024px hai nút lật nằm HẲN ngoài khung nhìn — sách mở được mà
+                không lật được trang. */}
+            <div className={`flex items-center gap-lg ${s.fitViewport}`}>
               <button
                 type="button"
                 onClick={() => flip("previous")}
