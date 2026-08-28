@@ -622,3 +622,193 @@ export async function moveBook(_prev: ActionState, fd: FormData): Promise<Action
     return EMPTY;
   });
 }
+
+// ---------------------------------------------------------------------------
+// Trang sách
+// ---------------------------------------------------------------------------
+
+/**
+ * Ô "Ý chính" nhận mỗi ý một dòng, đổi thành `text[]`.
+ *
+ * Một textarea nhiều dòng thay vì n ô nhập động: cột là `text[]` nên số phần tử tùy ý,
+ * và một danh sách ô có nút thêm/bớt cần JavaScript trạng thái ở client cho một việc mà
+ * phím Enter đã làm được. Dòng trắng bị bỏ, nên gõ thừa một dòng không tạo ra ý rỗng.
+ */
+function readSummary(fd: FormData): string[] {
+  return String(fd.get("summary") ?? "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+}
+
+export async function createPage(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  return guard(async () => {
+    const userId = await requireAdmin();
+    const bookSlug = field(fd, "bookSlug");
+    const shelfSlug = field(fd, "shelfSlug");
+    const heading = field(fd, "heading");
+    const body = field(fd, "body");
+    if (!bookSlug) return { error: "Thiếu quyển sách." };
+    if (!heading) return { error: "Tiêu đề trang không được để trống." };
+    if (!body) return { error: "Nội dung trang không được để trống." };
+
+    const img = readImageFields(fd, "image");
+    if ("error" in img) return { error: img.error };
+
+    await withRole(userId, (t) =>
+      sequelize.query(
+        `INSERT INTO public.pages
+              (book_slug, position, heading, body, image_url, image_source, image_credit, caption, summary)
+         VALUES ($1,
+                 coalesce((SELECT max(position) FROM public.pages WHERE book_slug = $1), 0) + 1,
+                 $2, $3, $4, $5, $6, $7, $8::text[])`,
+        {
+          bind: [
+            bookSlug,
+            heading,
+            body,
+            img.url,
+            img.source,
+            img.credit,
+            field(fd, "caption") || null,
+            readSummary(fd),
+          ],
+          transaction: t,
+          type: QueryTypes.INSERT,
+        },
+      ),
+    );
+
+    revalidatePath(`/quan-tri/${shelfSlug}/${bookSlug}`);
+    revalidatePath(`/quan-tri/${shelfSlug}`);
+    revalidatePath(`/${shelfSlug}`);
+    return { ok: "Đã thêm trang." };
+  });
+}
+
+export async function updatePage(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  return guard(async () => {
+    const userId = await requireAdmin();
+    const id = field(fd, "id");
+    const bookSlug = field(fd, "bookSlug");
+    const shelfSlug = field(fd, "shelfSlug");
+    const heading = field(fd, "heading");
+    const body = field(fd, "body");
+    if (!id) return { error: "Thiếu trang cần sửa." };
+    if (!heading) return { error: "Tiêu đề trang không được để trống." };
+    if (!body) return { error: "Nội dung trang không được để trống." };
+
+    const img = readImageFields(fd, "image");
+    if ("error" in img) return { error: img.error };
+
+    const [, affected] = (await withRole(userId, (t) =>
+      sequelize.query(
+        `UPDATE public.pages
+            SET heading = $2, body = $3, image_url = $4, image_source = $5,
+                image_credit = $6, caption = $7, summary = $8::text[]
+          WHERE id = $1::uuid`,
+        {
+          bind: [
+            id,
+            heading,
+            body,
+            img.url,
+            img.source,
+            img.credit,
+            field(fd, "caption") || null,
+            readSummary(fd),
+          ],
+          transaction: t,
+        },
+      ),
+    )) as [unknown, number];
+
+    if (affected === 0) return { error: "Không sửa được trang này (không tồn tại, hoặc thiếu quyền)." };
+
+    revalidatePath(`/quan-tri/${shelfSlug}/${bookSlug}`);
+    revalidatePath(`/${shelfSlug}`);
+    return { ok: "Đã lưu." };
+  });
+}
+
+export async function deletePage(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  return guard(async () => {
+    const userId = await requireAdmin();
+    const id = field(fd, "id");
+    const bookSlug = field(fd, "bookSlug");
+    const shelfSlug = field(fd, "shelfSlug");
+    if (!id || !bookSlug) return { error: "Yêu cầu không hợp lệ." };
+
+    return withRole(userId, async (t) => {
+      // Xóa trang của một quyển ĐANG XUẤT BẢN làm đổi tổng số trang, mà `complete_book`
+      // so `current_page` với đúng con số đó. Học sinh đang ở trang cuối bỗng thành
+      // "chưa đọc hết" và không hoàn thành được. Không chặn — biên tập nội dung đang
+      // chạy là việc hợp lệ — nhưng phải nói ra.
+      const meta = await sequelize.query<{ published: boolean; n: string }>(
+        `SELECT b.published, (SELECT count(*) FROM public.pages p WHERE p.book_slug = b.slug) AS n
+           FROM public.books b WHERE b.slug = $1`,
+        { bind: [bookSlug], transaction: t, type: QueryTypes.SELECT },
+      );
+      const book = meta[0];
+      if (book && Number(book.n) <= 1 && book.published) {
+        // Quyển 0 trang mà published là trạng thái `complete_book` từ chối bằng
+        // `Book has no pages` — nó biến quyển sách thành ngõ cụt cho học sinh.
+        return {
+          error:
+            "Đây là trang cuối cùng của một quyển đang xuất bản. " +
+            "Chuyển quyển về nháp trước, hoặc thêm trang khác rồi mới xóa trang này.",
+        };
+      }
+
+      const [, affected] = (await sequelize.query("DELETE FROM public.pages WHERE id = $1::uuid", {
+        bind: [id],
+        transaction: t,
+      })) as [unknown, number];
+      if (affected === 0) return { error: "Không xóa được trang này." };
+
+      // Vị trí còn lại có thể thành 1,2,4… (thủng chỗ vừa xóa). Không sao: mọi truy vấn
+      // đều ORDER BY position, và lần đổi thứ tự kế tiếp sẽ ghi lại thành 1..n. Đánh số
+      // lại ngay ở đây chỉ thêm một lượt ghi mà không ai thấy khác biệt.
+      revalidatePath(`/quan-tri/${shelfSlug}/${bookSlug}`);
+      revalidatePath(`/quan-tri/${shelfSlug}`);
+      revalidatePath(`/${shelfSlug}`);
+      return { ok: "Đã xóa trang." };
+    });
+  });
+}
+
+/** Đổi chỗ trang với trang liền kề. `direction` là -1 (lên) hoặc 1 (xuống). */
+export async function movePage(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  return guard(async () => {
+    const userId = await requireAdmin();
+    const id = field(fd, "id");
+    const bookSlug = field(fd, "bookSlug");
+    const shelfSlug = field(fd, "shelfSlug");
+    const direction = Number(field(fd, "direction"));
+    if (!id || !bookSlug || (direction !== -1 && direction !== 1)) {
+      return { error: "Yêu cầu không hợp lệ." };
+    }
+
+    await withRole(userId, async (t) => {
+      const rows = await sequelize.query<{ id: string }>(
+        "SELECT id FROM public.pages WHERE book_slug = $1 ORDER BY position",
+        { bind: [bookSlug], transaction: t, type: QueryTypes.SELECT },
+      );
+      const order = rows.map((r) => r.id);
+      const i = order.indexOf(id);
+      const j = i + direction;
+      if (i === -1 || j < 0 || j >= order.length) return;
+
+      [order[i], order[j]] = [order[j], order[i]];
+      await sequelize.query("SELECT public.reorder_pages($1, $2::uuid[])", {
+        bind: [bookSlug, order],
+        transaction: t,
+        type: QueryTypes.SELECT,
+      });
+    });
+
+    revalidatePath(`/quan-tri/${shelfSlug}/${bookSlug}`);
+    revalidatePath(`/${shelfSlug}`);
+    return EMPTY;
+  });
+}
