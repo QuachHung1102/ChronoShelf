@@ -4,10 +4,9 @@ import { mintToken, readToken } from "./token";
 /**
  * Phiên đăng nhập nằm trong một cookie `httpOnly`.
  *
- * Đổi so với thời InsForge: hồi đó phiên nằm ở `localStorage` của trình duyệt, nên
- * server component KHÔNG đọc được và mọi thứ cần danh tính đều phải chạy phía client.
- * Cookie `httpOnly` đi kèm mọi request, nên server đọc được — và JavaScript trên
- * trang thì không, kể cả khi có XSS.
+ * Chọn cookie `httpOnly` chứ không phải `localStorage`: nó đi kèm mọi request nên server
+ * component đọc được danh tính, còn JavaScript trên trang thì KHÔNG đọc được token, kể cả
+ * khi có XSS. `localStorage` thì ngược lại cả hai vế.
  */
 
 const COOKIE = "chronoshelf_session";

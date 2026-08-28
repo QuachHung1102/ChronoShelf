@@ -1,8 +1,7 @@
 # `db/schema/` — nguồn sự thật cho cấu trúc database
 
 Chạy tất cả bằng `npm run db:migrate`. Script chạy các file `NN-*.sql` ở thư mục này
-**theo thứ tự tên file**, mỗi file trong một transaction riêng. Thư mục con
-(`_legacy-insforge/`) bị bỏ qua.
+**theo thứ tự tên file**, mỗi file trong một transaction riêng.
 
 Tách nhỏ theo *một mối quan tâm một file* thay vì một file khổng lồ theo ngày. Đổi
 schema thì **sửa đúng file liên quan** rồi chạy lại `db:migrate` — mọi file đều viết
@@ -13,7 +12,7 @@ EXISTS` trước khi tạo).
 |---|---|---|
 | `00-roles.sql` | Ba role và quan hệ thành viên giữa chúng | ✅ |
 | `01-app-context.sql` | Schema `app`, hàm `app.current_user_id()` | |
-| `02-users.sql` | `users`, `login_codes` — thay `auth.users` của InsForge | |
+| `02-users.sql` | `users`, `login_codes` — tài khoản và mã đăng nhập | |
 | `03-user-roles.sql` | `user_roles`, `is_admin()` | |
 | `04-content-tables.sql` | `shelves`, `items`, `books`, `pages` | |
 | `05-content-rls.sql` | RLS + policy + grant cho bốn bảng nội dung | |

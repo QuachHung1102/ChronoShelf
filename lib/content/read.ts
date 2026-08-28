@@ -12,10 +12,8 @@ import type { ContentBook, ContentItem, ContentPage, ContentShelf } from "./type
  * published" lọc sạch bản nháp; với admin, cùng policy đó cho thấy cả nháp. Nhờ vậy
  * `/quan-tri` sau này dùng lại đúng hàm này, không cần một đường đọc thứ hai.
  *
- * Đổi so với thời InsForge: hồi đó server component đọc bằng khóa anon và KHÔNG biết
- * người xem là ai (phiên nằm ở localStorage của trình duyệt), nên admin không thể xem
- * trước bản nháp bằng đường server. Cookie `httpOnly` đi kèm mọi request nên ràng buộc
- * đó biến mất.
+ * Đọc được danh tính ở đây là nhờ phiên nằm trong cookie `httpOnly` — nó đi kèm mọi
+ * request nên server component biết ai đang xem, không cần đẩy việc này xuống client.
  */
 
 export interface ShelfSummary {
@@ -70,8 +68,7 @@ function toItem(row: Item): ContentItem {
  *
  * Bọc bằng `cache()` của React vì `app/[shelf]/page.tsx` gọi hàm này ở CẢ
  * `generateMetadata` lẫn thân trang; thiếu lớp này thì mỗi lượt xem tốn hai lượt truy
- * vấn database. (Lý do cũ — SDK InsForge gắn AbortSignal nên Next không memoize fetch —
- * đã hết hiệu lực, nhưng kết luận thì không đổi.)
+ * vấn database.
  */
 export const readShelf = cache(async function readShelf(slug: string): Promise<ContentShelf | null> {
   const userId = await getSessionUserId();

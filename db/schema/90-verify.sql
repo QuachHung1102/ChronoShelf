@@ -1,7 +1,7 @@
 -- Khẳng định CẤU TRÚC. Chạy được trên database rỗng — không cần dữ liệu seed.
 -- Mỗi khẳng định ở đây tương ứng một cách hàng rào có thể bị nới ra mà không ai thấy.
 --
--- Nguyên tắc rút ra từ hai lần bị lừa thời InsForge (xem CLAUDE.md, mục "Bẫy đã gặp"):
+-- Nguyên tắc rút ra từ hai lần bị lừa (xem CLAUDE.md, mục "Bẫy đã gặp"):
 -- KHÔNG liệt kê những trạng thái bị coi là hỏng — danh sách đó không bao giờ đủ. Liệt
 -- kê CHÍNH XÁC trạng thái được coi là "hàng rào còn nguyên", rồi coi mọi thứ khác là
 -- rò rỉ. Cụ thể: so khớp biểu thức policy bằng `=` chứ không `LIKE`, vì

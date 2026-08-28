@@ -1,10 +1,10 @@
 -- Hàng rào đọc/ghi của bốn bảng nội dung.
 --
--- Khác thời InsForge ở MỘT điểm về mô hình đe dọa, cần nói rõ: hồi đó trình duyệt gọi
--- thẳng PostgREST nên quyền của `anon` chính là thứ kẻ tấn công cầm trong tay. Bây giờ
--- trình duyệt chỉ nói chuyện với Route Handler của ta, nên lớp này là phòng thủ chiều
--- sâu chống lại LỖI CỦA CHÍNH TA — một route quên kiểm quyền admin vẫn bị chặn ở đây.
--- Nó rẻ và nó bắt đúng loại lỗi hay xảy ra nhất, nên vẫn giữ.
+-- MÔ HÌNH ĐE DỌA, cần nói rõ vì nó quyết định lớp này đáng giá bao nhiêu: trình duyệt
+-- KHÔNG nói chuyện thẳng với Postgres, nó chỉ gọi Route Handler của ta. Nên hàng rào
+-- đầu tiên là code Node, còn lớp RLS này là phòng thủ chiều sâu chống lại LỖI CỦA
+-- CHÍNH TA — một route quên kiểm quyền admin vẫn bị chặn ở đây. Nó rẻ và bắt đúng loại
+-- lỗi hay xảy ra nhất, nên vẫn giữ.
 
 ALTER TABLE public.shelves ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.items   ENABLE ROW LEVEL SECURITY;

@@ -6,23 +6,21 @@ quyển thì nhận được một vật phẩm, và chính vật phẩm đó m�
 
 **Trả lời người dùng bằng tiếng Việt.**
 
-> ⚠️ **`AGENTS.md` đã lỗi thời — đừng đọc theo, đừng viết vào.** Nó do installer InsForge sinh
-> ra và chỉ chứa tài liệu SDK của một backend dự án **không còn dùng** từ 2026-08-28. File này
-> đã bỏ dòng `@AGENTS.md` ở cuối, nên nội dung đó không còn được nạp vào mỗi phiên. Giữ file
-> lại chỉ vì nó nằm trong git; xóa được lúc nào cũng được. Mọi kiến thức về dự án thuộc về
-> `CLAUDE.md`.
+> ⚠️ **Mọi kiến thức về dự án thuộc về file này.** Đừng tạo lại `AGENTS.md` — nó từng tồn tại
+> nhưng chỉ chứa tài liệu SDK của một backend không còn dùng, và đã bị xóa ngày 2026-08-28.
 
 ## Nguồn sự thật — đọc trước khi làm
 
 | File | Nội dung |
 |---|---|
 | `content.md` | Bản mô tả sản phẩm đầy đủ: sitemap, cơ chế, nội dung từng trang. Nguồn sự thật về *cái gì* cần xây. |
-| `docs/superpowers/specs/2026-08-24-noi-dung-dong-va-quan-tri-design.md` | **Đọc khi mở phiên mới**: kiến trúc hiện tại — nội dung nằm trong database, vai trò admin/user, RPC đọc thẳng `books`/`pages`. Bản bàn giao 2026-08-12 đã bị thay thế (xem banner ở đầu file đó) — mô hình JSON nó mô tả không còn đúng. |
+| `docs/superpowers/specs/2026-08-24-noi-dung-dong-va-quan-tri-design.md` | **Đọc khi mở phiên mới**: kiến trúc nội dung — nội dung nằm trong database, vai trò admin/user, đọc thẳng `books`/`pages`. Phần *sản phẩm* còn đúng; phần *hạ tầng* viết theo backend cũ, xem banner ở đầu file. |
 | `DESIGN.md` | Hệ thiết kế (format `design.md` của Google Labs): toàn bộ color/typography/spacing token + lý do. Nguồn sự thật về *trông như thế nào*. |
+| `db/schema/README.md` | Thứ tự chạy schema, ba role và lý do. **Đọc trước khi đụng SQL.** |
 | `docs/superpowers/specs/` | Spec đã được duyệt, mỗi subsystem một file. |
-| `docs/superpowers/plans/` | Kế hoạch triển khai từng bước, mỗi subsystem một file. |
+| `docs/superpowers/plans/` | Kế hoạch triển khai từng bước. Chỉ còn chặng C; các plan đã hoàn thành bị xóa ngày 2026-08-28 vì chúng hướng dẫn theo backend cũ — git history vẫn giữ. |
 | `pen.dev/design.pen` | File thiết kế Pencil — mockup UI đã duyệt. |
-| `db/schema/` | SQL schema, nguồn sự thật cho cấu trúc DB (backend không tự version). |
+| `db/schema/` | SQL schema, nguồn sự thật cho cấu trúc DB. |
 
 Sản phẩm được chia thành các subsystem gần như độc lập, mỗi cái đi qua vòng
 spec → plan → code riêng: **kệ sách + đọc sách** (cơ chế lõi), trang chủ (timeline
@@ -46,10 +44,9 @@ spec → plan → code riêng: **kệ sách + đọc sách** (cơ chế lõi), t
   trả về giá trị mới trong khi file trên đĩa còn y nguyên. Đã suýt commit hụt một loạt thay
   đổi vì tin vào `Get`. Nếu `git status` chưa thấy `pen.dev/design.pen` bị sửa, chạy thêm một
   `execute` nữa (ví dụ `SetVariables` lặp lại đúng giá trị cũ) để đẩy phần đang treo xuống đĩa.
-- **Tailwind CSS 3.4, không nâng lên v4.** Ràng buộc ban đầu đến từ InsForge, mà InsForge thì
-  đã bỏ — nhưng version vẫn pin cứng trong `package.json` và nâng lên v4 là một task riêng
-  (v4 đổi cả cách cấu hình theme, tức là đụng vào đường sinh `DESIGN.md → tailwind.theme.json`).
-  Đừng nâng kèm theo việc khác.
+- **Tailwind CSS 3.4, không nâng lên v4.** Version pin cứng trong `package.json`. Nâng lên v4
+  là một task RIÊNG: v4 đổi cả cách cấu hình theme, tức là đụng vào đường sinh
+  `DESIGN.md → tailwind.theme.json`. Đừng nâng kèm theo việc khác.
 - **Logic mở khóa phải nằm ở phía server.** Client chỉ báo "đã đọc xong quyển X"; việc trao vật
   phẩm và mở khóa quyển kế tiếp do RPC `complete_book` (`SECURITY DEFINER`) quyết định. Không bao
   giờ chuyển logic này xuống client, và không cấp quyền INSERT/UPDATE trực tiếp lên `user_items`
@@ -114,16 +111,16 @@ PGPASSWORD=... "/c/Program Files/PostgreSQL/18/bin/psql.exe" -U postgres -h 127.
       ON CONFLICT (user_id) DO UPDATE SET role = 'admin'"
 ```
 
-## Backend — PostgreSQL cục bộ, không còn InsForge
+## Backend — PostgreSQL cục bộ
 
-**Bỏ InsForge ngày 2026-08-28.** Backend của nó trả `503 No backend services available` nhiều
-ngày liền và MCP server không kết nối được. Toàn bộ `@insforge/sdk` đã gỡ khỏi `package.json`;
-schema thời InsForge nằm ở `db/schema/_legacy-insforge/` kèm bản đồ port — **đừng chạy chúng**,
-chúng tham chiếu `auth.users`, `auth.uid()` và hai role `anon`/`authenticated` không còn tồn tại.
+**PostgreSQL 18 cục bộ + Sequelize + Next.js Route Handlers.** Không có server Express riêng —
+app đã là Next.js nên thêm một process nữa chỉ tốn CORS, hai chỗ deploy và logic phiên viết hai
+lần. Đã cân nhắc MySQL và loại: repo có 14 policy RLS (MySQL không có RLS), 3 ràng buộc
+`DEFERRABLE INITIALLY DEFERRED` mà RPC đổi thứ tự được thiết kế quanh nó (MySQL không có), và
+cột `summary text[]`.
 
-Stack hiện tại: **PostgreSQL 18 cục bộ + Sequelize + Next.js Route Handlers**. Không có server
-Express riêng — app đã là Next.js nên thêm một process nữa chỉ tốn CORS, hai chỗ deploy và logic
-phiên viết hai lần. Đã cân nhắc MySQL và loại; lý do ở `db/schema/README.md`.
+Trước 2026-08-28 dự án chạy trên một BaaS ngoài. Nó đã bị gỡ bỏ hoàn toàn — nếu còn thấy dấu vết
+nào ở đâu thì đó là sót, xóa đi.
 
 ### Ba role, và vì sao không phải một
 
@@ -147,8 +144,8 @@ mở một transaction rồi `SET LOCAL ROLE` sang `chronoshelf_anon` hoặc `ch
    `90-verify.sql` biết kêu).
 
 Logic đặc quyền vẫn đi qua hàm Postgres `SECURITY DEFINER` — `complete_book`, `is_admin`,
-`app.issue_login_code`, `app.consume_login_code`. Ranh giới đó không đổi khi bỏ InsForge, chỉ có
-nguồn danh tính là đổi (từ claim JWT sang `SET LOCAL app.user_id`).
+`app.issue_login_code`, `app.consume_login_code`. Nguồn danh tính là `SET LOCAL app.user_id`,
+do middleware đặt sau khi xác thực ở tầng Node.
 
 ### Đăng nhập
 
@@ -209,8 +206,8 @@ PGADMIN_URL=postgres://postgres:...@127.0.0.1:5432/chronoshelf npm run db:migrat
 
 `npm run check` cần `.env.local` có mặt (xem `.env.example`) — KHÔNG chạy "ngoại tuyến hoàn
 toàn" được. `next build` (bước cuối của `check`) nạp `lib/db/sequelize.ts`, file đó `throw`
-ngay lúc nạp module nếu thiếu `DATABASE_URL`. Đã kiểm lại thực nghiệm 2026-08-28 sau khi bỏ
-InsForge: giấu `.env.local` đi thì `next build` thoát mã 1 ở bước "Collecting page data" với
+ngay lúc nạp module nếu thiếu `DATABASE_URL`. Đã kiểm thực nghiệm 2026-08-28: giấu
+`.env.local` đi thì `next build` thoát mã 1 ở bước "Collecting page data" với
 `Failed to collect configuration for /api/auth/code`, dù mọi route đều `force-dynamic` — bước
 đó vẫn phải nạp module để đọc `export const dynamic`, nên code chạy lúc nạp module vẫn chạy.
 
@@ -274,15 +271,15 @@ làm được. Ngược lại, `db:check` không thấy được `condeferred` h
 
 `scripts/db-check.mjs` hiện có **27 phép** (đọc output thay vì tin con số này — nó chỉ để biết
 thứ tự lớn). Script tự tạo tài khoản test qua chính luồng OTP nên **không cần biến môi trường
-nào ngoài `DATABASE_URL`** — khác bản InsForge cũ, vốn đòi `DB_CHECK_USER_EMAIL`/`PASSWORD` và
-âm thầm BỎ QUA 6 phép khi thiếu.
+nào ngoài `DATABASE_URL`**. Một bản trước đây đòi tài khoản test qua biến môi trường và âm
+thầm BỎ QUA 6 phép khi thiếu — "bỏ qua" thì không phải "đạt", đừng làm lại kiểu đó.
 
 ### Ba bài học phải giữ
 
 **1. Liệt kê trạng thái "còn nguyên", đừng liệt kê trạng thái "đã hỏng."** Danh sách lỗi-được-
 coi-là-đã-lộ không bao giờ đủ. Phép gọi `complete_book` khi chưa đăng nhập chỉ đạt khi nhận
 ĐÚNG sqlstate `42501` VÀ message bắt đầu bằng `permission denied for function`; mọi thứ khác
-là rò rỉ. Bản InsForge từng dùng slug bịa và coi "có lỗi là đạt" — nếu EXECUTE lỡ bị cấp, hàm
+là rò rỉ. Một bản trước từng dùng slug bịa và coi "có lỗi là đạt" — nếu EXECUTE lỡ bị cấp, hàm
 vẫn dừng ở "Book not found" và phép kiểm báo PASS đúng lúc lỗ nghiêm trọng nhất mở toang. Sửa
 bằng slug thật vẫn chưa đủ: lần thử tiếp theo lộ ra một lỗi THỨ BA (vi phạm khóa ngoại) không
 ai lường trước. Vì vậy phải neo vào cái đúng, không phải liệt kê cái sai.

@@ -1,4 +1,4 @@
--- Tài khoản + đăng nhập bằng mã OTP. Thay cho schema `auth` của InsForge.
+-- Tài khoản + đăng nhập bằng mã OTP.
 --
 -- Mã OTP KHÔNG bao giờ được lưu dạng thô. Node sinh mã bằng `crypto.randomInt` rồi
 -- băm SHA-256; database chỉ thấy bản băm. Chọn băm ở Node chứ không ở Postgres để
@@ -89,8 +89,8 @@ $fn$;
 
 -- ---------------------------------------------------------------------------
 -- Đổi mã lấy tài khoản. Email chưa có tài khoản thì tài khoản được tạo tại đây —
--- giống hệt luồng OTP của InsForge, và cũng vì lý do đó: trả lời y hệt nhau dù email
--- đã tồn tại hay chưa, để không ai dò được danh sách người dùng.
+-- Trả lời y hệt nhau dù email đã tồn tại hay chưa, để không ai dò được danh sách
+-- người dùng.
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION app.consume_login_code(
   p_email     text,

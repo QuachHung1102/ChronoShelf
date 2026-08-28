@@ -1,9 +1,8 @@
 -- Chốt hoàn thành một quyển sách: trao vật phẩm và cho biết quyển kế tiếp đã mở chưa.
 --
--- Vẫn tách làm hai hàm. Thời InsForge lý do là proxy SQL chặn set_config nên
--- auth.uid() không giả lập được; bây giờ lý do đổi nhưng vẫn còn giá trị: `_complete_
--- book_for` nhận user_id tường minh nên kiểm được bằng fixture mà không cần dựng phiên
--- đăng nhập giả, còn `complete_book` là cửa duy nhất mở cho ứng dụng.
+-- Tách làm hai hàm: `_complete_book_for` nhận user_id tường minh nên kiểm được bằng
+-- fixture mà không cần dựng phiên đăng nhập giả, còn `complete_book` là cửa duy nhất
+-- mở cho ứng dụng.
 --
 -- BẢO MẬT: `_complete_book_for` KHÔNG ĐƯỢC cấp EXECUTE cho role nào cả — ai gọi được
 -- nó với user_id tùy ý là tự phát vật phẩm cho mình.

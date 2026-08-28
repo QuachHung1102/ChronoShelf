@@ -1,5 +1,15 @@
 # Thiết kế: Kệ sách & Trải nghiệm đọc sách (cơ chế lõi)
 
+> ## ⚠️ ĐÃ BỊ THAY THẾ (2026-08-28)
+>
+> Spec này mô tả cơ chế kệ-sách-đọc-sách theo mô hình nội dung JSON và một BaaS ngoài — **cả
+> hai đều không còn đúng**. Nội dung nay nằm trong database; hạ tầng là PostgreSQL cục bộ.
+>
+> Giữ lại vì phần mô tả *cơ chế chơi* (đọc hết sách → nhận vật phẩm → mở khóa quyển sau) vẫn
+> là gốc của sản phẩm. Đọc `docs/superpowers/specs/2026-08-24-noi-dung-dong-va-quan-tri-design.md`
+> trước, rồi mới đọc file này để hiểu ý đồ ban đầu.
+
+
 Ngày: 2026-08-12
 Trạng thái: Đã duyệt (UX + BE), chuẩn bị vẽ Pencil
 
@@ -17,7 +27,7 @@ nghiệm đọc sách — cơ chế trung tâm (mục 4, content.md) mà mọi k
 - Chỉ desktop.
 - Nội dung text dùng lorem ipsum; ảnh minh họa dùng ảnh thật tìm được (không phải ảnh AI-gen
   cho bìa sách/vật phẩm ở bước vẽ này).
-- Backend: schema + 1 serverless function trên InsForge cho cơ chế mở khóa.
+- Backend: schema + 1 hàm phía máy chủ cho cơ chế mở khóa.
 
 **Ngoài phạm vi (để sau, mỗi phần sẽ có spec riêng):**
 - Câu hỏi trắc nghiệm cuối sách (mục 4.3, content.md ghi là "tùy chọn nâng cao").
@@ -65,13 +75,13 @@ nghiệm đọc sách — cơ chế trung tâm (mục 4, content.md) mà mọi k
 `Header`, `ShelfHeader`, `BookShelf`, `BookCover` (3 biến thể trạng thái), `LockTooltip`,
 `BookReaderModal`, `PageSpread`, `ProgressRibbon`, `ItemDropOverlay`, `UnlockNextBookOverlay`.
 
-## 3. Backend — InsForge
+## 3. Backend
 
 ### 3.1 Bảng dữ liệu
 
 | Bảng | Cột chính | Ghi chú |
 |---|---|---|
-| `profiles` | `user_id` (FK → auth user), `display_name`, `streak_count`, `last_active_date` | Mở rộng 1-1 cho user auth có sẵn của InsForge |
+| `profiles` | `user_id` (FK → auth user), `display_name`, `streak_count`, `last_active_date` | Mở rộng 1-1 cho bảng user auth |
 | `shelves` | `id`, `slug`, `name`, `order` | Public read |
 | `books` | `id`, `shelf_id`, `title`, `cover_image_url`, `position`, `required_item_id` (null = luôn mở), `reward_item_id` | Public read |
 | `pages` | `id`, `book_id`, `page_number`, `content`, `image_url` | Public read |
@@ -100,7 +110,7 @@ Input: `{ bookId }`. User xác định qua JWT của request (không nhận `use
 
 ### 3.4 Data flow
 
-- **Đọc** kệ/sách/trang: client query thẳng qua InsForge SDK, RLS cho phép public read trên
+- **Đọc** kệ/sách/trang: client query thẳng xuống database, RLS cho phép public read trên
   `shelves`/`books`/`pages`/`items`.
 - **Lật trang**: client tự update `user_book_progress.current_page` trực tiếp qua SDK —
   không qua function, vì đây không phải điểm cần chống gian lận (chỉ ảnh hưởng UX "đọc tiếp

@@ -11,8 +11,6 @@ export interface SignedInUser {
 }
 
 /**
- * Thay cho `onAuthStateChange` của SDK InsForge.
- *
  * Cookie không phát sự kiện, nên ta tự phát: đăng nhập và đăng xuất đều đi qua đúng
  * hai hàm trong file này, và chúng gọi `notify()`. Nhờ vậy header với trang kệ vẫn
  * đồng bộ lại được mà không phải tải lại trang — đúng hành vi cũ.

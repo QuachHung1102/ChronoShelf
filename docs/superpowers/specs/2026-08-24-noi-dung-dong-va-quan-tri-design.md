@@ -1,5 +1,16 @@
 # Thiết kế: Nội dung động + Quản trị + Bản đồ thế giới
 
+> ## ⚠️ PHẦN HẠ TẦNG ĐÃ LỖI THỜI (2026-08-28)
+>
+> Spec này viết khi backend còn là một BaaS ngoài. **Phần SẢN PHẨM vẫn là nguồn sự thật**:
+> mô hình nội dung, vai trò admin/user, chuỗi mở khóa suy từ vị trí, luồng biên tập.
+>
+> **Phần hạ tầng thì không.** Mọi chỗ nói về role `anon`/`authenticated`, `auth.uid()`,
+> `auth.users`, MCP `run-raw-sql`, SDK hay storage của BaaS đều đã bị thay. Nguồn sự thật
+> cho hạ tầng bây giờ là `CLAUDE.md` mục "Backend — PostgreSQL cục bộ" và
+> `db/schema/README.md`.
+
+
 Ngày: 2026-08-24
 Trạng thái: Đã duyệt (2026-08-24), chờ viết plan
 Nhánh: `feature/ke-sach-doc-sach`
@@ -73,14 +84,14 @@ Ngữ nghĩa giữ nguyên với hôm nay, kể cả trường hợp một quy�
 quyển sau không có cổng, y hệt `requiredItem = null` hiện tại.
 
 Đánh đổi: mất khả năng mở khóa chéo kệ hoặc phân nhánh. `content:check` đang cấm đúng chuyện đó
-rồi nên không mất gì thật. Ghi `ponytail:` ở `lib/insforge/unlock.ts` kèm đường nâng cấp
+rồi nên không mất gì thật. Ghi `ponytail:` ở `lib/api/unlock.ts` kèm đường nâng cấp
 (thêm lại cột `required_item_slug` nullable, mặc định null nghĩa là "vật phẩm của quyển trước").
 
 ### 2.3 Vai trò: bảng `user_roles`, không dùng `auth.users`
 
 `auth.users` có sẵn cột `is_project_admin`, nhưng role `authenticated` **không có quyền gì**
 trên schema `auth` (đã kiểm `information_schema.role_table_grants`: grant chỉ tồn tại trên 3 bảng
-`public`). Đọc trực tiếp là không được, và cột đó thuộc về InsForge — installer có thể đổi ý nghĩa.
+`public`). Đọc trực tiếp là không được.
 
 Dùng bảng của mình: `public.user_roles`. **Không có dòng nghĩa là `user`** — chỉ admin mới có
 dòng. `authenticated` chỉ được `SELECT` dòng của chính mình (để ẩn/hiện link quản trị),
@@ -121,7 +132,7 @@ dung, và quyền EXECUTE bị kiểm **trước** khi toán tử `OR` kịp ng�
 Đã kiểm bằng thực nghiệm ngày 2026-08-24 chứ không suy đoán: dựng một bảng thử với policy
 `USING (flag OR _probe_exec())` trong đó **mọi dòng đều có `flag = true`**, rồi `SELECT` bằng
 đúng khóa `anon` qua HTTP. Kết quả: `42501 permission denied for function _probe_exec` — ngắn
-mạch không cứu được. (Không kiểm được bằng `SET ROLE` qua MCP: SQL proxy của InsForge chặn đổi
+mạch không cứu được. (Kiểm bằng `SET LOCAL ROLE` trong `npm run db:check`; trước đây không kiểm được vì proxy chặn đổi
 role, cùng họ với việc nó chặn `set_config`.)
 
 Không rò rỉ gì khi cấp cho `anon` — với `anon` thì `auth.uid()` là NULL nên hàm luôn trả
@@ -263,14 +274,14 @@ Nhờ vậy `BookShelf`, `BookCover`, `BookPage` — vốn thuần prop — khô
 | `app/lich-su-viet-nam/page.tsx` hardcode slug | `app/[shelf]/page.tsx` |
 
 Nội dung là dữ liệu public nên **server component đọc được bằng anon key** — chỉ trạng thái
-người dùng mới bắt buộc ở client (phiên InsForge nằm ở trình duyệt). Giữ nguyên ranh giới đó:
+người dùng đọc ở client để làm mới ngay sau khi đọc xong một quyển. Giữ nguyên ranh giới đó:
 server lấy nội dung, `ShelfPageClient` lấy trạng thái rồi ghép.
 
-`lib/insforge/unlock.ts` gần như không đổi: `resolveState` giữ nguyên thân hàm, tham số đầu đổi
+`lib/api/unlock.ts` gần như không đổi: `resolveState` giữ nguyên thân hàm, tham số đầu đổi
 tên từ `requiredItem` thành `prevRewardItem`. Người gọi (`buildShelfView`) truyền
 `books[i-1].rewardItem` thay vì `book.requiredItem`. `unlock.test.ts` cập nhật theo.
 
-`BookView.requiredItem` trong `lib/insforge/types.ts` **giữ nguyên** — đó là vật phẩm mà
+`BookView.requiredItem` trong `lib/api/types.ts` **giữ nguyên** — đó là vật phẩm mà
 `BookCover` hiện trong tooltip "Cần … để mở". Chỉ nguồn của nó đổi: `buildShelfView` tra
 `getItem(books[i-1].rewardItem)` thay vì `getItem(book.requiredItem)`. Đây là chỗ duy nhất
 trong toàn bộ code còn nhắc tới khái niệm "vật phẩm cần để mở", và nó là giá trị tính ra

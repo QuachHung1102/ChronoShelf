@@ -29,8 +29,8 @@ $fn$;
 
 -- Phải cấp cho CẢ chronoshelf_anon: hàm này nằm trong policy SELECT của bảng nội
 -- dung, và quyền EXECUTE bị kiểm TRƯỚC khi toán tử OR kịp ngắn mạch (đã kiểm bằng
--- thực nghiệm trên InsForge 2026-08-24: bảng thử với mọi dòng `flag = true` vẫn trả
--- 42501 cho anon). Không rò rỉ gì: với người chưa đăng nhập thì
+-- thực nghiệm 2026-08-24: bảng thử với mọi dòng `flag = true` vẫn trả 42501 cho role
+-- không có EXECUTE). Không rò rỉ gì: với người chưa đăng nhập thì
 -- app.current_user_id() là NULL nên hàm luôn trả false, và hàm chỉ nói về chính
 -- người gọi.
 REVOKE ALL ON FUNCTION public.is_admin() FROM PUBLIC;

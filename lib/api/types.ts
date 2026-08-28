@@ -2,8 +2,8 @@ import type { ContentBook, ContentItem } from "@/lib/content/types";
 
 export type BookState = "locked" | "unlocked" | "completed";
 
-/** Nội dung đọc từ database (server component, khóa anon), ghép với trạng thái người dùng —
- *  cũng ở DB, nhưng bắt buộc đọc phía client vì phiên đăng nhập InsForge nằm ở trình duyệt. */
+/** Nội dung đọc từ database ở server component, ghép với trạng thái người dùng — cũng ở
+ *  DB, nhưng đọc phía client để làm mới được ngay sau khi đọc xong một quyển. */
 export interface BookView {
   book: ContentBook;
   state: BookState;

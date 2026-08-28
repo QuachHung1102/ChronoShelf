@@ -1,4 +1,4 @@
--- Ba role thay cho `anon`/`authenticated` mà InsForge tự tạo.
+-- Ba role của ứng dụng.
 -- CẦN SUPERUSER. Role là đối tượng cấp cluster, không thuộc riêng database nào.
 --
 -- `chronoshelf_app` là role DUY NHẤT có LOGIN — `DATABASE_URL` dùng nó. Nó NOINHERIT,

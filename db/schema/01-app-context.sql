@@ -1,7 +1,6 @@
--- Danh tính người gọi, thay cho `auth.uid()` của InsForge.
+-- Danh tính người gọi.
 --
--- InsForge lấy user id từ claim của JWT ngay trong Postgres. Ở đây không có JWT nào
--- đi tới database — middleware xác thực ở tầng Node rồi đặt `app.user_id` bằng
+-- Không có JWT nào đi tới database — middleware xác thực ở tầng Node rồi đặt `app.user_id` bằng
 -- `SET LOCAL` bên trong transaction của request. `SET LOCAL` tự hết hiệu lực khi
 -- COMMIT/ROLLBACK, nên giá trị không thể rò rỉ sang request dùng lại cùng connection.
 
