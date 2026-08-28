@@ -65,13 +65,13 @@ export function PageAdmin({ book, pages }: { book: AdminBookHeader; pages: Admin
               <div className="flex items-center gap-sm">
                 <span
                   aria-hidden
-                  className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-surface-locked font-body text-caption text-secondary"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-neutral font-body text-caption text-primary-dark"
                 >
                   {index + 1}
                 </span>
                 <h3 className="font-heading text-headline-sm text-primary-dark">{page.heading}</h3>
                 {index === last && (
-                  <span className="rounded-full bg-surface-locked px-sm py-[0.15rem] font-body text-caption uppercase tracking-wide text-secondary">
+                  <span className="rounded-full bg-neutral px-sm py-[0.15rem] font-body text-caption uppercase tracking-wide text-primary-dark">
                     Trang cuối
                   </span>
                 )}

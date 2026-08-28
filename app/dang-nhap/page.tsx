@@ -16,7 +16,7 @@ export default async function DangNhapPage({ searchParams }: PageProps<"/dang-nh
   return (
     <>
       <Header activeHref="/dang-nhap" shelves={shelves} />
-      <main className="flex flex-1 flex-col">
+      <main id="noi-dung" className="flex flex-1 flex-col">
         <Room className="flex flex-1 flex-col">
           <div className="flex flex-1 items-center justify-center p-page-margin">
             <LoginForm next={next} />

@@ -85,7 +85,7 @@ export function ShelfAdmin({ shelves }: { shelves: AdminShelfRow[] }) {
                   className={`rounded-full px-sm py-[0.15rem] font-body text-caption uppercase tracking-wide ${
                     shelf.published
                       ? "bg-tertiary-deep text-on-primary"
-                      : "bg-surface-locked text-secondary"
+                      : "bg-neutral text-primary-dark"
                   }`}
                 >
                   {shelf.published ? "Đã xuất bản" : "Nháp"}

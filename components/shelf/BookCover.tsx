@@ -86,7 +86,7 @@ export function BookCover({
             đáy — cùng một khung cho cả ba trạng thái nên tên sách không nhảy chỗ khi mở khóa. */}
         <span className="flex flex-1 items-center justify-center">
           {isLocked ? (
-            <Lock aria-hidden className="h-9 w-9 text-on-primary opacity-90" />
+            <Lock aria-hidden className="h-9 w-9 text-secondary-light" />
           ) : (
             <span aria-hidden className={s.emblem}>
               {ROMAN[index] ?? index + 1}
@@ -95,8 +95,11 @@ export function BookCover({
         </span>
 
         <span
-          className={`text-center font-heading text-title-book text-on-primary ${
-            isLocked ? "opacity-75" : ""
+          // Bìa khóa đã dùng nền `surface-locked`; làm mờ thêm bằng opacity là giả một
+          // token không khai báo được, mà `design:lint` thì mù với opacity. Đổi màu chữ
+          // sang token thật để hàng rào tự động còn nhìn thấy.
+          className={`text-center font-heading text-title-book ${
+            isLocked ? "text-secondary-light" : "text-on-primary"
           }`}
         >
           {book.title}

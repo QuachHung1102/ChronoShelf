@@ -134,7 +134,7 @@ export function BookAdmin({
               <div className="flex flex-wrap items-center gap-sm">
                 <span
                   aria-hidden
-                  className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-surface-locked font-body text-caption text-secondary"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-neutral font-body text-caption text-primary-dark"
                 >
                   {index + 1}
                 </span>
@@ -143,7 +143,7 @@ export function BookAdmin({
                   className={`rounded-full px-sm py-[0.15rem] font-body text-caption uppercase tracking-wide ${
                     book.published
                       ? "bg-tertiary-deep text-on-primary"
-                      : "bg-surface-locked text-secondary"
+                      : "bg-neutral text-primary-dark"
                   }`}
                 >
                   {book.published ? "Đã xuất bản" : "Nháp"}

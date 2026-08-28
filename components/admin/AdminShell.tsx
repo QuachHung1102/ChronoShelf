@@ -50,7 +50,7 @@ export async function AdminShell({
   return (
     <>
       <Header activeHref="/quan-tri" shelves={shelves} />
-      <main className="mx-auto w-full max-w-[64rem] flex-1 px-page-margin py-lg">
+      <main id="noi-dung" className="mx-auto w-full max-w-[64rem] flex-1 px-page-margin py-lg">
         <nav aria-label="Đường dẫn" className="mb-sm">
           <ol className="flex flex-wrap items-center gap-xs font-body text-body-sm text-secondary">
             {trail.map((c, i) => (

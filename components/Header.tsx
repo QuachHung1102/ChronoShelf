@@ -23,7 +23,7 @@ export function Header({
   ];
 
   return (
-    <header className="flex h-header-height items-center justify-between bg-primary px-8">
+    <header className="flex h-header-height items-center justify-between bg-primary px-page-margin">
       <Link href="/" className={`font-heading text-headline-sm text-on-primary ${focusOnDark}`}>
         CỬA SỔ LỊCH SỬ
       </Link>
@@ -45,16 +45,21 @@ export function Header({
           );
         })}
 
-        {/* Streak và túi hành trang thuộc subsystem khác — số liệu ở đây là placeholder. */}
+        {/* Streak và túi hành trang thuộc subsystem khác, CHƯA có số thật.
+            Trước đây chỗ này hiện cứng "12" và "7". Một sản phẩm dạy học sinh mà bịa số
+            là thứ mất uy tín nhanh nhất — và học sinh nhận ra ngay khi con số không bao
+            giờ đổi. Hiện dấu "–" cho tới khi subsystem đó có thật. */}
         <span className="flex items-center gap-xs text-on-primary" title="Chuỗi ngày học liên tục">
           <Flame aria-hidden className="h-5 w-5 text-tertiary-light" />
-          <span className="font-body text-label-md">12</span>
-          <span className="sr-only">ngày streak</span>
+          <span className="font-body text-label-md" aria-label="chưa có dữ liệu streak">
+            –
+          </span>
         </span>
         <span className="flex items-center gap-xs text-on-primary" title="Túi hành trang">
           <Backpack aria-hidden className="h-5 w-5" />
-          <span className="font-body text-label-md">7</span>
-          <span className="sr-only">vật phẩm đã sưu tầm</span>
+          <span className="font-body text-label-md" aria-label="chưa có dữ liệu túi hành trang">
+            –
+          </span>
         </span>
 
         <AuthMenu />

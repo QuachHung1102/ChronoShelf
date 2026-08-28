@@ -18,7 +18,7 @@ export default async function ShelfPage({ params }: PageProps<"/[shelf]">) {
     <>
       <Header activeHref={`/${shelf.slug}`} shelves={shelves} />
       {/* flex-col để căn phòng (Room) kéo giãn hết chiều cao còn lại của khung nhìn. */}
-      <main className="flex flex-1 flex-col">
+      <main id="noi-dung" className="flex flex-1 flex-col">
         <ShelfPageClient shelf={shelf} />
       </main>
     </>

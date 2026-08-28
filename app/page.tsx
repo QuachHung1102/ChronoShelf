@@ -15,7 +15,7 @@ export default async function Home() {
   return (
     <>
       <Header activeHref="/" shelves={shelves} />
-      <main className="flex-1 px-page-margin py-xl">
+      <main id="noi-dung" className="flex-1 px-page-margin py-xl">
         <p className="font-body text-label-caps uppercase text-tertiary-deep">Cửa sổ lịch sử</p>
         <h1 className="mt-sm max-w-2xl font-heading text-headline-lg text-primary-dark">
           Mỗi bài học là một quyển sách. Đọc xong một quyển, bạn nhận được vật phẩm mở khóa

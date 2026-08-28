@@ -42,7 +42,7 @@ export function ItemDropOverlay({
             <p className="font-heading text-headline-md text-on-primary">
               {replay ? `Vật phẩm đã có: ${item.name}` : `Bạn nhận được: ${item.name}`}
             </p>
-            <p className="mt-sm max-w-xl font-body text-body-md text-on-primary opacity-80">
+            <p className="mt-sm max-w-xl font-body text-body-md text-secondary-light">
               {item.description}
             </p>
           </div>

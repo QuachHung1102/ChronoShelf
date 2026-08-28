@@ -14,7 +14,7 @@
     "db:check": "node --env-file-if-exists=.env.local scripts/db-check.mjs",
     "seed:content": "node scripts/seed-content.mjs",
     "design:lint": "designmd lint DESIGN.md",
-    "design:build": "designmd export --format json-tailwind DESIGN.md > tailwind.theme.json",
+    "design:build": "designmd export --format json-tailwind DESIGN.md > tailwind.theme.json && node scripts/design-line-height.mjs",
     "db:migrate": "node --env-file-if-exists=.env.local scripts/db-migrate.mjs",
     "db:mutation": "node --env-file-if-exists=.env.local scripts/db-mutation-check.mjs"
   },

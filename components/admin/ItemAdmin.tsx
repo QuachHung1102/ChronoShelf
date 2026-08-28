@@ -88,7 +88,7 @@ export function ItemAdmin({ items }: { items: AdminItemRow[] }) {
               <h3 className="font-heading text-headline-sm text-primary-dark">{item.name}</h3>
               <span className="font-body text-caption text-secondary">{item.slug}</span>
               {item.usedByBooks.length > 0 && (
-                <span className="rounded-full bg-surface-locked px-sm py-[0.15rem] font-body text-caption text-secondary">
+                <span className="rounded-full bg-neutral px-sm py-[0.15rem] font-body text-caption text-primary-dark">
                   Phần thưởng của {item.usedByBooks.length} quyển
                 </span>
               )}
