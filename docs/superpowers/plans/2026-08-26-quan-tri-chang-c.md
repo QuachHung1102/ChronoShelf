@@ -1,44 +1,28 @@
-# Giao diện quản trị `/quan-tri` — Chặng C
+# Giao diện quản trị `/quan-tri` — Chặng C ✅ XONG
 
-> **Trạng thái:** bản chi tiết từng bước đã bị **rút gọn ngày 2026-08-28**. Bản gốc viết cho một
-> BaaS ngoài đã bị gỡ bỏ; mọi đoạn mã mẫu trong đó gọi SDK, MCP và role không còn tồn tại, nên
-> để nguyên là mời một agent làm theo hướng dẫn sai. File này giữ lại **những gì đã quyết** —
-> phần đắt nhất — và bỏ phần từng-bước sẽ viết lại khi bắt đầu chặng.
->
-> Bản đầy đủ vẫn còn trong git:
-> `git show 3646431:docs/superpowers/plans/2026-08-26-quan-tri-chang-c.md`
+> **Hoàn thành 2026-08-29.** Cả 10 task đã xong và đã nghiệm thu đầu-cuối qua trình duyệt
+> thật. File này giữ lại **những gì đã quyết** để chặng sau còn tra; phần từng-bước không
+> còn cần nữa.
 
-**Goal:** Admin đăng nhập vào `/quan-tri` tạo được một kệ mới, một quyển sách mới, soạn các
-trang của nó, xuất bản — rồi học sinh đọc được quyển đó, tất cả mà không chạm vào SQL và không
-build lại.
+**Nghiệm thu (làm tròn qua giao diện, KHÔNG một dòng SQL nào):**
+tạo kệ "Lịch sử Thế giới" → tạo sách "Kim tự tháp Ai Cập" → soạn 2 trang (trang cuối có
+3 ý chính) → xuất bản sách → xuất bản kệ → `curl` **không cookie** đọc được đủ nội dung
+cả hai trang, còn kệ nháp thì không lọt ra.
 
-**Spec:** `docs/superpowers/specs/2026-08-24-noi-dung-dong-va-quan-tri-design.md` §5 (phạm vi
-chính), §6 (ảnh), §3.3 (hàng rào ghi). Đọc banner ở đầu spec đó — phần sản phẩm còn đúng, phần
-hạ tầng thì không.
+| Task | | Nơi ở |
+|---|---|---|
+| 1 | RPC đổi thứ tự | `db/schema/08-reorder.sql` (+ `reorder_shelves`) |
+| 2 | `slugify`/`uniqueSlug` | `lib/admin/slug.ts` |
+| 3 | Cổng admin | `lib/admin/gate.ts`, `AdminGate`, `AdminShell` |
+| 4 | Hằng class form | `components/ui/controls.ts` |
+| 5 | Upload ảnh + credit | `db/schema/09-media.sql`, `10-image-credit.sql`, `ImageField` |
+| 6 | Quản lý kệ | `ShelfAdmin` |
+| 7 | Quản lý vật phẩm | `ItemAdmin` |
+| 8 | Quản lý sách | `BookAdmin` |
+| 9 | Soạn trang | `PageAdmin` |
+| 10 | Nghiệm thu | ✅ |
 
-**Hạ tầng:** `CLAUDE.md` mục "Backend — PostgreSQL cục bộ" và `db/schema/README.md`.
-
----
-
-## Đã xong
-
-| | |
-|---|---|
-| **Task 1** — RPC đổi thứ tự | Xong, ở `db/schema/08-reorder.sql`. `reorder_books(text, text[])` và `reorder_pages(text, uuid[])`, cố ý **SECURITY INVOKER** để policy "admin write" vẫn áp lên UPDATE bên trong. Khẳng định cấu trúc nằm ở `90-verify.sql`; phần kiểm **hành vi** (đổi chỗ thật rồi trả lại) cần seed nên chưa viết. |
-| **Task 2** — `slugify` + `uniqueSlug` | Xong, `lib/admin/slug.ts` + 8 test. Thuần, không dính backend nên không bị ảnh hưởng gì. |
-| **Task 4** — hằng class form | Xong, `components/ui/controls.ts` (`FOCUS_RING`, `LABEL`, `FIELD`, `PRIMARY_BUTTON`, `QUIET_BUTTON`, `DANGER_BUTTON`). |
-| **Task 3** — cổng admin | Xong. `lib/admin/gate.ts`, `AdminGate`, `AdminShell`. Kiến trúc đã chốt: **server component đọc + Server Action ghi**, không có tầng API admin. |
-| **Task 6** — quản lý kệ | Xong. `lib/admin/shelves.ts` (đọc) + `lib/admin/actions.ts` (ghi) + `ShelfAdmin`. Thêm `reorder_shelves` vào `08-reorder.sql`. |
-
-## Còn lại
-
-| Task | Việc |
-|---|---|
-| 5 | Upload ảnh + bắt buộc nhập `source`/`credit` |
-| 7 | Quản lý vật phẩm — `/quan-tri/vat-pham` |
-| 8 | Quản lý sách trong kệ — `/quan-tri/[shelf]` |
-| 9 | Soạn trang — `/quan-tri/[shelf]/[book]` |
-| 10 | Nghiệm thu đầu-cuối + cập nhật `CLAUDE.md` |
+**Cổng cuối:** `check` 47/47 · `db:check` 33/33 · `db:mutation` 9/9.
 
 ---
 

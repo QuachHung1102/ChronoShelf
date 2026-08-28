@@ -194,6 +194,22 @@ phải JWT**: định dạng này không có trường `alg`, nên không có g�
   chặn tài nguyên dev cross-origin, WebSocket HMR hỏng, và form submit kiểu native — triệu chứng
   nhìn y như một bug của app (URL mất sạch query param). Dùng `localhost`, hoặc thêm
   `allowedDevOrigins` vào `next.config.ts`.
+- **`designmd export` ĐÁNH RƠI `lineHeight`.** Nó xuất `fontWeight` và `letterSpacing` vào tuple
+  `fontSize` nhưng không xuất `lineHeight`, nên mọi chữ chạy 1.5 mặc định của Tailwind thay vì
+  1.15–1.75 như DESIGN.md. Không cổng nào bắt được: `design:lint` chỉ đọc DESIGN.md (nơi giá trị
+  vẫn đúng). `scripts/design-line-height.mjs` vá lại và tự nó là một cổng — thiếu lineHeight cho
+  bất kỳ token nào thì nó thoát mã 1.
+- **Phân loại lỗi Postgres bằng SQLSTATE, đừng bằng văn xuôi.** Đã vấp: `/violates foreign key/`
+  không khớp `violates RESTRICT setting of foreign key constraint` (có chữ chen vào giữa), và
+  sqlstate là `23001` chứ không phải `23503`. Văn xuôi đổi theo phiên bản và theo `lc_messages`;
+  sqlstate thì không. Sequelize bọc lỗi gốc vào `.parent` nên `e.code` ở tầng ngoài luôn
+  `undefined` — xem `pgInfo()` ở `lib/admin/actions.ts`.
+- **Đoạn tĩnh thắng đoạn động trong App Router.** `/quan-tri/vat-pham` che `/quan-tri/[shelf]`,
+  nên một kệ đặt tên "Vật phẩm" (slug `vat-pham`) sẽ mất màn quản trị. `createShelf` coi slug đó
+  như đã dùng.
+- **Ghi file vào `public/` LÚC CHẠY không phục vụ được.** `next start` trả 404, `next dev` trả
+  200 — bẫy "chạy tốt trên máy tôi" chỉ nổ ở production. File commit sẵn thì vẫn bình thường. Đó
+  là lý do ảnh nằm trong bảng `media` (bytea) chứ không nằm trên đĩa.
 
 ## Lệnh
 
