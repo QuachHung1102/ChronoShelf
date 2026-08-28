@@ -14,15 +14,19 @@
     "db:check": "node --env-file-if-exists=.env.local scripts/db-check.mjs",
     "seed:content": "node scripts/seed-content.mjs",
     "design:lint": "designmd lint DESIGN.md",
-    "design:build": "designmd export --format json-tailwind DESIGN.md > tailwind.theme.json"
+    "design:build": "designmd export --format json-tailwind DESIGN.md > tailwind.theme.json",
+    "db:migrate": "node --env-file-if-exists=.env.local scripts/db-migrate.mjs",
+    "db:mutation": "node --env-file-if-exists=.env.local scripts/db-mutation-check.mjs"
   },
   "dependencies": {
     "@google/design.md": "^0.4.0",
-    "@insforge/sdk": "latest",
     "lucide-react": "^1.31.0",
     "next": "16.3.0",
+    "pg": "^8.23.0",
+    "pg-hstore": "^2.3.4",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "sequelize": "^6.37.8"
   },
   "devDependencies": {
     "@types/node": "^20",
