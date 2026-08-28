@@ -27,14 +27,14 @@ hạ tầng thì không.
 | **Task 1** — RPC đổi thứ tự | Xong, ở `db/schema/08-reorder.sql`. `reorder_books(text, text[])` và `reorder_pages(text, uuid[])`, cố ý **SECURITY INVOKER** để policy "admin write" vẫn áp lên UPDATE bên trong. Khẳng định cấu trúc nằm ở `90-verify.sql`; phần kiểm **hành vi** (đổi chỗ thật rồi trả lại) cần seed nên chưa viết. |
 | **Task 2** — `slugify` + `uniqueSlug` | Xong, `lib/admin/slug.ts` + 8 test. Thuần, không dính backend nên không bị ảnh hưởng gì. |
 | **Task 4** — hằng class form | Xong, `components/ui/controls.ts` (`FOCUS_RING`, `LABEL`, `FIELD`, `PRIMARY_BUTTON`, `QUIET_BUTTON`, `DANGER_BUTTON`). |
+| **Task 3** — cổng admin | Xong. `lib/admin/gate.ts`, `AdminGate`, `AdminShell`. Kiến trúc đã chốt: **server component đọc + Server Action ghi**, không có tầng API admin. |
+| **Task 6** — quản lý kệ | Xong. `lib/admin/shelves.ts` (đọc) + `lib/admin/actions.ts` (ghi) + `ShelfAdmin`. Thêm `reorder_shelves` vào `08-reorder.sql`. |
 
 ## Còn lại
 
 | Task | Việc |
 |---|---|
-| 3 | Cổng admin — `isAdmin()`, `AdminGate`, `AdminShell`, route `/quan-tri` |
 | 5 | Upload ảnh + bắt buộc nhập `source`/`credit` |
-| 6 | Quản lý kệ — `/quan-tri` |
 | 7 | Quản lý vật phẩm — `/quan-tri/vat-pham` |
 | 8 | Quản lý sách trong kệ — `/quan-tri/[shelf]` |
 | 9 | Soạn trang — `/quan-tri/[shelf]/[book]` |
@@ -69,15 +69,24 @@ hạ tầng thì không.
 - **Không thêm INSERT/UPDATE trực tiếp lên `user_items` hay cột `user_book_progress.completed`.**
 - **Cổng duy nhất là `npm run check`**, cộng `npm run db:check` sau mỗi lần đổi `db/schema/`.
 
-## Quyết định kiến trúc phải xem lại khi bắt đầu Task 3
+## Kiến trúc đã chốt (Task 3)
 
-Bản gốc bắt **toàn bộ** giao diện quản trị chạy phía client, vì phiên đăng nhập của BaaS cũ nằm
-trong `localStorage` nên server component không đọc được và không thể thấy bản nháp.
+**Server Component đọc + Server Action ghi.** Không có tầng API admin nào. Bản gốc bắt toàn bộ
+giao diện chạy phía client vì phiên của BaaS cũ nằm trong `localStorage`; ràng buộc đó đã hết.
 
-**Ràng buộc đó không còn.** Phiên nay là cookie `httpOnly`, `readShelf()` đã chạy dưới danh tính
-người xem, nên server component **đọc được bản nháp** cho admin. Cân nhắc lại: server component
-cho phần đọc + Route Handler cho phần ghi sẽ ít JavaScript hơn hẳn so với bắt cả bốn màn hình
-chạy client. Hàng rào thật vẫn là RLS `admin write` ở tầng DB; `AdminGate` chỉ là cổng giao diện.
+**Ba lớp, và `AdminGate` là lớp yếu nhất trong ba:**
+
+1. `AdminGate` chỉ quyết định hiện màn nào. **Không phải hàng rào.**
+2. `requireAdmin()` ở dòng đầu **mọi** Server Action. Tài liệu Next nói thẳng: action là một
+   endpoint POST công khai, *"reachable to anyone who can send the same POST. Treat every action
+   as an untrusted entry point."*
+3. Policy `admin write` ở tầng database — lớp duy nhất không thể quên gọi.
+
+**Tách đọc khỏi ghi thành hai file là quyết định bảo mật, không phải sắp xếp:** trong file có
+`"use server"`, MỌI export đều thành endpoint POST công khai, kể cả hàm chỉ đọc.
+
+**Không truyền được function làm `children`** từ Server Component xuống Client Component. Trạng
+thái `pending` lấy bằng `useFormStatus` trong một nút con (`SubmitButton`), không phải render prop.
 
 ## Xong chặng C khi
 

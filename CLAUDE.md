@@ -183,6 +183,17 @@ phải JWT**: định dạng này không có trường `alg`, nên không có g�
   nhau trên một connection. Trong `withRole` thì chạy tuần tự.
 - **Không bao giờ gọi `sequelize.sync()`.** Nó không biết gì về RLS, policy, ràng buộc
   DEFERRABLE hay hàm SECURITY DEFINER — bảng nó tạo ra là bảng không có hàng rào nào.
+- **Trong file có `"use server"`, MỌI export đều là một endpoint POST công khai** — kể cả hàm
+  chỉ đọc. Vì vậy `lib/admin/shelves.ts` (đọc) tách khỏi `lib/admin/actions.ts` (ghi), và mọi
+  action bắt đầu bằng `requireAdmin()`. Tài liệu Next: *"the route is reachable to anyone who
+  can send the same POST. Treat every action as an untrusted entry point."*
+- **Không truyền được function làm `children` từ Server Component xuống Client Component.**
+  React báo `Functions are not valid as a child of Client Components`. Trạng thái `pending` của
+  form lấy bằng `useFormStatus` trong một nút con, không phải bằng render prop.
+- **Vào dev server bằng `127.0.0.1` thay vì `localhost` làm React không hydrate xong.** Next 16
+  chặn tài nguyên dev cross-origin, WebSocket HMR hỏng, và form submit kiểu native — triệu chứng
+  nhìn y như một bug của app (URL mất sạch query param). Dùng `localhost`, hoặc thêm
+  `allowedDevOrigins` vào `next.config.ts`.
 
 ## Lệnh
 
