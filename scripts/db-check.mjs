@@ -1,393 +1,259 @@
-#!/usr/bin/env node
 /**
- * Self-check các ranh giới bảo mật ở tầng DB, chạy bằng đúng khóa `anon` mà trình duyệt
- * cầm. Kiểm "kẻ chưa đăng nhập KHÔNG làm được gì" — phần mà `npm run check` không với tới
- * vì nó cần backend thật.
+ * Hàng rào nhìn từ phía ỨNG DỤNG: nối bằng đúng `DATABASE_URL` mà Route Handler dùng
+ * (role `chronoshelf_app`), rồi thử đúng những việc một request thật có thể thử.
  *
- * Vì sao không phải một file .sql chạy qua MCP `run-raw-sql`: SQL chạy bằng quyền admin,
- * nên nó kiểm được `has_function_privilege` nhưng không kiểm được thứ thật sự quan trọng —
- * cái mà một request thật từ ngoài Internet làm được. Script này đi đúng đường của kẻ tấn
- * công. Nó cũng không cần MCP, nên chạy được cả khi MCP không kết nối.
+ * Khác `db/schema/90-verify.sql`: file đó chạy bằng superuser nên kiểm được catalog
+ * (`has_table_privilege`) nhưng KHÔNG kiểm được thứ quan trọng hơn — cái mà một
+ * request thật làm được. Script này đi đúng đường của kẻ tấn công.
  *
- *   npm run db:check
+ * Chạy: npm run db:check
  *
- * KHÔNG nằm trong `npm run check`: cần mạng và backend sống. Chạy nó sau khi đổi bất cứ
- * thứ gì trong db/schema/ — RLS, GRANT, hay thân hàm RPC.
+ * CẦN DỮ LIỆU SEED: nửa sau của script đòi nội dung thật cùng hai dòng mồi nhử do
+ * `npm run seed:content` tạo ra (quyển nháp `__nhap-khong-bao-gio-xuat-ban` và dòng
+ * vai trò admin của tài khoản mồi nhử `2222…`). Chạy trên database rỗng thì chúng
+ * hỏng — không phải vì hàng rào thủng, mà vì không còn gì để thử.
  */
-import { createClient } from "@insforge/sdk";
 
-const baseUrl = process.env.NEXT_PUBLIC_INSFORGE_BASE_URL;
-const anonKey = process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY;
-if (!baseUrl || !anonKey) {
-  console.error(
-    "Thiếu NEXT_PUBLIC_INSFORGE_BASE_URL hoặc NEXT_PUBLIC_INSFORGE_ANON_KEY.\n" +
-      "Script đọc chúng từ .env.local — file đó bị gitignore nên máy mới clone phải tạo lại.",
-  );
-  process.exit(1);
-}
+import pg from "pg";
+import crypto from "node:crypto";
 
-const anon = createClient({ baseUrl, anonKey });
+const c = new pg.Client({ connectionString: process.env.DATABASE_URL });
+await c.connect();
 
-// Slug bịa để nếu một phép ghi lọt qua thì dòng rác còn nhận ra được mà xóa.
-const SENTINEL = "__db_check_khong_duoc_ton_tai";
-const FAKE_UUID = "00000000-0000-0000-0000-000000000000";
+let pass = 0, fail = 0;
+const ok  = (n) => { console.log(`  PASS  ${n}`); pass++; };
+const bad = (n, d) => { console.log(`  FAIL  ${n}\n        ${d}`); fail++; };
+/** `cond` đúng thì đạt, sai thì hỏng kèm `detail`. */
+const check = (cond, name, detail = "") => (cond ? ok(name) : bad(name, detail));
 
-const results = [];
-let skipped = 0;
-
-/** `expect` mô tả điều PHẢI đúng; trả về chuỗi lý do khi sai, hoặc null khi đạt. */
-async function check(name, run, expect) {
-  let outcome;
+/** Chạy `sql` dưới `role`; đạt CHỈ KHI hỏng đúng sqlstate 42501 VÀ đúng thông điệp
+ *  `expect`. Mọi lỗi khác — kể cả 42501 khác thông điệp — tính là rò rỉ, vì
+ *  "permission denied for table" và "violates row-level security policy" dùng CHUNG
+ *  mã 42501 nhưng nói hai chuyện hoàn toàn khác nhau. */
+async function denied(name, role, sql, expect) {
   try {
-    outcome = await run();
+    await c.query("BEGIN");
+    await c.query(`SET LOCAL ROLE ${role}`);
+    await c.query(sql);
+    await c.query("ROLLBACK");
+    return bad(name, "câu lệnh CHẠY ĐƯỢC — đáng lẽ bị từ chối");
   } catch (e) {
-    outcome = { error: e instanceof Error ? e : new Error(String(e)) };
+    await c.query("ROLLBACK").catch(() => {});
+    if (e.code !== "42501") return bad(name, `sqlstate ${e.code}, chờ 42501: ${e.message}`);
+    if (e.message !== expect) return bad(name, `thông điệp "${e.message}", chờ đúng "${expect}"`);
+    ok(name);
   }
-  const reason = expect(outcome);
-  results.push({ name, ok: reason === null, reason, outcome });
 }
 
-function errorLabel(error) {
-  if (!error) return "không có lỗi";
-  const code = error.error ?? error.code ?? "";
-  return `${code ? code + " " : ""}${error.message ?? String(error)}`.slice(0, 120);
+/** Chạy trong một transaction có SET LOCAL ROLE, trả kết quả câu cuối. */
+async function asRole(role, userId, queries) {
+  await c.query("BEGIN");
+  await c.query(`SET LOCAL ROLE ${role}`);
+  if (userId) await c.query("SELECT set_config('app.user_id', $1, true)", [userId]);
+  let last;
+  for (const q of queries) last = await c.query(...[].concat(q));
+  await c.query("COMMIT");
+  return last;
 }
 
-// --- Phép 1 đổi bảng: book_unlocks không còn, kệ nay đọc từ `books` ------------
-// (thay thế nguyên khối check "anon ĐỌC ĐƯỢC book_unlocks")
-await check(
-  "anon ĐỌC ĐƯỢC books đã xuất bản (kệ phải hiện ra khi chưa đăng nhập)",
-  () => anon.database.from("books").select("slug, published"),
-  ({ data, error }) =>
-    error
-      ? `bị chặn: ${errorLabel(error)}`
-      : (data ?? []).length > 0
-        ? null
-        : "không đọc được quyển nào",
-);
+console.log("\n-- NOINHERIT: role kết nối không tự có quyền của hai role con --");
+console.log(`  current_user = ${(await c.query("SELECT current_user")).rows[0].current_user}`);
+// Với role KHÔNG có quyền gì, "cổng nào bắn trước" (schema / function / bảng) là chi
+// tiết nội bộ của Postgres và có thể đổi giữa các bản. Nên khẳng định chính xác đặt ở
+// CATALOG — ổn định và nói đúng điều ta muốn — còn phép chạy thật chỉ cần xác nhận nó
+// bị chặn bằng 42501.
+for (const obj of ["public.users", "public.login_codes", "public.user_roles"]) {
+  const got = (await c.query("SELECT has_table_privilege('chronoshelf_app',$1,'SELECT') AS ok", [obj])).rows[0].ok;
+  check(got === false, `catalog: chronoshelf_app KHÔNG có SELECT trên ${obj}`, "NOINHERIT mất tác dụng");
+}
+{
+  // Không dùng chữ ký dạng text: has_function_privilege() phải phân giải tên, việc đó
+  // đòi USAGE trên schema `app` — thứ role này cố tình không có, nên chính phép kiểm
+  // sẽ nổ thay vì trả lời. Tra OID trong pg_proc thì không cần quyền gì (catalog đọc
+  // được cho mọi role).
+  const q = await c.query(`
+    SELECT has_schema_privilege('chronoshelf_app','app','USAGE') AS schema_usage,
+           has_function_privilege('chronoshelf_app', p.oid, 'EXECUTE') AS fn_exec
+      FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+     WHERE n.nspname = 'app' AND p.proname = 'current_user_id'`);
+  const r = q.rows[0];
+  check(r.schema_usage === false, "catalog: chronoshelf_app KHÔNG có USAGE trên schema app");
+  check(r.fn_exec === false, "catalog: chronoshelf_app KHÔNG có EXECUTE trên app.current_user_id()");
+}
+for (const [name, sql] of [
+  ["chạy thật: đọc users khi chưa SET ROLE bị chặn", "SELECT 1 FROM public.users"],
+  ["chạy thật: gọi app.current_user_id() bị chặn", "SELECT app.current_user_id()"],
+]) {
+  try {
+    await c.query("BEGIN"); await c.query(sql); await c.query("ROLLBACK");
+    bad(name, "CHẠY ĐƯỢC — đáng lẽ bị từ chối");
+  } catch (e) {
+    await c.query("ROLLBACK").catch(() => {});
+    check(e.code === "42501", `${name}  (${e.code}: ${e.message})`, `chờ 42501, nhận ${e.code}`);
+  }
+}
 
-await check(
-  "anon KHÔNG ghi được user_items (chỉ RPC SECURITY DEFINER được trao vật phẩm)",
-  () =>
-    anon.database
-      .from("user_items")
-      .insert([{ user_id: FAKE_UUID, item_slug: SENTINEL }]),
-  ({ error }) => (error ? null : "GHI ĐƯỢC — ai cũng tự phát vật phẩm cho mình được"),
-);
+console.log("\n-- Người chưa đăng nhập (chronoshelf_anon) --");
+await denied("không đọc được users",       "chronoshelf_anon", "SELECT 1 FROM public.users",       "permission denied for table users");
+await denied("không đọc được login_codes", "chronoshelf_anon", "SELECT 1 FROM public.login_codes", "permission denied for table login_codes");
+await denied("không đọc được user_roles",  "chronoshelf_anon", "SELECT 1 FROM public.user_roles",  "permission denied for table user_roles");
+await denied("không tự phong admin",       "chronoshelf_anon",
+  "INSERT INTO public.user_roles (user_id, role) VALUES (gen_random_uuid(),'admin')",
+  "permission denied for table user_roles");
 
-await check(
-  "anon KHÔNG ghi được user_book_progress (GRANT chỉ cấp cho authenticated)",
-  () =>
-    anon.database
-      .from("user_book_progress")
-      .insert([{ user_id: FAKE_UUID, book_slug: SENTINEL }]),
-  ({ error }) => (error ? null : "GHI ĐƯỢC khi chưa đăng nhập"),
-);
+const anonUid = (await asRole("chronoshelf_anon", null, ["SELECT app.current_user_id() AS id"])).rows[0].id;
+check(anonUid === null, "app.current_user_id() là NULL khi chưa đặt app.user_id", `nhận ${anonUid}`);
 
-// Slug THẬT, đã xuất bản — KHÔNG dùng slug bịa. Slug bịa (bản cũ dùng "bach-dang-938",
-// không tồn tại — slug đúng là "tran-chien-bach-dang-938") khiến MỌI kết quả, kể cả một
-// lời gọi đã lọt qua REVOKE, đều dừng ở "Book not found" — một lỗi có thật nhưng không
-// nói lên gì về quyền — nên phép kiểm "có lỗi là đạt" báo PASS ngay cả khi lỗ nghiêm
-// trọng nhất đã mở toang.
-const REAL_BOOK_SLUG = "khoi-nguon-bo-coi";
+console.log("\n-- Luồng OTP (chỉ đi qua hàm SECURITY DEFINER) --");
+const mk = (e, cd) => crypto.createHash("sha256").update(`${e}:${cd}`).digest("hex");
+const emailA = `a-${Date.now()}@example.invalid`;
+const hashA = mk(emailA, "111111");
+const userA = (await asRole("chronoshelf_anon", null, [
+  ["SELECT app.issue_login_code($1,$2,now() + interval '10 minutes')", [emailA, hashA]],
+  ["SELECT app.consume_login_code($1,$2) AS id", [emailA, hashA]],
+])).rows[0].id;
+check(Boolean(userA), `anon phát + đổi mã, tạo tài khoản ${String(userA).slice(0, 8)}…`);
+
+for (const [name, code] of [["mã sai bị từ chối", "999999"], ["mã đã dùng không tái sử dụng được", "111111"]]) {
+  try {
+    await asRole("chronoshelf_anon", null, [["SELECT app.consume_login_code($1,$2)", [emailA, mk(emailA, code)]]]);
+    bad(name, "được chấp nhận");
+  } catch (e) {
+    await c.query("ROLLBACK").catch(() => {});
+    check(e.message === "Invalid or expired code", name, `thông điệp khác: ${e.message}`);
+  }
+}
+
+const emailB = `b-${Date.now()}@example.invalid`;
+const hashB = mk(emailB, "222222");
+const userB = (await asRole("chronoshelf_anon", null, [
+  ["SELECT app.issue_login_code($1,$2,now() + interval '10 minutes')", [emailB, hashB]],
+  ["SELECT app.consume_login_code($1,$2) AS id", [emailB, hashB]],
+])).rows[0].id;
+
+console.log("\n-- RLS: người đã đăng nhập chỉ thấy dòng của mình --");
+const seen = await asRole("chronoshelf_auth", userA, ["SELECT id FROM public.users"]);
+check(seen.rowCount === 1 && seen.rows[0].id === userA,
+  "chỉ thấy 1 dòng users, đúng của mình (bảng đang có ít nhất 2 tài khoản: A và B)",
+  `thấy ${seen.rowCount} dòng: ${JSON.stringify(seen.rows)}`);
+
+const seenB = await asRole("chronoshelf_auth", userB, ["SELECT id FROM public.users"]);
+check(seenB.rowCount === 1 && seenB.rows[0].id === userB,
+  "đổi app.user_id thì thấy đúng dòng của người kia, không phải dòng cũ",
+  `thấy ${JSON.stringify(seenB.rows)}`);
+
+console.log("\n-- SET LOCAL không rò rỉ sang transaction sau --");
+const after = (await asRole("chronoshelf_auth", null, ["SELECT app.current_user_id() AS id"])).rows[0];
+check(after.id === null, "app.user_id đã tự xóa khi transaction trước kết thúc", `còn sót ${after.id}`);
 
 /**
- * true khi lỗi ĐÚNG LÀ quyền EXECUTE bị chặn tại cổng (REVOKE hoạt động đúng) — không
- * phải BẤT KỲ lỗi nào khác phát sinh từ bên trong thân hàm.
+ * Đạt CHỈ KHI câu lệnh hỏng vì POLICY chặn — sqlstate 42501 VÀ thông điệp nói về
+ * row-level security.
  *
- * Bản đầu của phép kiểm này chỉ loại trừ message "Book not found", dựa trên giả định
- * lời gọi lọt qua sẽ dừng ở SELECT đầu tiên trong hàm. Giả định đó SAI: đã kiểm thực
- * nghiệm ngày 2026-08-25 bằng cách tạm `GRANT EXECUTE ... TO anon` rồi gọi lại đúng
- * phép này — với `p_user_id: FAKE_UUID` (không tồn tại trong auth.users) và slug sách
- * thật, lời gọi đi QUA khỏi "Book not found" (sách có thật) rồi mới hỏng ở bước
- * `INSERT INTO user_book_progress`, vì FAKE_UUID vi phạm khóa ngoại tới auth.users —
- * một lỗi 23503, không phải "Book not found" — nên phép kiểm bản đầu vẫn báo PASS dù
- * quyền đã lộ thật. Sửa lại theo hướng AN TOÀN HƠN: liệt kê CHÍNH XÁC lỗi được coi là
- * "quyền còn nguyên" (42501 + đúng message REVOKE tạo ra), thay vì liệt kê những lỗi bị
- * coi là "đã lộ". Bất kỳ lỗi nào khác — "Book not found", vi phạm khóa ngoại, "Not
- * authenticated", hay không có lỗi gì cả — đều là lời gọi đã chạm được logic bên trong
- * hàm, nên đều phải là FAIL.
+ * Phân biệt này là bắt buộc, không phải cầu kỳ: "thiếu GRANT" và "policy chặn" dùng
+ * CHUNG sqlstate 42501 và khác nhau duy nhất ở message
+ * (`permission denied for table` so với `new row violates row-level security policy`).
+ * Nếu phép kiểm chấp nhận cả hai, thì một ngày nào đó GRANT bị gỡ mất — khiến chính
+ * ADMIN THẬT cũng không ghi được — mà phép kiểm vẫn xanh. Nó sẽ không còn chứng minh
+ * điều ta cần: rằng người thường đi qua được cửa GRANT rồi mới bị policy chặn lại.
  */
-function blockedByRevoke(error) {
-  const code = error?.code ?? error?.error ?? "";
-  const message = error?.message ?? "";
-  return code === "42501" && /permission denied for function/i.test(message);
-}
-
-await check(
-  "anon KHÔNG gọi được _complete_book_for (gọi được là tự trao vật phẩm cho user bất kỳ)",
-  () =>
-    anon.database.rpc("_complete_book_for", {
-      p_user_id: FAKE_UUID,
-      p_book_slug: REAL_BOOK_SLUG,
-    }),
-  ({ error }) => {
-    if (!error) return "GỌI ĐƯỢC — đây là lỗ nghiêm trọng nhất có thể có";
-    return blockedByRevoke(error)
-      ? null
-      : `LỌT QUA REVOKE — chạm được logic bên trong hàm (${errorLabel(error)}), EXECUTE bị cấp nhầm cho anon`;
-  },
-);
-
-await check(
-  "anon KHÔNG gọi được complete_book (EXECUTE đã REVOKE khỏi anon)",
-  () => anon.database.rpc("complete_book", { p_book_slug: REAL_BOOK_SLUG }),
-  ({ error }) => {
-    if (!error) return "GỌI ĐƯỢC khi chưa đăng nhập";
-    return blockedByRevoke(error)
-      ? null
-      : `LỌT QUA REVOKE — chạm được logic bên trong hàm (${errorLabel(error)}), EXECUTE bị cấp nhầm cho anon`;
-  },
-);
-
-await check(
-  "anon đọc user_items ra rỗng (REVOKE ALL khỏi anon; đổi grant thì RLS auth.uid() = user_id vẫn lọc rỗng)",
-  () => anon.database.from("user_items").select("item_slug"),
-  ({ data, error }) => {
-    if (!error) return (data?.length ?? 0) === 0 ? null : `đọc ra ${data.length} dòng của người khác`;
-    // user_items REVOKE ALL khỏi anon ngay từ 2026-08-12-ke-sach-doc-sach.sql — anon
-    // không có cả SELECT, nên đường an toàn LUÔN lỗi 42501 "permission denied for
-    // table" (đã kiểm thực nghiệm 2026-08-24), không bao giờ chạy tới nhánh RLS lọc
-    // rỗng ở trên. Một lỗi khác (đổi tên bảng, mất mạng, …) không chứng minh được gì
-    // nên vẫn phải coi là hỏng — không tự động biến MỌI lỗi thành "đạt".
-    const code = error.code ?? error.error ?? "";
-    return code === "42501" ? null : `lỗi bất thường: ${errorLabel(error)}`;
-  },
-);
-
-// --- Phép 7 -------------------------------------------------------------------
-// Mồi nhử: một quyển CỐ Ý để nháp vĩnh viễn, tạo ở Step 1. Không có nó thì phép này
-// rỗng nghĩa — mọi sách thật đều đã xuất bản nên truy vấn trả 0 dòng kể cả khi RLS
-// hỏng hoàn toàn.
-const DRAFT_BAIT = "__nhap-khong-bao-gio-xuat-ban";
-
-await check(
-  "anon KHÔNG đọc được sách nháp (RLS: published OR is_admin())",
-  () => anon.database.from("books").select("slug, published").eq("slug", DRAFT_BAIT),
-  ({ data, error }) =>
-    error
-      ? `lỗi bất thường: ${errorLabel(error)}`
-      : (data ?? []).length === 0
-        ? null
-        : `lộ quyển nháp ${DRAFT_BAIT} — RLS "read published" hỏng`,
-);
-
-// --- Phép 8 -------------------------------------------------------------------
-await check(
-  "anon KHÔNG ghi được user_roles (không ai tự phong admin được)",
-  () => anon.database.from("user_roles").insert([{ user_id: FAKE_UUID, role: "admin" }]),
-  ({ error }) => (error ? null : "GHI ĐƯỢC — bất kỳ ai cũng thành admin"),
-);
-
-// --- Phép 9 -------------------------------------------------------------------
-await check(
-  "anon KHÔNG ghi được books (nội dung chỉ admin sửa)",
-  () =>
-    anon.database
-      .from("books")
-      .insert([{ slug: SENTINEL, shelf_slug: "lich-su-viet-nam", position: 999, title: "x", era: "x" }]),
-  ({ error }) =>
-    error ? null : "GHI ĐƯỢC — xóa dòng rác " + SENTINEL,
-);
-
-// --- Phép 10: phép quan trọng nhất của đợt này --------------------------------
-// Đi đúng đường của kẻ tấn công CÓ TÀI KHOẢN. Phải thất bại vì POLICY chặn, chứ
-// không phải vì thiếu GRANT — thiếu GRANT thì admin thật cũng ghi hỏng.
-//
-// CẢNH BÁO: không phân biệt được hai trường hợp đó bằng sqlstate. Postgres trả
-// CHUNG mã 42501 cho cả hai, chỉ khác message ("permission denied for table" vs
-// "new row violates row-level security policy"). Bắt buộc soi message.
-//
-// Kiểm hai thứ trong một phiên: không sửa được nội dung, và không tự phong admin.
-//
-// Khối này BẮT BUỘC nằm CUỐI file: nó tạo một client đã đăng nhập, và đặt nó
-// trước các phép dùng `anon` sẽ mở đường cho việc phiên rò sang client kia.
-const SENTINEL_AUTH = SENTINEL + "_authed";
-const testEmail = process.env.DB_CHECK_USER_EMAIL;
-const testPassword = process.env.DB_CHECK_USER_PASSWORD;
-
-if (!testEmail || !testPassword) {
-  // 4 phép ghi nội dung (shelves/items/books/pages) + user_items + tự phong admin.
-  skipped = 6;
-  console.warn(
-    "\n!!  BỎ QUA 6 phép cần đăng nhập — thiếu DB_CHECK_USER_EMAIL / DB_CHECK_USER_PASSWORD\n" +
-      "!!  trong .env.local. Đây là các hàng rào QUAN TRỌNG NHẤT của tầng nội dung: người\n" +
-      "!!  dùng thường không được sửa shelves/items/books/pages, không tự trao được vật\n" +
-      "!!  phẩm qua user_items, và không tự phong admin được. Chúng đang KHÔNG được kiểm.\n",
-  );
-} else {
-  const user = createClient({ baseUrl, anonKey });
-  const signIn = await user.auth.signInWithPassword({ email: testEmail, password: testPassword });
-
-  // Whole-branch review 2026-08-24, finding E.2: trước đây phép này chỉ thử ghi
-  // `books`. Cả 4 bảng nội dung dùng CHUNG policy "admin write" (is_admin() ở cả
-  // USING lẫn WITH CHECK — xem tự kiểm Task 2 trong schema) nên hàng rào PHẢI giống
-  // hệt nhau ở cả 4 bảng — nhưng một sai lệch riêng ở `shelves`/`items`/`pages` (quên
-  // áp policy khi thêm bảng, gõ nhầm tên bảng...) trước đây không bị bất cứ npm script
-  // nào bắt: chỉ có khối `DO $$` chạy tay qua MCP soi được tên/biểu thức policy, và nó
-  // chạy bằng quyền admin nên không kiểm được thứ một request HTTP THẬT làm được — đúng
-  // thứ dòng rủi ro "Người dùng thường sửa được nội dung" trong CLAUDE.md cần. Lặp qua
-  // cả 4 bảng để một script duy nhất phủ hết.
-  const CONTENT_WRITE_PROBES = [
-    { table: "shelves", row: { slug: SENTINEL_AUTH, name: "x", position: 997, published: true } },
-    // items không có cột `published` — mọi dòng luôn đọc được (policy "read items"
-    // USING (true)), nên không cần mẹo `published: true` để buộc một cú ghi lọt qua
-    // phải hiện ra ở bước đọc lại.
-    { table: "items", row: { slug: SENTINEL_AUTH, name: "x" } },
-    {
-      table: "books",
-      row: {
-        slug: SENTINEL_AUTH,
-        shelf_slug: "lich-su-viet-nam",
-        position: 998,
-        title: "x",
-        era: "x",
-        // `published: true` KHÔNG phải trang trí — nó là thứ làm phép kiểm này có nghĩa.
-        // Nếu thiếu, cột mặc định `false`, và policy đọc `published OR is_admin()` khiến
-        // chính phiên non-admin này KHÔNG thấy dòng nó vừa ghi. Khi đó một policy ghi bị
-        // hở sẽ cho INSERT thành công không lỗi, đọc lại ra 0 dòng, và phép kiểm báo ĐẠT
-        // đúng vào lúc hàng rào bị phá. Ở trạng thái đúng thì `WITH CHECK` chặn trước
-        // khi giá trị này kịp có ý nghĩa, nên nó vô hại.
-        published: true,
-      },
-    },
-    // pages không có `published` riêng — nó ăn theo published của book cha (policy
-    // "read pages"). Trỏ vào một book THẬT đã published (khoi-nguon-bo-coi) vì cùng lý
-    // do trên: một cú ghi lọt qua phải đọc lại được bằng đúng phiên non-admin này.
-    { table: "pages", row: { book_slug: "khoi-nguon-bo-coi", position: 9998, heading: "x", body: "x" } },
-  ];
-
-  for (const { table, row } of CONTENT_WRITE_PROBES) {
-    await check(
-      `authenticated (không phải admin) KHÔNG ghi được ${table}`,
-      async () => {
-        if (signIn.error) return { signInError: signIn.error };
-        const insert = await user.database.from(table).insert([row]);
-        // Lọc đọc lại bằng ĐÚNG mọi cột vừa ghi — `pages` không có cột định danh riêng
-        // như `slug`, nên chỉ tổ hợp (book_slug, position) — vốn UNIQUE — mới khớp
-        // đúng dòng vừa chèn chứ không phải trang thật nào khác của cùng cuốn sách.
-        let readBack = user.database.from(table).select("*");
-        for (const [col, val] of Object.entries(row)) readBack = readBack.eq(col, val);
-        const back = await readBack;
-        return { insert, rows: back.data ?? [], readError: back.error };
-      },
-      ({ signInError, insert, rows, readError, error }) => {
-        // `error` là ngoại lệ do chính `check` bắt, khác với lỗi trong {data,error} của SDK.
-        if (error) return `lỗi bất thường: ${errorLabel(error)}`;
-        if (signInError) return `không đăng nhập được tài khoản test: ${errorLabel(signInError)}`;
-        if ((rows ?? []).length > 0) return `GHI ĐƯỢC — xóa dòng rác khỏi ${table}`;
-        // Đọc lại mà lỗi thì "0 dòng" không chứng minh được gì — đừng coi là đạt.
-        if (readError) return `không đọc lại được để kiểm chứng: ${errorLabel(readError)}`;
-        // Tới đây `insert` không lỗi VÀ đọc lại thành công ra 0 dòng — payload đã được
-        // dựng để một cú ghi lọt qua chắc chắn hiện ra ở nhánh trên, nên trường hợp này
-        // là policy chặn mà driver không báo lỗi.
-        if (!insert?.error) return null;
-        const code = insert.error.code ?? insert.error.error ?? "";
-        const message = insert.error.message ?? "";
-        // Postgres dùng CHUNG sqlstate 42501 cho cả "thiếu GRANT" (message "permission
-        // denied for table") lẫn "RLS WITH CHECK chặn" (message "new row violates
-        // row-level security policy") — đã kiểm thực nghiệm 2026-08-24 ngay trên backend
-        // này: anon (thật sự 0 GRANT) và authenticated (có GRANT, bị policy admin write
-        // chặn) đều trả về đúng code "42501", chỉ khác ở message. Không thể phân biệt
-        // hai trường hợp bằng code, bắt buộc phải soi message.
-        const isRlsCheckFailure = /row-level security/i.test(message);
-        return code === "42501" && !isRlsCheckFailure
-          ? `bị chặn bằng 42501 không phải RLS (${message}) — nghi thiếu GRANT trên ${table}, admin thật cũng ghi hỏng`
-          : null;
-      },
-    );
+async function deniedByPolicy(name, userId, sql) {
+  try {
+    await asRole("chronoshelf_auth", userId, [sql]);
+    return bad(name, "GHI ĐƯỢC — policy \"admin write\" không chặn");
+  } catch (e) {
+    await c.query("ROLLBACK").catch(() => {});
+    if (e.code !== "42501") return bad(name, `sqlstate ${e.code}, chờ 42501: ${e.message}`);
+    if (!/row-level security policy/.test(e.message)) {
+      return bad(name, `42501 nhưng KHÔNG phải do policy: "${e.message}" — có thể đang thiếu GRANT`);
+    }
+    ok(`${name} — bị policy chặn (không phải thiếu GRANT)`);
   }
-
-  // Phần 3, mục 4 của đợt review toàn nhánh 2026-08-24: ranh giới "chỉ RPC
-  // SECURITY DEFINER mới ghi được user_items" đã được test ở góc độ CHƯA đăng nhập
-  // (phép "anon KHÔNG ghi được user_items" ở trên), nhưng CLAUDE.md gọi đây là quy tắc
-  // bắt buộc cho cả role `authenticated` — và cho tới giờ không có phép nào thử góc độ
-  // đó. Hàng rào giữ bằng HAI lớp độc lập (2026-08-12-ke-sach-doc-sach.sql): không có
-  // GRANT INSERT nào cho `authenticated` trên `user_items`, VÀ RLS bật nhưng không có
-  // policy INSERT nào — nhưng CHƯA từng có gì tự động phát hiện nếu một trong hai lớp
-  // đó bị vô tình gỡ. Phiên đã đăng nhập đã có sẵn ở đây nên tiện thử luôn.
-  await check(
-    "authenticated KHÔNG ghi được user_items (chỉ RPC SECURITY DEFINER được trao vật phẩm)",
-    async () => {
-      if (signIn.error) return { signInError: signIn.error };
-      const me = await user.auth.getCurrentUser();
-      const insert = await user.database
-        .from("user_items")
-        .insert([{ user_id: me.data?.user?.id, item_slug: SENTINEL_AUTH }]);
-      // Đọc lại bằng chính phiên này: policy "own items select" (auth.uid() = user_id)
-      // cho phép user đọc dòng CỦA CHÍNH MÌNH, nên nếu insert lỡ lọt qua thì đọc lại
-      // chắc chắn thấy — không có chỗ cho "ghi được nhưng RLS giấu mất" như ở books.
-      const readBack = await user.database
-        .from("user_items")
-        .select("item_slug")
-        .eq("item_slug", SENTINEL_AUTH);
-      return { insert, rows: readBack.data ?? [], readError: readBack.error };
-    },
-    ({ signInError, insert, rows, readError, error }) => {
-      if (error) return `lỗi bất thường: ${errorLabel(error)}`;
-      if (signInError) return `không đăng nhập được tài khoản test: ${errorLabel(signInError)}`;
-      if ((rows ?? []).length > 0) return "GHI ĐƯỢC — xóa dòng rác " + SENTINEL_AUTH + " khỏi user_items";
-      if (readError) return `không đọc lại được để kiểm chứng: ${errorLabel(readError)}`;
-      return insert?.error ? null : "insert không báo lỗi mà cũng không thấy dòng — kiểm tay";
-    },
-  );
-
-  // Phép này bắt HAI thứ trong một truy vấn đọc lại:
-  //   a) không tự ghi được dòng admin cho chính mình;
-  //   b) không đọc trộm được dòng của NGƯỜI KHÁC — dòng mồi nhử tạo ở Step 1c
-  //      (Task 3's cấp admin thật là tùy chọn nên không dựa vào nó), và tài khoản
-  //      test phải thấy ĐÚNG 0 dòng.
-  // Vế (b) là thứ duy nhất chứng minh policy "own role select" thật sự lọc theo
-  // auth.uid(); `has_table_privilege` trong khối tự kiểm SQL không với tới được.
-  await check(
-    "authenticated KHÔNG tự phong admin, cũng KHÔNG đọc được vai trò người khác",
-    async () => {
-      if (signIn.error) return { signInError: signIn.error };
-      const me = await user.auth.getCurrentUser();
-      const insert = await user.database
-        .from("user_roles")
-        .insert([{ user_id: me.data?.user?.id, role: "admin" }]);
-      const readBack = await user.database.from("user_roles").select("user_id, role");
-      return {
-        insert,
-        rows: readBack.data ?? [],
-        readError: readBack.error,
-        myId: me.data?.user?.id,
-      };
-    },
-    ({ signInError, insert, rows, readError, myId, error }) => {
-      if (error) return `lỗi bất thường: ${errorLabel(error)}`;
-      if (signInError) return `không đăng nhập được tài khoản test: ${errorLabel(signInError)}`;
-      if (readError) return `không đọc lại được để kiểm chứng: ${errorLabel(readError)}`;
-      const seen = rows ?? [];
-      if (seen.some((r) => r.user_id === myId)) {
-        return "TỰ PHONG ADMIN ĐƯỢC — xóa dòng trong user_roles ngay";
-      }
-      if (seen.length > 0) {
-        return `đọc được ${seen.length} dòng vai trò của người khác — policy "own role select" không lọc theo auth.uid()`;
-      }
-      return insert?.error ? null : "insert không báo lỗi mà cũng không thấy dòng — kiểm tay";
-    },
-  );
-
-  if (!signIn.error) await user.auth.signOut();
 }
 
-let failed = 0;
-for (const r of results) {
-  const detail = r.ok
-    ? r.outcome?.error
-      ? `(${errorLabel(r.outcome.error)})`
-      : `(${r.outcome?.data?.length ?? 0} dòng)`
-    : `→ ${r.reason}`;
-  console.log(`${r.ok ? "PASS" : "FAIL"}  ${r.name}\n        ${detail}`);
-  if (!r.ok) failed++;
+console.log("\n-- Người đã đăng nhập nhưng KHÔNG phải admin --");
+// Bốn bảng kiểm riêng từng cái: cả bốn dùng chung policy "admin write", nhưng một sai
+// lệch ở riêng một bảng sẽ không bị phép nào khác bắt được.
+for (const [table, sql] of [
+  ["shelves", "INSERT INTO public.shelves (slug, name, position) VALUES ('__dbcheck', 'x', 997)"],
+  ["items", "INSERT INTO public.items (slug, name) VALUES ('__dbcheck', 'x')"],
+  [
+    "books",
+    "INSERT INTO public.books (slug, shelf_slug, position, title, era) " +
+      "VALUES ('__dbcheck', 'lich-su-viet-nam', 997, 'x', 'x')",
+  ],
+  [
+    "pages",
+    "INSERT INTO public.pages (book_slug, position, heading, body) " +
+      "VALUES ('khoi-nguon-bo-coi', 997, 'x', 'x')",
+  ],
+]) {
+  await deniedByPolicy(`không ghi được ${table}`, userA, sql);
 }
 
-console.log(
-  failed === 0
-    ? `\nOK — ${results.length}/${results.length} ranh giới còn nguyên.` +
-        (skipped > 0 ? ` (${skipped} PHÉP BỊ BỎ QUA — xem cảnh báo phía trên.)` : "")
-    : `\n${failed}/${results.length} KIỂM TRA HỎNG. Đừng deploy cho tới khi sửa xong.`,
-);
-process.exit(failed === 0 ? 0 : 1);
+{
+  // `user_items` KHÁC bốn bảng nội dung ở trên, và khác một cách có chủ ý: ở đó hàng
+  // rào là policy (GRANT có, policy chặn), còn ở đây là chính GRANT — KHÔNG role nào
+  // được ghi user_items, cửa duy nhất là `complete_book` chạy SECURITY DEFINER.
+  //
+  // Nên thông điệp đúng ở đây là "permission denied for table", và nếu một ngày nó đổi
+  // thành "violates row-level security policy" thì nghĩa là ai đó vừa CẤP THÊM GRANT
+  // INSERT — đúng thứ phải nổ.
+  const sql = `INSERT INTO public.user_items (user_id, item_slug) VALUES ('${userA}', 'trong-dong')`;
+  const name = "không tự trao được vật phẩm qua user_items";
+  try {
+    await asRole("chronoshelf_auth", userA, [sql]);
+    bad(name, "GHI ĐƯỢC — tự phát vật phẩm cho mình được");
+  } catch (e) {
+    await c.query("ROLLBACK").catch(() => {});
+    const intact = e.code === "42501" && e.message === "permission denied for table user_items";
+    check(intact, `${name} — chặn ở tầng GRANT, không role nào ghi được`,
+      `chờ 42501 "permission denied for table user_items", nhận ${e.code} "${e.message}"`);
+  }
+}
+
+{
+  // Mồi nhử `__nhap-khong-bao-gio-xuat-ban` do seed tạo ra. Thiếu nó thì phép này luôn
+  // thấy 0 dòng vì mọi sách thật đều đã xuất bản — vẫn báo đạt, kể cả khi RLS hỏng.
+  const drafts = await asRole("chronoshelf_auth", userA, [
+    "SELECT slug FROM public.books WHERE NOT published",
+  ]);
+  check(drafts.rowCount === 0, "không đọc được sách chưa xuất bản",
+    `thấy ${drafts.rowCount} quyển nháp: ${JSON.stringify(drafts.rows)}`);
+}
+
+{
+  // Vai trò "của người khác" cũng do seed tạo (tài khoản mồi nhử 2222…). Thiếu nó thì
+  // user_roles không còn dòng nào ngoài của chính mình và phép này thành rỗng nghĩa.
+  const roles = await asRole("chronoshelf_auth", userA, ["SELECT user_id FROM public.user_roles"]);
+  check(roles.rowCount === 0, "không đọc trộm được vai trò của người khác",
+    `thấy ${roles.rowCount} dòng: ${JSON.stringify(roles.rows)}`);
+}
+
+console.log("\n-- complete_book khi CHƯA đăng nhập --");
+// Dùng slug sách THẬT đã xuất bản, không phải slug bịa. Với slug bịa, kể cả khi quyền
+// EXECUTE lỡ bị cấp cho người chưa đăng nhập thì hàm vẫn dừng ở "Book not found" — một
+// lỗi có thật nhưng không nói gì về quyền — nên phép kiểm sẽ báo đạt đúng lúc lỗ hổng
+// nghiêm trọng nhất đã mở toang.
+//
+// Và không liệt kê những lỗi bị coi là "đã lộ" (danh sách đó không bao giờ đủ): chỉ
+// một trạng thái được coi là "quyền còn nguyên" — đúng 42501 VÀ đúng thông điệp
+// "permission denied for function" — mọi thứ khác là rò rỉ.
+for (const [name, fn] of [
+  ["complete_book", "SELECT public.complete_book('khoi-nguon-bo-coi')"],
+  ["_complete_book_for", `SELECT public._complete_book_for('${userA}', 'khoi-nguon-bo-coi')`],
+]) {
+  try {
+    await asRole("chronoshelf_anon", null, [fn]);
+    bad(`người chưa đăng nhập không gọi được ${name}`, "GỌI ĐƯỢC");
+  } catch (e) {
+    await c.query("ROLLBACK").catch(() => {});
+    const intact = e.code === "42501" && e.message.startsWith("permission denied for function");
+    check(intact, `người chưa đăng nhập không gọi được ${name}`,
+      `chờ 42501 "permission denied for function…", nhận ${e.code} "${e.message}"`);
+  }
+}
+
+console.log(`\n${pass} đạt / ${fail} hỏng`);
+await c.end();
+process.exit(fail ? 1 : 0);

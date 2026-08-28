@@ -6,8 +6,11 @@
  * muốn sửa nội dung thì vào /quan-tri. File JSON chỉ còn để dựng lại một DB dev từ số
  * không.
  *
- * In ra SQL để chạy qua MCP `run-raw-sql`:
- *   node scripts/seed-content.mjs
+ * Chạy thẳng vào PostgreSQL cục bộ:
+ *   PGADMIN_URL=postgres://postgres:...@127.0.0.1:5432/chronoshelf npm run seed:content
+ *
+ * Cần quyền superuser vì nó ghi vào bảng nội dung, mà bảng nội dung chỉ admin mới
+ * ghi được — và lúc bootstrap thì chưa có admin nào.
  *
  * Idempotent: chạy lại nhiều lần cho cùng một kết quả.
  */
@@ -33,11 +36,8 @@ if (files.length === 0) {
 const shelves = [];
 for (const file of files) shelves.push(JSON.parse(await readFile(join(dir, file), "utf8")));
 
-// KHÔNG phát `BEGIN;`/`COMMIT;`: MCP `run-raw-sql` từ chối lệnh điều khiển transaction
-// tường minh, và nó không cần — proxy đã tự bọc cả batch trong một transaction. Đã kiểm
-// bằng thực nghiệm ngày 2026-08-24: một batch có `CREATE TABLE` rồi một `INSERT` trùng
-// khóa làm cả batch roll back, bảng vừa tạo cũng biến mất. Thêm `BEGIN;` vào chỉ khiến
-// output không dán thẳng vào MCP được, đúng lỗi đã vấp lần đầu.
+// Không phát `BEGIN;`/`COMMIT;` ở đây: script tự bọc cả lô trong MỘT transaction bên
+// dưới, nên seed hỏng giữa chừng sẽ roll back sạch thay vì để lại nửa quyển sách.
 const out = [];
 
 for (const shelf of shelves) {
@@ -88,4 +88,56 @@ for (const shelf of shelves) {
   });
 }
 
-console.log(out.join("\n\n"));
+// ---------------------------------------------------------------------------
+// Hai dòng MỒI NHỬ cho `npm run db:check`. Chúng KHÔNG phải nội dung thật và
+// không được "dọn dẹp": thiếu chúng thì hai phép kiểm vẫn chạy, vẫn báo đạt, nhưng hết
+// nghĩa — mọi sách thật đều đã xuất bản nên phép "không đọc được sách nháp" luôn thấy 0
+// dòng, và user_roles không còn dòng "của người khác" nào nên phép "không đọc trộm được
+// vai trò người khác" cũng luôn thấy 0 dòng, kể cả khi RLS hỏng hoàn toàn.
+const BAIT_USER = "22222222-2222-2222-2222-222222222222";
+out.push(
+  "INSERT INTO public.books (slug, shelf_slug, position, title, era, published) VALUES\n" +
+    "  ('__nhap-khong-bao-gio-xuat-ban', 'lich-su-viet-nam', 900,\n" +
+    "   'Mồi nhử cho db:check — đừng xuất bản', '—', false)\n" +
+    "ON CONFLICT (slug) DO UPDATE SET published = false;",
+  "INSERT INTO public.users (id, email, email_verified) VALUES\n" +
+    "  ('" + BAIT_USER + "', '__moi-nhu-vai-tro@example.invalid', false)\n" +
+    "ON CONFLICT (id) DO NOTHING;",
+  "INSERT INTO public.user_roles (user_id, role) VALUES ('" + BAIT_USER + "', 'admin')\n" +
+    "ON CONFLICT (user_id) DO UPDATE SET role = 'admin';",
+);
+
+const url = process.env.PGADMIN_URL;
+if (!url) {
+  console.error(
+    "Thiếu PGADMIN_URL — chuỗi kết nối quyền superuser. Ví dụ:\n" +
+      "  PGADMIN_URL=postgres://postgres:...@127.0.0.1:5432/chronoshelf npm run seed:content",
+  );
+  process.exit(1);
+}
+
+const { default: pg } = await import("pg");
+const client = new pg.Client({ connectionString: url });
+await client.connect();
+try {
+  await client.query("BEGIN");
+  for (const stmt of out) await client.query(stmt);
+  await client.query("COMMIT");
+  const { rows } = await client.query(
+    "SELECT (SELECT count(*) FROM public.shelves) AS shelves," +
+      " (SELECT count(*) FROM public.items) AS items," +
+      " (SELECT count(*) FROM public.books) AS books," +
+      " (SELECT count(*) FROM public.pages) AS pages",
+  );
+  const c = rows[0];
+  console.log(
+    "Seed xong: " + c.shelves + " kệ, " + c.items + " vật phẩm, " +
+      c.books + " sách (kể cả 1 mồi nhử chưa xuất bản), " + c.pages + " trang.",
+  );
+} catch (e) {
+  await client.query("ROLLBACK").catch(() => {});
+  console.error("Seed hỏng, đã roll back:", e.message);
+  process.exitCode = 1;
+} finally {
+  await client.end();
+}
