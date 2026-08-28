@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, MailCheck, Send } from "lucide-react";
-import { sendLoginCode, verifyLoginCode } from "@/lib/insforge/auth";
+import { sendLoginCode, verifyLoginCode } from "@/lib/api/auth";
 import { FIELD, LABEL, PRIMARY_BUTTON, QUIET_BUTTON } from "@/components/ui/controls";
 
 /**

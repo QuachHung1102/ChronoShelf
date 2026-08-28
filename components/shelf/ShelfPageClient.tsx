@@ -4,9 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import { BookReaderModal } from "@/components/reader/BookReaderModal";
 import { findBook } from "@/lib/content/find";
 import type { ContentShelf } from "@/lib/content/types";
-import { onAuthChange } from "@/lib/insforge/auth";
-import { buildShelfView, getUserShelfState } from "@/lib/insforge/shelf";
-import type { UserShelfState } from "@/lib/insforge/types";
+import { onAuthChange } from "@/lib/api/auth";
+import { buildShelfView, getUserShelfState } from "@/lib/api/shelf";
+import type { UserShelfState } from "@/lib/api/types";
 import { BookShelf } from "./BookShelf";
 
 /** Chưa đăng nhập: kệ vẫn xem được, chỉ quyển đầu mở và tiến độ không lưu. */
@@ -14,8 +14,12 @@ const SIGNED_OUT: UserShelfState = { ownedItemSlugs: new Set(), progressByBook: 
 
 /**
  * Nội dung tới từ server component qua prop; chỉ trạng thái người dùng (vật phẩm,
- * tiến độ) mới phải hỏi backend — và phiên đăng nhập của InsForge nằm ở trình duyệt,
- * nên phần đó bắt buộc chạy phía client.
+ * tiến độ) mới phải hỏi máy chủ.
+ *
+ * Phần đó vẫn chạy phía client, nhưng nay vì lý do KHÁC trước: cookie `httpOnly` thì
+ * server đọc được, nên về mặt kỹ thuật gộp được vào server component. Không gộp vì
+ * trạng thái này phải làm mới lại NGAY sau khi đọc xong một quyển (nhận vật phẩm →
+ * mở khóa quyển sau) và sau khi đăng nhập ở header — cả hai đều không đổi route.
  */
 export function ShelfPageClient({ shelf }: { shelf: ContentShelf }) {
   const [userState, setUserState] = useState<UserShelfState>(SIGNED_OUT);

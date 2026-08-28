@@ -2,7 +2,7 @@
 
 import type { CSSProperties } from "react";
 import { Check, Lock } from "lucide-react";
-import type { BookView } from "@/lib/insforge/types";
+import type { BookView } from "@/lib/api/types";
 import s from "./BookCover.module.scss";
 
 // Padding lệch trái/phải là cố ý: bên trái phải né cạnh gáy 10px, bên phải né mép giấy 5px,

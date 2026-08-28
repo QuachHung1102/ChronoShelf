@@ -1,61 +1,22 @@
 import { cache } from "react";
-import { insforge } from "@/lib/insforge/client";
+import { Book, Item, Page, Shelf } from "@/lib/db/models";
+import { withRole } from "@/lib/db/tx";
+import { getSessionUserId } from "@/lib/auth/session";
 import type { ContentBook, ContentItem, ContentPage, ContentShelf } from "./types";
 
 /**
- * Nội dung bài học nằm TRONG DATABASE (spec 2026-08-24 §2.1) — admin sửa xong là
- * thấy ngay, không cần build lại.
+ * Nội dung bài học nằm TRONG DATABASE (spec 2026-08-24 §2.1) — admin sửa xong là thấy
+ * ngay, không cần build lại.
  *
- * Dữ liệu này public nên server component đọc được bằng khóa anon; RLS tự lọc bản
- * nháp cho ai không phải admin. Chỉ TRẠNG THÁI NGƯỜI DÙNG mới bắt buộc chạy phía
- * client, vì phiên InsForge nằm ở trình duyệt — ranh giới đó giữ nguyên như cũ.
+ * Đọc dưới danh tính của chính người đang xem: với người thường, policy "read
+ * published" lọc sạch bản nháp; với admin, cùng policy đó cho thấy cả nháp. Nhờ vậy
+ * `/quan-tri` sau này dùng lại đúng hàm này, không cần một đường đọc thứ hai.
  *
- * Một truy vấn lồng ba tầng shelves → books → pages. PostgREST làm được (đã kiểm
- * bằng request thật ngày 2026-08-24), nên trang kệ chỉ tốn một round-trip.
+ * Đổi so với thời InsForge: hồi đó server component đọc bằng khóa anon và KHÔNG biết
+ * người xem là ai (phiên nằm ở localStorage của trình duyệt), nên admin không thể xem
+ * trước bản nháp bằng đường server. Cookie `httpOnly` đi kèm mọi request nên ràng buộc
+ * đó biến mất.
  */
-// Ba hằng số tách riêng (thay vì nối bằng `+`) vì lý do KIỂU, không phải đọc cho dễ:
-// `+` giữa hai chuỗi luôn cho ra type `string`, PostgREST-js parse `select` bằng
-// template literal type nên `string` (không phải literal) rơi vào nhánh
-// `GenericStringError` — `shelfRes.data` mất hết kiểu cụ thể. Ghép bằng `${}` giữa
-// các hằng số literal thì TypeScript suy literal type xuyên suốt, đúng như khi viết
-// liền một chuỗi.
-const PAGE_SELECT = "position, heading, body, image_url, caption, summary";
-const BOOK_SELECT = `slug, title, era, cover_url, position, reward_item_slug, pages(${PAGE_SELECT})`;
-const SHELF_SELECT = `slug, name, position, country_code, books(${BOOK_SELECT})`;
-
-interface PageRow {
-  position: number;
-  heading: string;
-  body: string;
-  image_url: string | null;
-  caption: string | null;
-  summary: string[] | null;
-}
-
-interface BookRow {
-  slug: string;
-  title: string;
-  era: string;
-  cover_url: string | null;
-  position: number;
-  reward_item_slug: string | null;
-  pages: PageRow[];
-}
-
-interface ShelfRow {
-  slug: string;
-  name: string;
-  position: number;
-  country_code: string | null;
-  books: BookRow[];
-}
-
-interface ItemRow {
-  slug: string;
-  name: string;
-  description: string;
-  image_url: string | null;
-}
 
 export interface ShelfSummary {
   slug: string;
@@ -63,99 +24,98 @@ export interface ShelfSummary {
   countryCode: string | null;
 }
 
+/** Sắp theo `position` ở phía JS thay vì trong truy vấn: cú pháp `order` lồng nhau của
+ *  Sequelize cho quan hệ hai tầng dài và dễ viết sai hơn hẳn ba dòng này, mà số phần tử
+ *  thì luôn nhỏ (một kệ vài chục quyển, một quyển vài chục trang). */
 const byPosition = <T extends { position: number }>(rows: T[]): T[] =>
   [...rows].sort((a, b) => a.position - b.position);
 
-function toPage(row: PageRow): ContentPage {
+function toPage(row: Page): ContentPage {
   return {
     heading: row.heading,
     body: row.body,
-    image: row.image_url,
+    image: row.imageUrl,
     caption: row.caption,
     ...(row.summary?.length ? { summary: row.summary } : {}),
   };
 }
 
-function toBook(row: BookRow): ContentBook {
+function toBook(row: Book): ContentBook {
   return {
     slug: row.slug,
     title: row.title,
     era: row.era,
-    cover: row.cover_url,
-    rewardItem: row.reward_item_slug,
+    cover: row.coverUrl,
+    rewardItem: row.rewardItemSlug,
     pages: byPosition(row.pages ?? []).map(toPage),
   };
 }
 
-function toItem(row: ItemRow): ContentItem {
+function toItem(row: Item): ContentItem {
   return {
     slug: row.slug,
     name: row.name,
     description: row.description,
-    image: row.image_url,
+    image: row.imageUrl,
   };
 }
 
 /**
- * Trả về null khi không có kệ nào mang slug đó, hoặc kệ đó chưa xuất bản — đây là câu
- * trả lời "rỗng" THẬT, và `/[shelf]` 404 đúng trên nó.
+ * Trả về null khi không có kệ nào mang slug đó, hoặc kệ đó chưa xuất bản (và người xem
+ * không phải admin) — đây là câu trả lời "rỗng" THẬT, và `/[shelf]` 404 đúng trên nó.
  *
- * Backend không trả lời được (mất mạng, sai URL...) thì NỔ bằng exception, không được
- * trả về null: null ở đây có nghĩa "404", nên một lần backend sập sẽ bị hiểu nhầm thành
- * slug không tồn tại thay vì báo lỗi thật.
+ * Database không trả lời được thì NỔ bằng exception, không được trả về null: null ở đây
+ * có nghĩa "404", nên một lần database sập sẽ bị hiểu nhầm thành slug không tồn tại thay
+ * vì báo lỗi thật. Đó là lý do không có `try/catch` nào ở đây.
  *
- * Bọc bằng `cache()` của React: `app/[shelf]/page.tsx` gọi hàm này ở cả `generateMetadata`
- * lẫn thân trang. Bình thường Next tự memoize fetch trùng trong một request, nhưng SDK
- * InsForge luôn gắn `AbortSignal` vào fetch (timeout mặc định 30000ms) — mà fetch có
- * AbortSignal thì Next KHÔNG memoize — nên nếu thiếu lớp này, mỗi lượt xem trang kệ tốn
- * gấp đôi round-trip xuống backend. Đừng xoá vì tưởng là thừa.
+ * Bọc bằng `cache()` của React vì `app/[shelf]/page.tsx` gọi hàm này ở CẢ
+ * `generateMetadata` lẫn thân trang; thiếu lớp này thì mỗi lượt xem tốn hai lượt truy
+ * vấn database. (Lý do cũ — SDK InsForge gắn AbortSignal nên Next không memoize fetch —
+ * đã hết hiệu lực, nhưng kết luận thì không đổi.)
  */
 export const readShelf = cache(async function readShelf(slug: string): Promise<ContentShelf | null> {
-  // Vật phẩm là bảng dùng chung cho mọi kệ nên không lồng được vào truy vấn trên;
-  // hai request này độc lập, chạy song song.
-  const [shelfRes, itemsRes] = await Promise.all([
-    insforge.database.from("shelves").select(SHELF_SELECT).eq("slug", slug).maybeSingle(),
-    insforge.database.from("items").select("slug, name, description, image_url"),
-  ]);
+  const userId = await getSessionUserId();
 
-  if (shelfRes.error) throw new Error(`Không đọc được kệ "${slug}": ${shelfRes.error.message}`);
-  if (itemsRes.error) throw new Error(`Không đọc được danh sách vật phẩm: ${itemsRes.error.message}`);
-  if (!shelfRes.data) return null;
-  const row = shelfRes.data as ShelfRow;
+  return withRole(userId, async (t) => {
+    // Vật phẩm là bảng dùng chung cho mọi kệ nên không lồng vào truy vấn kệ được. Hai
+    // truy vấn nằm trong CÙNG transaction nên phải chạy tuần tự — `Promise.all` trên
+    // một transaction của Sequelize sẽ gửi hai câu lệnh chồng lên nhau trên một
+    // connection và hỏng.
+    const shelf = await Shelf.findByPk(slug, {
+      include: [{ model: Book, as: "books", include: [{ model: Page, as: "pages" }] }],
+      transaction: t,
+    });
+    if (!shelf) return null;
 
-  return {
-    slug: row.slug,
-    name: row.name,
-    order: row.position,
-    countryCode: row.country_code,
-    items: ((itemsRes.data ?? []) as ItemRow[]).map(toItem),
-    books: byPosition(row.books ?? []).map(toBook),
-  };
+    const items = await Item.findAll({ transaction: t });
+
+    return {
+      slug: shelf.slug,
+      name: shelf.name,
+      order: shelf.position,
+      countryCode: shelf.countryCode,
+      items: items.map(toItem),
+      books: byPosition(shelf.books ?? []).map(toBook),
+    };
+  });
 });
 
 /**
  * Danh sách kệ đã xuất bản, cho thanh điều hướng và bản đồ.
  *
- * Bọc bằng `cache()` cùng lý do như `readShelf` ở trên: SDK InsForge luôn gắn
- * `AbortSignal` vào fetch nên Next không tự memoize, còn hàm này lại được gọi từ nhiều
- * nơi trong cùng một request (trang, layout, nav) — không có lớp này thì mỗi nơi gọi
- * lại tốn thêm một round-trip.
+ * Bọc `cache()` cùng lý do như `readShelf`: hàm này được gọi từ nhiều nơi trong cùng
+ * một request (trang, layout, nav).
  */
 export const readShelfList = cache(async function readShelfList(): Promise<ShelfSummary[]> {
-  const { data, error } = await insforge.database
-    .from("shelves")
-    .select("slug, name, position, country_code")
-    .order("position");
-  // NỔ khi backend không trả lời được, thay vì âm thầm coi như "chưa kệ nào xuất bản".
-  // Trang chủ ở app/page.tsx bắt buộc phải fail xây dựng nếu điều này xảy ra lúc build
-  // — nếu không, một backend sập tạm thời sẽ bị đóng băng vĩnh viễn thành trang chủ
-  // trắng trong bản HTML tĩnh đã build ra.
-  if (error) throw new Error(`Không đọc được danh sách kệ: ${error.message}`);
-  // Kiểu riêng, KHÔNG dùng lại ShelfRow: truy vấn này không lấy `books`.
-  type ShelfListRow = Omit<ShelfRow, "books">;
-  return ((data ?? []) as ShelfListRow[]).map((row) => ({
-    slug: row.slug,
-    name: row.name,
-    countryCode: row.country_code,
-  }));
+  const userId = await getSessionUserId();
+
+  const rows = await withRole(userId, (t) =>
+    Shelf.findAll({
+      attributes: ["slug", "name", "countryCode", "position"],
+      order: [["position", "ASC"]],
+      transaction: t,
+    }),
+  );
+
+  return rows.map((r) => ({ slug: r.slug, name: r.name, countryCode: r.countryCode }));
 });

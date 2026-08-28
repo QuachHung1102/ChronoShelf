@@ -4,16 +4,20 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut, UserRound } from "lucide-react";
-import { getSignedInUser, onAuthChange, signOut, type SignedInUser } from "@/lib/insforge/auth";
+import { getSignedInUser, onAuthChange, signOut, type SignedInUser } from "@/lib/api/auth";
 
 const FOCUS_ON_DARK =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-on-dark " +
   "focus-visible:ring-offset-2 focus-visible:ring-offset-primary rounded-sm";
 
 /**
- * Phiên InsForge nằm ở trình duyệt nên trạng thái đăng nhập chỉ đọc được phía client —
- * cùng lý do với `ShelfPageClient`. Đăng xuất không cần `router.refresh()`: SDK phát
- * sự kiện `signedOut` và mọi chỗ đang nghe tự lấy lại trạng thái.
+ * Component này vẫn chạy phía client dù phiên nay đã nằm trong cookie `httpOnly` (nên
+ * server đọc được): nó ngồi trong `Header`, mà `Header` xuất hiện ở layout của cả
+ * những trang tĩnh. Biến nó thành server component sẽ kéo mọi trang đó thành động chỉ
+ * để hiện một cái tên.
+ *
+ * Đăng xuất không cần `router.refresh()`: `signOut()` phát sự kiện qua `onAuthChange`
+ * và mọi chỗ đang nghe tự lấy lại trạng thái.
  */
 export function AuthMenu() {
   const [user, setUser] = useState<SignedInUser | null>(null);

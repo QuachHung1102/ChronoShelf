@@ -22,7 +22,7 @@ export interface ContentBook {
   cover: string | null;
   /**
    * Vật phẩm nhận được khi đọc xong. Đây cũng là thứ mở khóa quyển kế tiếp —
-   * không có trường `requiredItem`, xem lib/insforge/unlock.ts.
+   * không có trường `requiredItem`, xem lib/api/unlock.ts.
    */
   rewardItem: string | null;
   pages: ContentPage[];

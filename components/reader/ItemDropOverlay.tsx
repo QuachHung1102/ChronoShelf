@@ -1,7 +1,7 @@
 import { LockOpen, Sparkles } from "lucide-react";
 import { findBook, findItem } from "@/lib/content/find";
 import type { ContentShelf } from "@/lib/content/types";
-import type { CompleteBookResult } from "@/lib/insforge/types";
+import type { CompleteBookResult } from "@/lib/api/types";
 import s from "./reader.module.scss";
 
 /**

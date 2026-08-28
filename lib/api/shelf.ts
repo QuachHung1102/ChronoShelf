@@ -1,35 +1,42 @@
-import { insforge } from "./client";
-import { getSignedInUser } from "./auth";
+"use client";
+
 import { resolveState } from "./unlock";
 import { findItem } from "@/lib/content/find";
 import type { ContentShelf } from "@/lib/content/types";
 import type { BookView, CompleteBookResult, ShelfView, UserShelfState } from "./types";
 
-async function getCurrentUserId(): Promise<string | null> {
-  return (await getSignedInUser())?.id ?? null;
+/**
+ * Trạng thái người dùng và các hành động lên nó, nhìn từ trình duyệt.
+ *
+ * Mọi thứ ở đây đi qua Route Handler chứ không chạm database: phiên nằm trong cookie
+ * `httpOnly`, và quan trọng hơn — quyết định trao vật phẩm phải ở phía máy chủ.
+ */
+
+async function req<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(path, init);
+  const data: unknown = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg = (data as { error?: unknown })?.error;
+    throw new Error(typeof msg === "string" ? msg : "Không kết nối được máy chủ.");
+  }
+  return data as T;
+}
+
+interface StateResponse {
+  ownedItemSlugs: string[];
+  progress: { bookSlug: string; currentPage: number; completed: boolean }[];
 }
 
 /**
- * Đọc phần duy nhất nằm trong database: vật phẩm đang sở hữu và tiến độ đọc.
+ * Đọc vật phẩm đang sở hữu và tiến độ đọc.
  * Chưa đăng nhập thì trả về rỗng — kệ sách vẫn xem được, chỉ quyển đầu mở.
  */
 export async function getUserShelfState(): Promise<UserShelfState> {
-  const empty: UserShelfState = { ownedItemSlugs: new Set(), progressByBook: new Map() };
-  if (!(await getCurrentUserId())) return empty;
-
-  const [items, progress] = await Promise.all([
-    insforge.database.from("user_items").select("item_slug"),
-    insforge.database.from("user_book_progress").select("book_slug, current_page, completed"),
-  ]);
-  if (items.error || progress.error) return empty;
-
+  const data = await req<StateResponse>("/api/me/state");
   return {
-    ownedItemSlugs: new Set(
-      ((items.data ?? []) as { item_slug: string }[]).map((r) => r.item_slug),
-    ),
+    ownedItemSlugs: new Set(data.ownedItemSlugs),
     progressByBook: new Map(
-      ((progress.data ?? []) as { book_slug: string; current_page: number; completed: boolean }[])
-        .map((r) => [r.book_slug, { currentPage: r.current_page, completed: r.completed }]),
+      data.progress.map((p) => [p.bookSlug, { currentPage: p.currentPage, completed: p.completed }]),
     ),
   };
 }
@@ -66,26 +73,12 @@ export function buildShelfView(shelf: ContentShelf, state: UserShelfState): Shel
  * Trả về false khi chưa đăng nhập (tiến độ không lưu được, không phải lỗi).
  */
 export async function setCurrentPage(bookSlug: string, page: number): Promise<boolean> {
-  const userId = await getCurrentUserId();
-  if (!userId) return false;
-
-  const existing = await insforge.database
-    .from("user_book_progress")
-    .select("id")
-    .eq("book_slug", bookSlug)
-    .maybeSingle();
-
-  const res = existing.data
-    ? await insforge.database
-        .from("user_book_progress")
-        .update({ current_page: page })
-        .eq("book_slug", bookSlug)
-    : await insforge.database
-        .from("user_book_progress")
-        .insert([{ user_id: userId, book_slug: bookSlug, current_page: page }]);
-
-  if (res.error) throw new Error("Không lưu được tiến độ đọc.");
-  return true;
+  const data = await req<{ saved: boolean }>("/api/me/progress", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ bookSlug, page }),
+  });
+  return data.saved;
 }
 
 /**
@@ -94,12 +87,9 @@ export async function setCurrentPage(bookSlug: string, page: number): Promise<bo
  * An toàn để gọi lại: hàm idempotent, gọi hai lần không nhân đôi vật phẩm.
  */
 export async function completeBook(bookSlug: string): Promise<CompleteBookResult> {
-  const { data, error } = await insforge.database.rpc("complete_book", {
-    p_book_slug: bookSlug,
+  return req<CompleteBookResult>("/api/me/complete", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ bookSlug }),
   });
-  if (error) {
-    const message = error instanceof Error ? error.message : JSON.stringify(error);
-    throw new Error(`Không ghi nhận được kết quả đọc: ${message}`);
-  }
-  return data as CompleteBookResult;
 }

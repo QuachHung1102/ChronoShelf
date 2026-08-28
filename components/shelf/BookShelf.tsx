@@ -2,7 +2,7 @@
 
 import { Check, Lock } from "lucide-react";
 import { Room } from "@/components/Room";
-import type { ShelfView } from "@/lib/insforge/types";
+import type { ShelfView } from "@/lib/api/types";
 import { BookCover } from "./BookCover";
 import s from "./BookShelf.module.scss";
 
