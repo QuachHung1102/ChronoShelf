@@ -53,14 +53,27 @@ export async function sendLoginCode(email: string): Promise<void> {
   await deliver(email, code);
 }
 
-/** Đổi mã lấy user id. Ném lỗi "Invalid or expired code" cho mọi trường hợp hỏng. */
+/**
+ * Đổi mã lấy user id. Ném lỗi "Invalid or expired code" cho mọi trường hợp hỏng.
+ *
+ * `app.consume_login_code` trả về NULL — chứ KHÔNG ném exception — cho mọi nhánh
+ * hỏng (mã sai, mã hết hạn, thử quá 5 lần, email chưa từng xin mã). Đó là chủ ý:
+ * một RAISE trong hàm sẽ hủy cả transaction của request và cuốn theo chính câu
+ * `UPDATE attempts` của nó, làm giới hạn 5 lần thử thành vô nghĩa. Lý do đầy đủ
+ * nằm trong `db/schema/02-users.sql`.
+ *
+ * Hệ quả cho chỗ này: `throw` bên dưới BẮT BUỘC nằm NGOÀI `withRole()`. Ném từ
+ * bên trong callback thì Sequelize rollback transaction và xóa luôn bộ đếm vừa
+ * tăng — mở lại đúng lỗ vừa vá. Đừng kéo nó vào trong.
+ */
 export async function verifyLoginCode(email: string, code: string): Promise<string> {
   const rows = await withRole(null, (t) =>
-    sequelize.query<{ consume_login_code: string }>(
+    sequelize.query<{ consume_login_code: string | null }>(
       "SELECT app.consume_login_code($1, $2) AS consume_login_code",
       { bind: [email, hashCode(email, code)], transaction: t, type: QueryTypes.SELECT },
     ),
   );
+  // Tới đây withRole() đã COMMIT xong: bộ đếm lần thử an toàn, giờ mới được ném.
   const id = rows[0]?.consume_login_code;
   if (!id) throw new Error("Invalid or expired code");
   return id;

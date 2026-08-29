@@ -56,8 +56,16 @@ export function readToken(
   // đủ để dò dần từng byte chữ ký qua thời gian phản hồi.
   // timingSafeEqual ném lỗi nếu hai buffer khác độ dài, nên phải chặn trước — và bản
   // thân phép so độ dài không rò rỉ gì (độ dài chữ ký là hằng số công khai).
-  if (sig.length !== expected.length) return null;
-  if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
+  //
+  // Chốt này phải đo BYTE, không đo KÝ TỰ. `Buffer.from(s, "utf8")` mã hóa nhiều byte
+  // cho ký tự ngoài ASCII, nên một chữ ký méo đúng 43 ký tự nhưng có một chữ 'é' vẫn
+  // cho 44 byte: so theo `sig.length` thì lọt qua, rồi timingSafeEqual ném RangeError
+  // và lỗi đó thoát ra khỏi hàm — phá vỡ hợp đồng "mọi trường hợp khác trả null" và
+  // làm 500 mọi trang gọi getSessionUserId(). Dựng buffer TRƯỚC rồi mới so độ dài.
+  const sigBytes = Buffer.from(sig, "utf8");
+  const expectedBytes = Buffer.from(expected, "utf8");
+  if (sigBytes.length !== expectedBytes.length) return null;
+  if (!crypto.timingSafeEqual(sigBytes, expectedBytes)) return null;
 
   let parsed: unknown;
   try {

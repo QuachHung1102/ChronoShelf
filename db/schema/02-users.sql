@@ -91,6 +91,10 @@ $fn$;
 -- Đổi mã lấy tài khoản. Email chưa có tài khoản thì tài khoản được tạo tại đây —
 -- Trả lời y hệt nhau dù email đã tồn tại hay chưa, để không ai dò được danh sách
 -- người dùng.
+--
+-- HỢP ĐỒNG TRẢ VỀ: uuid khi mã đúng, NULL cho MỌI nhánh hỏng. Không ném exception —
+-- xem chú thích dài trong thân hàm để biết vì sao đó là điều kiện sống còn của
+-- giới hạn 5 lần thử.
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION app.consume_login_code(
   p_email     text,
@@ -111,26 +115,38 @@ BEGIN
      FOR UPDATE;
 
   IF NOT FOUND THEN
-    RAISE EXCEPTION 'Invalid or expired code';
+    RETURN NULL;
   END IF;
 
   -- Đếm lần thử TRƯỚC khi so sánh: thoát sớm ở nhánh nào cũng phải đã tính tiền.
+  --
+  -- MỌI nhánh hỏng bên dưới PHẢI là `RETURN NULL`, TUYỆT ĐỐI KHÔNG được
+  -- `RAISE EXCEPTION`. Lý do: một RAISE không ai bắt sẽ hủy CẢ transaction của
+  -- request, kéo theo chính câu UPDATE attempts ngay dưới đây — bộ đếm vĩnh viễn
+  -- bằng 0, nhánh `v_row.attempts + 1 > 5` không bao giờ đúng, và giới hạn 5 lần
+  -- thử thành vô nghĩa. Đã tái hiện 2026-08-29 trên database thật qua đúng role
+  -- `chronoshelf_anon`: phát một mã, sai 8 lần, mã ĐÚNG ở lần thứ 9 vẫn được chấp
+  -- nhận — tức là dò cạn không gian 10^6 là chiếm được tài khoản bất kỳ, kể cả admin.
+  --
+  -- Phía Node (`lib/auth/otp.ts`) đổi NULL thành lỗi cho người dùng, và nó throw
+  -- Ở NGOÀI `withRole()` nên transaction đã COMMIT bộ đếm xong trước đó. Đừng
+  -- "dọn dẹp" mấy dòng này ngược lại thành RAISE.
   UPDATE public.login_codes SET attempts = attempts + 1 WHERE id = v_row.id;
 
   IF v_row.attempts + 1 > 5 THEN
     UPDATE public.login_codes SET consumed_at = now() WHERE id = v_row.id;
-    RAISE EXCEPTION 'Invalid or expired code';
+    RETURN NULL;
   END IF;
 
   IF v_row.expires_at <= now() THEN
-    RAISE EXCEPTION 'Invalid or expired code';
+    RETURN NULL;
   END IF;
 
-  -- Một thông điệp lỗi duy nhất cho mọi nhánh hỏng ở trên: mã sai, mã hết hạn, thử
-  -- quá số lần đều trả về đúng một câu. Phân biệt chúng là chỉ cho kẻ dò biết nó
-  -- đang tới gần chỗ nào.
+  -- Một câu trả lời duy nhất cho mọi nhánh hỏng ở trên: mã sai, mã hết hạn, thử quá
+  -- số lần, email chưa từng xin mã — tất cả đều trả về NULL. Phân biệt chúng là chỉ
+  -- cho kẻ dò biết nó đang tới gần chỗ nào.
   IF v_row.code_hash <> p_code_hash THEN
-    RAISE EXCEPTION 'Invalid or expired code';
+    RETURN NULL;
   END IF;
 
   UPDATE public.login_codes SET consumed_at = now() WHERE id = v_row.id;

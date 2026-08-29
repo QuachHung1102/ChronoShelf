@@ -39,6 +39,19 @@ test("sửa một ký tự của chữ ký thì từ chối", () => {
   assert.equal(readToken(flipped, SECRET, NOW), null);
 });
 
+test("chữ ký chứa ký tự đa byte thì trả null, không ném lỗi", () => {
+  // Đúng số KÝ TỰ nhưng nhiều hơn về số BYTE. Nếu chốt độ dài quay lại so `sig.length`
+  // với `expected.length`, nó lọt qua, crypto.timingSafeEqual ném RangeError, và test
+  // này ĐỔ — đó chính là việc của nó. Xem chú thích ở token.ts.
+  const [body, sig] = mintToken(valid, SECRET).split(".");
+  for (const ch of ["é", "€"]) {
+    const meo = ch + sig.slice(1);
+    assert.equal(meo.length, sig.length, "phải giữ nguyên số ký tự");
+    assert.ok(Buffer.byteLength(meo, "utf8") > sig.length, "và phải nhiều byte hơn");
+    assert.equal(readToken(`${body}.${meo}`, SECRET, NOW), null, `phải từ chối: ${ch}`);
+  }
+});
+
 test("token cụt hoặc thừa dấu chấm đều từ chối", () => {
   const t = mintToken(valid, SECRET);
   for (const bad of ["", ".", t.split(".")[0], `${t}.them`, "khong-co-dau-cham"]) {
