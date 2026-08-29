@@ -120,3 +120,42 @@ export const readShelfList = cache(async function readShelfList(): Promise<Shelf
 
   return rows.map((r) => ({ slug: r.slug, name: r.name, countryCode: r.countryCode }));
 });
+
+export interface ShelfChain extends ShelfSummary {
+  /** Theo đúng thứ tự `position`. `rewardItemSlug` là vật phẩm quyển đó THƯỞNG. */
+  books: { slug: string; rewardItemSlug: string | null }[];
+}
+
+/**
+ * Kệ kèm chuỗi sách, đủ để tính "đã mở mấy trên mấy" — không hơn.
+ *
+ * Cố ý KHÔNG dùng `readShelf()` cho việc này dù nó trả về nhiều hơn: trang chủ có ba kệ,
+ * mà `readShelf` nạp cả `pages` (mỗi quyển vài nghìn chữ) chỉ để đếm. Ở đây chỉ cần hai
+ * cột của `books`.
+ *
+ * Trạng thái mở/khóa KHÔNG tính ở đây: nó phụ thuộc túi vật phẩm, mà túi thì nằm sau
+ * `/api/me/state` và đổi ngay khi người dùng đọc xong một quyển. Server trả phần TĨNH
+ * (chuỗi sách), client ghép phần ĐỘNG (vật phẩm đang có) bằng `resolveState`.
+ */
+export const readShelfChains = cache(async function readShelfChains(): Promise<ShelfChain[]> {
+  const userId = await getSessionUserId();
+
+  const rows = await withRole(userId, (t) =>
+    Shelf.findAll({
+      attributes: ["slug", "name", "countryCode", "position"],
+      include: [{ model: Book, as: "books", attributes: ["slug", "position", "rewardItemSlug"] }],
+      order: [["position", "ASC"]],
+      transaction: t,
+    }),
+  );
+
+  return rows.map((r) => ({
+    slug: r.slug,
+    name: r.name,
+    countryCode: r.countryCode,
+    books: byPosition(r.books ?? []).map((b) => ({
+      slug: b.slug,
+      rewardItemSlug: b.rewardItemSlug,
+    })),
+  }));
+});
