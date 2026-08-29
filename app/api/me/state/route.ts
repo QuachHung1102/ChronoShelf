@@ -1,6 +1,7 @@
 import { getSessionUserId } from "@/lib/auth/session";
 import { withRole } from "@/lib/db/tx";
-import { UserBookProgress, UserItem } from "@/lib/db/models";
+import { UserActivity, UserBookProgress, UserItem } from "@/lib/db/models";
+import { tinhStreak } from "@/lib/streak";
 import { ok } from "@/lib/api/respond";
 
 export const dynamic = "force-dynamic";
@@ -19,17 +20,27 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(): Promise<Response> {
   const userId = await getSessionUserId();
-  if (!userId) return ok({ ownedItemSlugs: [], progress: [] });
+  if (!userId) return ok({ ownedItemSlugs: [], progress: [], streak: 0 });
 
-  const { items, progress } = await withRole(userId, async (t) => ({
+  const { items, progress, ngayHoatDong } = await withRole(userId, async (t) => ({
     items: await UserItem.findAll({ attributes: ["itemSlug"], transaction: t }),
     progress: await UserBookProgress.findAll({
       attributes: ["bookSlug", "currentPage", "completed"],
       transaction: t,
     }),
+    ngayHoatDong: await UserActivity.findAll({ attributes: ["activeOn"], transaction: t }),
   }));
 
+  // "Hôm nay" theo múi giờ Việt Nam, khớp với cách `record_activity()` ghi ngày. Lấy
+  // theo giờ máy chủ chứ không theo đồng hồ trình duyệt: đồng hồ máy khách sửa được, và
+  // chuỗi giữ lửa là thứ sẽ gắn với danh hiệu.
+  const homNay = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" });
+
   return ok({
+    streak: tinhStreak(
+      ngayHoatDong.map((r) => String(r.activeOn)),
+      homNay,
+    ),
     ownedItemSlugs: items.map((i) => i.itemSlug),
     progress: progress.map((p) => ({
       bookSlug: p.bookSlug,

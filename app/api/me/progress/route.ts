@@ -30,7 +30,7 @@ export async function POST(req: Request): Promise<Response> {
 
   let affected: number;
   try {
-    [, affected] = await withRole(userId, (t) =>
+    affected = await withRole(userId, async (t) => {
       // Upsert bằng SQL thô chứ không dùng `Model.upsert()`: upsert của Sequelize ghi
       // LẠI MỌI CỘT, mà role chronoshelf_auth chỉ có `GRANT UPDATE (current_page)` —
       // nó sẽ đâm vào quyền cột và hỏng. Câu lệnh này chỉ chạm đúng cột được phép.
@@ -43,14 +43,30 @@ export async function POST(req: Request): Promise<Response> {
       // thì nổ 23503 — hai câu trả lời khác nhau biến endpoint này thành máy dò slug sách
       // nháp. Cho câu lệnh tự đi qua policy "read published": sách nháp trúng 0 dòng y hệt
       // slug không tồn tại.
-      sequelize.query(
+      const [, n] = await sequelize.query(
         `INSERT INTO public.user_book_progress (user_id, book_slug, current_page)
          SELECT $1, b.slug, $3 FROM public.books b WHERE b.slug = $2
          ON CONFLICT (user_id, book_slug)
          DO UPDATE SET current_page = EXCLUDED.current_page`,
         { bind: [userId, bookSlug, page], transaction: t, type: QueryTypes.INSERT },
-      ),
-    );
+      );
+
+      // Ghi nhận "hôm nay có học" cho chuỗi giữ lửa (content.md §6) — nhưng CHỈ khi lần
+      // lưu này thật sự chạm được vào một quyển sách. Gọi vô điều kiện thì một slug bịa
+      // cũng nhóm được lửa, và chuỗi giữ lửa thành thứ tự bơm được bằng vòng lặp fetch.
+      //
+      // Cùng transaction với câu trên, chạy TUẦN TỰ (không `Promise.all`): tiến độ đã lưu
+      // mà ngày hoạt động thì không, hay ngược lại, đều là trạng thái không nên tồn tại.
+      // `record_activity()` là SECURITY DEFINER và tự lấy danh tính từ
+      // `app.current_user_id()` — không có tham số nào để truyền user_id của người khác.
+      if (n > 0) {
+        await sequelize.query("SELECT public.record_activity()", {
+          transaction: t,
+          type: QueryTypes.SELECT,
+        });
+      }
+      return n;
+    });
   } catch (e) {
     console.error("POST /api/me/progress:", e);
     return fail("Không lưu được tiến độ đọc.", 500);

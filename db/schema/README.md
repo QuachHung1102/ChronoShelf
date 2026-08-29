@@ -21,6 +21,7 @@ EXISTS` trước khi tạo).
 | `08-reorder.sql` | `reorder_books`, `reorder_pages` | |
 | `09-media.sql` | `media` — kho ảnh bytea, khóa chính là sha256 của chính nội dung; policy đọc-công-khai + GRANT chỉ-ghi-thêm | |
 | `10-image-credit.sql` | Vá dữ liệu ảnh cũ RỒI thêm ràng buộc "có ảnh thì phải có nguồn + tác giả" — thứ tự trong file quan trọng | |
+| `11-activity.sql` | `user_activity` — mỗi người mỗi ngày một dòng, nguồn của chuỗi giữ lửa; chỉ-đọc với mọi role, cửa ghi duy nhất là `record_activity()` SECURITY DEFINER | |
 | `90-verify.sql` | Khẳng định cấu trúc — nổ nếu hàng rào bị nới | |
 
 ## Ba role, không phải một

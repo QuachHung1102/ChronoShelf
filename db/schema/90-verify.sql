@@ -21,7 +21,7 @@ BEGIN
 
   -- Role kết nối phải trống rỗng: mọi quyền chỉ đến sau khi SET LOCAL ROLE.
   FOREACH t IN ARRAY ARRAY['users','login_codes','user_roles','shelves','items','books','pages',
-                           'user_book_progress','user_items'] LOOP
+                           'user_book_progress','user_items','user_activity'] LOOP
     IF has_table_privilege('chronoshelf_app', 'public.' || t, 'SELECT') THEN
       RAISE EXCEPTION 'chronoshelf_app đọc thẳng được % mà không cần SET ROLE', t;
     END IF;
@@ -348,4 +348,59 @@ BEGIN
   END IF;
 
   RAISE NOTICE 'E. tiến độ đọc + túi vật phẩm OK';
+END $$;
+
+-- === F. Chuỗi giữ lửa ===
+DO $$
+DECLARE
+  n integer;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_tables
+                  WHERE schemaname='public' AND tablename='user_activity' AND rowsecurity) THEN
+    RAISE EXCEPTION 'user_activity chưa tồn tại hoặc chưa bật RLS';
+  END IF;
+
+  -- Hàng rào ở đây là chính GRANT, y như `user_items`: KHÔNG role nào ghi được, cửa duy
+  -- nhất là `record_activity()` chạy SECURITY DEFINER. Nếu một ngày chỗ này đổi thành
+  -- "bị policy chặn" thì nghĩa là ai đó vừa CẤP THÊM GRANT — đúng thứ phải nổ.
+  IF has_table_privilege('chronoshelf_auth', 'public.user_activity', 'INSERT')
+  OR has_table_privilege('chronoshelf_auth', 'public.user_activity', 'UPDATE')
+  OR has_table_privilege('chronoshelf_auth', 'public.user_activity', 'DELETE') THEN
+    RAISE EXCEPTION 'chronoshelf_auth ghi được user_activity — tự bịa chuỗi giữ lửa được';
+  END IF;
+  IF NOT has_table_privilege('chronoshelf_auth', 'public.user_activity', 'SELECT') THEN
+    RAISE EXCEPTION 'chronoshelf_auth không đọc được user_activity — ngọn lửa sẽ luôn tắt';
+  END IF;
+  IF has_table_privilege('chronoshelf_anon', 'public.user_activity', 'SELECT') THEN
+    RAISE EXCEPTION 'người chưa đăng nhập đọc được user_activity';
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_policies
+                  WHERE schemaname='public' AND tablename='user_activity'
+                    AND policyname='own activity select'
+                    AND qual='(app.current_user_id() = user_id)' AND cmd='SELECT') THEN
+    RAISE EXCEPTION 'policy "own activity select" thiếu, hoặc không còn đúng là (app.current_user_id() = user_id)';
+  END IF;
+
+  SELECT count(*) INTO n FROM pg_policies WHERE schemaname='public' AND tablename='user_activity';
+  IF n <> 1 THEN
+    RAISE EXCEPTION 'có % policy trên user_activity, chờ đúng 1 — ai đó vừa thêm một cửa', n;
+  END IF;
+
+  -- Hàm ghi phải là SECURITY DEFINER, nếu không nó chạy bằng quyền người gọi và INSERT
+  -- sẽ hỏng đúng vì hàng rào GRANT ở trên — chuỗi im lặng không bao giờ tăng.
+  IF NOT EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace ns ON ns.oid = p.pronamespace
+                  WHERE ns.nspname='public' AND p.proname='record_activity' AND p.prosecdef) THEN
+    RAISE EXCEPTION 'record_activity thiếu, hoặc không còn là SECURITY DEFINER';
+  END IF;
+  -- Không nhận tham số: nhận user_id làm tham số là biến nó thành hàm ghi hộ người khác.
+  IF (SELECT pronargs FROM pg_proc p JOIN pg_namespace ns ON ns.oid = p.pronamespace
+       WHERE ns.nspname='public' AND p.proname='record_activity') <> 0 THEN
+    RAISE EXCEPTION 'record_activity nhận tham số — nó phải tự lấy danh tính từ app.current_user_id()';
+  END IF;
+  IF has_function_privilege('chronoshelf_anon', 'public.record_activity()', 'EXECUTE') THEN
+    RAISE EXCEPTION 'người chưa đăng nhập gọi được record_activity';
+  END IF;
+
+  RAISE NOTICE 'F. chuỗi giữ lửa OK';
 END $$;

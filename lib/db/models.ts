@@ -202,6 +202,31 @@ UserItem.init(
   { ...base, tableName: "user_items" },
 );
 
+/**
+ * Nhật ký "ngày nào có học", nguồn của chuỗi giữ lửa (content.md §6).
+ *
+ * Không có cột `id`: khóa chính là cặp (user_id, active_on), vì câu hỏi duy nhất bảng này
+ * trả lời là "hôm đó có học không" và một dòng thừa cho cùng một ngày là vô nghĩa.
+ *
+ * `DATEONLY` chứ không phải `DATE`: Sequelize trả `DATEONLY` về dưới dạng chuỗi
+ * `YYYY-MM-DD` đúng như Postgres lưu, không kèm giờ và không bị múi giờ của tiến trình
+ * Node kéo lệch sang ngày khác — mà lệch một ngày ở đây là đứt chuỗi của người dùng.
+ */
+export class UserActivity extends Model<
+  InferAttributes<UserActivity>,
+  InferCreationAttributes<UserActivity>
+> {
+  declare userId: string;
+  declare activeOn: string;
+}
+UserActivity.init(
+  {
+    userId: { type: DataTypes.UUID, primaryKey: true, allowNull: false },
+    activeOn: { type: DataTypes.DATEONLY, primaryKey: true, allowNull: false },
+  },
+  { ...base, tableName: "user_activity" },
+);
+
 // `sourceKey`/`targetKey` là bắt buộc: khóa chính ở đây là `slug` dạng text, không
 // phải cột `id` mà Sequelize mặc định giả định.
 Shelf.hasMany(Book, { foreignKey: "shelfSlug", sourceKey: "slug", as: "books" });

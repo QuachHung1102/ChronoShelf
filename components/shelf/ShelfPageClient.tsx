@@ -11,7 +11,11 @@ import type { UserShelfState } from "@/lib/api/types";
 import { BookShelf } from "./BookShelf";
 
 /** Chưa đăng nhập: kệ vẫn xem được, chỉ quyển đầu mở và tiến độ không lưu. */
-const SIGNED_OUT: UserShelfState = { ownedItemSlugs: new Set(), progressByBook: new Map() };
+const SIGNED_OUT: UserShelfState = {
+  ownedItemSlugs: new Set(),
+  progressByBook: new Map(),
+  streak: 0,
+};
 
 /**
  * Nội dung tới từ server component qua prop; chỉ trạng thái người dùng (vật phẩm,

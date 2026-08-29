@@ -475,6 +475,87 @@ for (const [name, fn] of [
   }
 }
 
+// ---------------------------------------------------------------------------
+// Chuoi giu lua (content.md §6)
+// ---------------------------------------------------------------------------
+console.log("\n-- Chuỗi giữ lửa --");
+
+{
+  // Hàng rào ở đây là chính GRANT, y như `user_items`: KHÔNG role nào ghi được, cửa duy
+  // nhất là `record_activity()` chạy SECURITY DEFINER. Nên thông điệp đúng là
+  // "permission denied for table"; nếu một ngày nó đổi thành "violates row-level security
+  // policy" thì nghĩa là ai đó vừa CẤP THÊM GRANT INSERT — đúng thứ phải nổ.
+  const name = "không tự bịa được ngày hoạt động (INSERT thẳng user_activity)";
+  try {
+    await asRoleUndo("chronoshelf_auth", userA, [
+      `INSERT INTO public.user_activity (user_id, active_on) VALUES ('${userA}', CURRENT_DATE - 5)`,
+    ]);
+    bad(name, "GHI ĐƯỢC — chuỗi giữ lửa tự bơm được");
+  } catch (e) {
+    await c.query("ROLLBACK").catch(() => {});
+    const intact = e.code === "42501" && e.message === "permission denied for table user_activity";
+    check(intact, `${name} — chặn ở tầng GRANT, không role nào ghi được`,
+      `chờ 42501 "permission denied for table user_activity", nhận ${e.code} "${e.message}"`);
+  }
+}
+
+{
+  // Đối chứng: cửa HỢP LỆ phải mở. Thiếu phép này thì phép trên đạt kể cả khi
+  // record_activity hỏng hoàn toàn và chuỗi không bao giờ tăng được.
+  const r = await asRoleUndo("chronoshelf_auth", userA, [
+    "SELECT public.record_activity()",
+    `SELECT count(*)::int AS n FROM public.user_activity
+      WHERE user_id = '${userA}' AND active_on = (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date`,
+  ]);
+  check(r.rows[0].n === 1, "đối chứng: record_activity() ghi được đúng một dòng cho hôm nay",
+    `chờ 1 dòng, nhận ${r.rows[0].n}`);
+}
+
+{
+  // Gọi hai lần trong ngày vẫn chỉ một dòng — `ON CONFLICT DO NOTHING` phải thật sự làm
+  // việc đó, nếu không mỗi lần lật trang lại nổ khóa chính và mọi lần lưu tiến độ đều hỏng.
+  const r = await asRoleUndo("chronoshelf_auth", userA, [
+    "SELECT public.record_activity()",
+    "SELECT public.record_activity()",
+    `SELECT count(*)::int AS n FROM public.user_activity WHERE user_id = '${userA}'`,
+  ]);
+  check(r.rows[0].n === 1, "gọi hai lần trong cùng ngày vẫn chỉ một dòng",
+    `chờ 1 dòng, nhận ${r.rows[0].n}`);
+}
+
+{
+  // RLS: người này không đọc được ngày hoạt động của người kia. Mồi nhử là dòng vừa ghi
+  // cho A ngay trong transaction này — không có nó thì phép này luôn thấy 0 và hết nghĩa.
+  await c.query("BEGIN");
+  await c.query("SET LOCAL ROLE chronoshelf_auth");
+  await c.query("SELECT set_config('app.user_id', $1, true)", [userA]);
+  await c.query("SELECT public.record_activity()");
+  await c.query("SELECT set_config('app.user_id', $1, true)", [userB]);
+  const r = await c.query("SELECT count(*)::int AS n FROM public.user_activity");
+  await c.query("ROLLBACK").catch(() => {});
+  check(r.rows[0].n === 0, "không đọc trộm được ngày hoạt động của người khác",
+    `B thấy ${r.rows[0].n} dòng, chờ 0 (A vừa được ghi một dòng ngay trước đó)`);
+}
+
+await denied(
+  "người chưa đăng nhập không đọc được user_activity",
+  "chronoshelf_anon",
+  "SELECT 1 FROM public.user_activity",
+  "permission denied for table user_activity",
+);
+
+{
+  const name = "người chưa đăng nhập không gọi được record_activity";
+  try {
+    await asRoleUndo("chronoshelf_anon", null, ["SELECT public.record_activity()"]);
+    bad(name, "GỌI ĐƯỢC");
+  } catch (e) {
+    await c.query("ROLLBACK").catch(() => {});
+    const intact = e.code === "42501" && e.message.startsWith("permission denied for function");
+    check(intact, name, `chờ 42501 "permission denied for function…", nhận ${e.code} "${e.message}"`);
+  }
+}
+
 console.log(`\n${pass} đạt / ${fail} hỏng`);
 await c.end();
 process.exit(fail ? 1 : 0);

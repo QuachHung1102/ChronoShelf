@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { Flame } from "lucide-react";
 import { AuthMenu } from "@/components/auth/AuthMenu";
-import { BagCount } from "@/components/bag/BagCount";
+import { HeaderStats } from "@/components/HeaderStats";
 import type { ShelfSummary } from "@/lib/content/read";
 
 const focusOnDark =
@@ -46,19 +45,7 @@ export function Header({
           );
         })}
 
-        {/* Streak CHƯA có số thật: nó cần một bảng ghi hoạt động theo ngày mà database
-            chưa có, tức là một subsystem riêng (CLAUDE.md: đừng gộp nhiều subsystem vào
-            một lượt). Trước đây chỗ này hiện cứng "12" và "7". Một sản phẩm dạy học sinh
-            mà bịa số là thứ mất uy tín nhanh nhất — và học sinh nhận ra ngay khi con số
-            không bao giờ đổi. Giữ dấu "–" cho tới khi có dữ liệu thật. */}
-        <span className="flex items-center gap-xs text-on-primary" title="Chuỗi ngày học liên tục">
-          <Flame aria-hidden className="h-5 w-5 text-tertiary-light" />
-          <span className="font-body text-label-md" aria-label="chưa có dữ liệu streak">
-            –
-          </span>
-        </span>
-
-        <BagCount />
+        <HeaderStats />
 
         <AuthMenu />
       </nav>

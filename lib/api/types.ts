@@ -28,4 +28,6 @@ export interface CompleteBookResult {
 export interface UserShelfState {
   ownedItemSlugs: Set<string>;
   progressByBook: Map<string, { currentPage: number; completed: boolean }>;
+  /** Số ngày học liên tục, do máy chủ tính (content.md §6). */
+  streak: number;
 }

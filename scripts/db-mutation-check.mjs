@@ -130,6 +130,18 @@ const MUTATIONS = [
     `CREATE POLICY "leak" ON public.user_items FOR SELECT USING (true)`,
     "chờ đúng 4",
   ],
+  // --- mục F: chuỗi giữ lửa.
+  [
+    "chronoshelf_auth được GRANT INSERT trên user_activity",
+    "GRANT INSERT ON public.user_activity TO chronoshelf_auth",
+    "ghi được user_activity",
+  ],
+  [
+    "record_activity hạ xuống SECURITY INVOKER",
+    "ALTER FUNCTION public.record_activity() SECURITY INVOKER",
+    "SECURITY DEFINER",
+  ],
+
 ];
 
 const verifySql = await readFile(VERIFY, "utf8");

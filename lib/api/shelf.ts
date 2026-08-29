@@ -25,6 +25,7 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
 interface StateResponse {
   ownedItemSlugs: string[];
   progress: { bookSlug: string; currentPage: number; completed: boolean }[];
+  streak: number;
 }
 
 /**
@@ -34,6 +35,9 @@ interface StateResponse {
 export async function getUserShelfState(): Promise<UserShelfState> {
   const data = await req<StateResponse>("/api/me/state");
   return {
+    // Máy chủ tính chuỗi, client chỉ hiển thị. Tính ở client thì đồng hồ máy khách sửa
+    // được — và chuỗi giữ lửa là thứ sẽ gắn với danh hiệu và phần thưởng (§6).
+    streak: data.streak ?? 0,
     ownedItemSlugs: new Set(data.ownedItemSlugs),
     progressByBook: new Map(
       data.progress.map((p) => [p.bookSlug, { currentPage: p.currentPage, completed: p.completed }]),
