@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { QueryTypes } from "sequelize";
+import { rowsAffected } from "@/lib/db/rows-affected";
 import { sequelize } from "@/lib/db/sequelize";
 import { withRole } from "@/lib/db/tx";
 import { requireAdmin } from "./gate";
@@ -28,8 +29,6 @@ export interface ActionState {
   error?: string;
   ok?: string;
 }
-
-const EMPTY: ActionState = {};
 
 /** Lấy một trường chuỗi đã trim từ FormData; `""` khi thiếu. */
 const field = (fd: FormData, key: string): string => String(fd.get(key) ?? "").trim();
@@ -65,8 +64,10 @@ function pgInfo(e: unknown): { code: string; constraint: string; message: string
  * Đây là cùng một bài học đã ghi trong CLAUDE.md cho `42501`: neo vào tín hiệu chính xác
  * và ổn định, đừng so khớp câu chữ. Văn xuôi của Postgres đổi theo phiên bản và theo
  * `lc_messages`; sqlstate thì không.
+ *
+ * `deleting` để phân biệt hai chuyện mà 23001/23503 gộp lại làm một — xem nhánh đó.
  */
-async function guard(fn: () => Promise<ActionState>): Promise<ActionState> {
+async function guard(fn: () => Promise<ActionState>, deleting = false): Promise<ActionState> {
   try {
     return await fn();
   } catch (e) {
@@ -79,9 +80,15 @@ async function guard(fn: () => Promise<ActionState>): Promise<ActionState> {
         return { error: message.replace(OUR_SQL_PREFIX, "") };
 
       // 23001 restrict_violation — ON DELETE RESTRICT chặn.
-      // 23503 foreign_key_violation — họ hàng gần, gộp chung một câu.
+      // 23503 foreign_key_violation — họ hàng gần, nhưng KHÔNG cùng nghĩa: 23503 cũng nổ
+      // theo chiều ngược lại, khi một INSERT/UPDATE trỏ tới một dòng vừa biến mất (chọn
+      // phần thưởng là vật phẩm mà tab khác vừa xóa, thêm sách vào kệ vừa bị xóa…). Nói
+      // "không xóa được" lúc đó là chỉ sai chỗ hoàn toàn, nên chỉ nói vậy khi đang xóa.
       case "23001":
       case "23503":
+        if (!deleting) {
+          return { error: "Thứ bạn vừa chọn không còn tồn tại — tải lại trang rồi chọn lại." };
+        }
         return {
           error:
             "Không xóa được: thứ này đang được dữ liệu khác tham chiếu. " +
@@ -116,6 +123,17 @@ async function guard(fn: () => Promise<ActionState>): Promise<ActionState> {
 // Kệ
 // ---------------------------------------------------------------------------
 
+/**
+ * Slug bị coi như đã dùng vì có một đoạn TĨNH mang đúng tên đó che mất đoạn động.
+ *
+ * Danh sách này là "thư mục route CÓ `page.tsx`", không phải "mọi thư mục trong `app/`":
+ * `app/api` và `app/media` không có page nên `/api` và `/media` vẫn rơi vào `/[shelf]` —
+ * đã đo bằng `next start`. Còn `vat-pham` thì che `/quan-tri/[shelf]`.
+ *
+ * Thêm một thư mục route gốc CÓ `page.tsx` thì phải cập nhật danh sách này.
+ */
+const RESERVED_SLUGS = ["vat-pham", "quan-tri", "dang-nhap"];
+
 export async function createShelf(_prev: ActionState, fd: FormData): Promise<ActionState> {
   return guard(async () => {
     const userId = await requireAdmin();
@@ -130,11 +148,11 @@ export async function createShelf(_prev: ActionState, fd: FormData): Promise<Act
         transaction: t,
         type: QueryTypes.SELECT,
       });
-      // `vat-pham` bị coi như đã dùng: đoạn tĩnh `/quan-tri/vat-pham` thắng đoạn động
-      // `/quan-tri/[shelf]` trong App Router, nên một kệ mang slug đó sẽ có màn quản trị
-      // bị che mất. Admin đặt tên kệ là "Vật phẩm" là ra đúng slug này — không hiếm như
-      // nó tưởng. `uniqueSlug` sẽ tự đổi thành `vat-pham-2`.
-      const slug = uniqueSlug(base, new Set([...taken.map((r) => r.slug), "vat-pham"]));
+      // Đoạn tĩnh thắng đoạn động trong App Router, nên một kệ mang slug trùng tên một
+      // đoạn tĩnh sẽ bị che mất — cả màn quản trị lẫn trang kệ của học sinh. Admin đặt
+      // tên kệ là "Vật phẩm" hay "Quản trị" là ra đúng những slug đó, không hiếm như nó
+      // tưởng. `uniqueSlug` sẽ tự đổi thành `vat-pham-2`, `quan-tri-2`…
+      const slug = uniqueSlug(base, new Set([...taken.map((r) => r.slug), ...RESERVED_SLUGS]));
 
       // Kệ mới xếp cuối, và LUÔN ở trạng thái nháp: xuất bản là một hành động riêng,
       // có ý thức. Tạo xong đã hiện ngay cho học sinh là cách chắc chắn nhất để một
@@ -164,15 +182,18 @@ export async function updateShelf(_prev: ActionState, fd: FormData): Promise<Act
       return { error: "Mã quốc gia phải là số ISO-3166-1 numeric, ví dụ 704 cho Việt Nam." };
     }
 
-    const [, affected] = await withRole(userId, (t) =>
-      sequelize.query(
-        `UPDATE public.shelves SET name = $2, blurb = $3, country_code = $4 WHERE slug = $1`,
-        { bind: [slug, name, blurb, countryCode || null], transaction: t },
-      ),
-    ) as [unknown, number];
-
     // Policy chặn thì UPDATE trúng 0 dòng mà KHÔNG báo lỗi. Không có phép so này thì
-    // giao diện báo "đã lưu" trong khi database không đổi gì.
+    // giao diện báo "đã lưu" trong khi database không đổi gì. Phải qua `rowsAffected`
+    // chứ không ép kiểu phần tử thứ hai thành số — nó là một đối tượng `pg.Result`, và
+    // một bản trước đã ép kiểu như vậy nên phép so này chết câm. Xem lib/db/rows-affected.ts.
+    const affected = rowsAffected(
+      await withRole(userId, (t) =>
+        sequelize.query(
+          `UPDATE public.shelves SET name = $2, blurb = $3, country_code = $4 WHERE slug = $1`,
+          { bind: [slug, name, blurb, countryCode || null], transaction: t },
+        ),
+      ),
+    );
     if (affected === 0) return { error: "Không sửa được kệ này (không tồn tại, hoặc thiếu quyền)." };
 
     revalidatePath("/quan-tri");
@@ -202,12 +223,14 @@ export async function setShelfPublished(_prev: ActionState, fd: FormData): Promi
       }
     }
 
-    const [, affected] = await withRole(userId, (t) =>
-      sequelize.query("UPDATE public.shelves SET published = $2 WHERE slug = $1", {
-        bind: [slug, publish],
-        transaction: t,
-      }),
-    ) as [unknown, number];
+    const affected = rowsAffected(
+      await withRole(userId, (t) =>
+        sequelize.query("UPDATE public.shelves SET published = $2 WHERE slug = $1", {
+          bind: [slug, publish],
+          transaction: t,
+        }),
+      ),
+    );
     if (affected === 0) return { error: "Không đổi được trạng thái kệ này." };
 
     revalidatePath("/quan-tri");
@@ -236,17 +259,19 @@ export async function deleteShelf(_prev: ActionState, fd: FormData): Promise<Act
         return { error: `Kệ còn ${n} quyển sách. Gỡ hết sách khỏi kệ rồi mới xóa được.` };
       }
 
-      const [, affected] = (await sequelize.query(
-        "DELETE FROM public.shelves WHERE slug = $1",
-        { bind: [slug], transaction: t },
-      )) as [unknown, number];
+      const affected = rowsAffected(
+        await sequelize.query("DELETE FROM public.shelves WHERE slug = $1", {
+          bind: [slug],
+          transaction: t,
+        }),
+      );
       if (affected === 0) return { error: "Không xóa được kệ này." };
 
       revalidatePath("/quan-tri");
       revalidatePath("/");
       return { ok: "Đã xóa kệ." };
     });
-  });
+  }, true);
 }
 
 /**
@@ -263,9 +288,12 @@ export async function moveShelf(_prev: ActionState, fd: FormData): Promise<Actio
     const direction = Number(field(fd, "direction"));
     if (!slug || (direction !== -1 && direction !== 1)) return { error: "Yêu cầu không hợp lệ." };
 
-    await withRole(userId, async (t) => {
-      const rows = await sequelize.query<{ slug: string }>(
-        "SELECT slug FROM public.shelves ORDER BY position",
+    // Trả về một câu trạng thái THẬT chứ không phải EMPTY: người dùng bàn phím bấm ▲/▼
+    // xong thì tiêu điểm rời khỏi nút, và nếu vùng aria-live không có gì để đọc thì
+    // trình đọc màn hình im lặng — thao tác đã xảy ra mà không ai được báo (WCAG 4.1.3).
+    const moved = await withRole(userId, async (t) => {
+      const rows = await sequelize.query<{ slug: string; name: string }>(
+        "SELECT slug, name FROM public.shelves ORDER BY position",
         { transaction: t, type: QueryTypes.SELECT },
       );
       const order = rows.map((r) => r.slug);
@@ -273,7 +301,7 @@ export async function moveShelf(_prev: ActionState, fd: FormData): Promise<Actio
       const j = i + direction;
       // Đã ở đầu/cuối thì không làm gì — nút tương ứng cũng đã bị vô hiệu hóa ở giao
       // diện, nhưng action là endpoint công khai nên phải tự kiểm lại.
-      if (i === -1 || j < 0 || j >= order.length) return;
+      if (i === -1 || j < 0 || j >= order.length) return null;
 
       [order[i], order[j]] = [order[j], order[i]];
       await sequelize.query("SELECT public.reorder_shelves($1::text[])", {
@@ -281,11 +309,14 @@ export async function moveShelf(_prev: ActionState, fd: FormData): Promise<Actio
         transaction: t,
         type: QueryTypes.SELECT,
       });
+      return { name: rows[i].name, pos: j + 1, n: order.length };
     });
 
     revalidatePath("/quan-tri");
     revalidatePath("/");
-    return EMPTY;
+    return moved
+      ? { ok: `Đã đưa kệ “${moved.name}” về vị trí ${moved.pos}/${moved.n}.` }
+      : { error: "Kệ này đã ở đầu hoặc cuối danh sách." };
   });
 }
 
@@ -342,17 +373,19 @@ export async function updateItem(_prev: ActionState, fd: FormData): Promise<Acti
     const img = readImageFields(fd, "image");
     if ("error" in img) return { error: img.error };
 
-    const [, affected] = (await withRole(userId, (t) =>
-      sequelize.query(
-        `UPDATE public.items
-            SET name = $2, description = $3, image_url = $4, image_source = $5, image_credit = $6
-          WHERE slug = $1`,
-        {
-          bind: [slug, name, field(fd, "description"), img.url, img.source, img.credit],
-          transaction: t,
-        },
+    const affected = rowsAffected(
+      await withRole(userId, (t) =>
+        sequelize.query(
+          `UPDATE public.items
+              SET name = $2, description = $3, image_url = $4, image_source = $5, image_credit = $6
+            WHERE slug = $1`,
+          {
+            bind: [slug, name, field(fd, "description"), img.url, img.source, img.credit],
+            transaction: t,
+          },
+        ),
       ),
-    )) as [unknown, number];
+    );
 
     if (affected === 0) {
       return { error: "Không sửa được vật phẩm này (không tồn tại, hoặc thiếu quyền)." };
@@ -393,16 +426,18 @@ export async function deleteItem(_prev: ActionState, fd: FormData): Promise<Acti
       // chặn trước được: admin không có policy nào cho phép đọc `user_items` của người
       // khác. Phải để khóa ngoại ném rồi dịch — `guard()` có nhánh riêng cho việc đó, và
       // nhánh ấy phải đứng TRƯỚC nhánh "violates" (xem chú thích ở guard).
-      const [, affected] = (await sequelize.query("DELETE FROM public.items WHERE slug = $1", {
-        bind: [slug],
-        transaction: t,
-      })) as [unknown, number];
+      const affected = rowsAffected(
+        await sequelize.query("DELETE FROM public.items WHERE slug = $1", {
+          bind: [slug],
+          transaction: t,
+        }),
+      );
       if (affected === 0) return { error: "Không xóa được vật phẩm này." };
 
       revalidatePath("/quan-tri/vat-pham");
       return { ok: "Đã xóa vật phẩm." };
     });
-  });
+  }, true);
 }
 
 // ---------------------------------------------------------------------------
@@ -466,14 +501,16 @@ export async function updateBook(_prev: ActionState, fd: FormData): Promise<Acti
     if (!title) return { error: "Tiêu đề không được để trống." };
     if (!era) return { error: "Niên đại không được để trống (ví dụ: Năm 938)." };
 
-    const [, affected] = (await withRole(userId, (t) =>
-      sequelize.query(
-        `UPDATE public.books
-            SET title = $2, era = $3, reward_item_slug = $4, updated_at = now()
-          WHERE slug = $1`,
-        { bind: [slug, title, era, rewardItemSlug], transaction: t },
+    const affected = rowsAffected(
+      await withRole(userId, (t) =>
+        sequelize.query(
+          `UPDATE public.books
+              SET title = $2, era = $3, reward_item_slug = $4, updated_at = now()
+            WHERE slug = $1`,
+          { bind: [slug, title, era, rewardItemSlug], transaction: t },
+        ),
       ),
-    )) as [unknown, number];
+    );
 
     if (affected === 0) {
       return { error: "Không sửa được quyển này (không tồn tại, hoặc thiếu quyền)." };
@@ -508,12 +545,14 @@ export async function setBookPublished(_prev: ActionState, fd: FormData): Promis
       }
     }
 
-    const [, affected] = (await withRole(userId, (t) =>
-      sequelize.query("UPDATE public.books SET published = $2, updated_at = now() WHERE slug = $1", {
-        bind: [slug, publish],
-        transaction: t,
-      }),
-    )) as [unknown, number];
+    const affected = rowsAffected(
+      await withRole(userId, (t) =>
+        sequelize.query(
+          "UPDATE public.books SET published = $2, updated_at = now() WHERE slug = $1",
+          { bind: [slug, publish], transaction: t },
+        ),
+      ),
+    );
     if (affected === 0) return { error: "Không đổi được trạng thái quyển này." };
 
     revalidatePath(`/quan-tri/${shelfSlug}`);
@@ -574,17 +613,19 @@ export async function deleteBook(_prev: ActionState, fd: FormData): Promise<Acti
         };
       }
 
-      const [, affected] = (await sequelize.query("DELETE FROM public.books WHERE slug = $1", {
-        bind: [slug],
-        transaction: t,
-      })) as [unknown, number];
+      const affected = rowsAffected(
+        await sequelize.query("DELETE FROM public.books WHERE slug = $1", {
+          bind: [slug],
+          transaction: t,
+        }),
+      );
       if (affected === 0) return { error: "Không xóa được quyển này." };
 
       revalidatePath(`/quan-tri/${shelfSlug}`);
       revalidatePath(`/${shelfSlug}`);
       return { ok: "Đã xóa quyển sách." };
     });
-  });
+  }, true);
 }
 
 /** Đổi chỗ quyển sách với quyển liền kề. `direction` là -1 (lên) hoặc 1 (xuống). */
@@ -598,15 +639,15 @@ export async function moveBook(_prev: ActionState, fd: FormData): Promise<Action
       return { error: "Yêu cầu không hợp lệ." };
     }
 
-    await withRole(userId, async (t) => {
-      const rows = await sequelize.query<{ slug: string }>(
-        "SELECT slug FROM public.books WHERE shelf_slug = $1 ORDER BY position",
+    const moved = await withRole(userId, async (t) => {
+      const rows = await sequelize.query<{ slug: string; title: string }>(
+        "SELECT slug, title FROM public.books WHERE shelf_slug = $1 ORDER BY position",
         { bind: [shelfSlug], transaction: t, type: QueryTypes.SELECT },
       );
       const order = rows.map((r) => r.slug);
       const i = order.indexOf(slug);
       const j = i + direction;
-      if (i === -1 || j < 0 || j >= order.length) return;
+      if (i === -1 || j < 0 || j >= order.length) return null;
 
       [order[i], order[j]] = [order[j], order[i]];
       await sequelize.query("SELECT public.reorder_books($1, $2::text[])", {
@@ -614,12 +655,15 @@ export async function moveBook(_prev: ActionState, fd: FormData): Promise<Action
         transaction: t,
         type: QueryTypes.SELECT,
       });
+      return { title: rows[i].title, pos: j + 1, n: order.length };
     });
 
     revalidatePath(`/quan-tri/${shelfSlug}`);
     // Đổi thứ tự là ĐỔI CẢ CHUỖI MỞ KHÓA — trang kệ của học sinh phải tính lại.
     revalidatePath(`/${shelfSlug}`);
-    return EMPTY;
+    return moved
+      ? { ok: `Đã đưa “${moved.title}” về vị trí ${moved.pos}/${moved.n}.` }
+      : { error: "Quyển này đã ở đầu hoặc cuối kệ." };
   });
 }
 
@@ -695,35 +739,48 @@ export async function updatePage(_prev: ActionState, fd: FormData): Promise<Acti
     const heading = field(fd, "heading");
     const body = field(fd, "body");
     if (!id) return { error: "Thiếu trang cần sửa." };
+    // `bookSlug` không còn là thứ chỉ dùng để `revalidatePath` nữa — nó là một nửa của
+    // điều kiện WHERE, nên thiếu nó thì câu lệnh trúng 0 dòng. Đòi trước cho lỗi rõ ràng.
+    if (!bookSlug) return { error: "Thiếu quyển sách." };
     if (!heading) return { error: "Tiêu đề trang không được để trống." };
     if (!body) return { error: "Nội dung trang không được để trống." };
 
     const img = readImageFields(fd, "image");
     if ("error" in img) return { error: img.error };
 
-    const [, affected] = (await withRole(userId, (t) =>
-      sequelize.query(
-        `UPDATE public.pages
-            SET heading = $2, body = $3, image_url = $4, image_source = $5,
-                image_credit = $6, caption = $7, summary = $8::text[]
-          WHERE id = $1::uuid`,
-        {
-          bind: [
-            id,
-            heading,
-            body,
-            img.url,
-            img.source,
-            img.credit,
-            field(fd, "caption") || null,
-            readSummary(fd),
-          ],
-          transaction: t,
-        },
+    // `AND book_slug = $9` — action là endpoint POST công khai, nên một id trang bất kỳ
+    // không được phép sửa được chỉ vì nó là uuid hợp lệ: nó phải thuộc đúng quyển đang
+    // thao tác. ($9 chứ không phải $2 — $2..$8 đã dùng hết cho các cột đang SET.)
+    const affected = rowsAffected(
+      await withRole(userId, (t) =>
+        sequelize.query(
+          `UPDATE public.pages
+              SET heading = $2, body = $3, image_url = $4, image_source = $5,
+                  image_credit = $6, caption = $7, summary = $8::text[]
+            WHERE id = $1::uuid AND book_slug = $9`,
+          {
+            bind: [
+              id,
+              heading,
+              body,
+              img.url,
+              img.source,
+              img.credit,
+              field(fd, "caption") || null,
+              readSummary(fd),
+              bookSlug,
+            ],
+            transaction: t,
+          },
+        ),
       ),
-    )) as [unknown, number];
+    );
 
-    if (affected === 0) return { error: "Không sửa được trang này (không tồn tại, hoặc thiếu quyền)." };
+    if (affected === 0) {
+      return {
+        error: "Không sửa được trang này (không tồn tại, không thuộc quyển này, hoặc thiếu quyền).",
+      };
+    }
 
     revalidatePath(`/quan-tri/${shelfSlug}/${bookSlug}`);
     revalidatePath(`/${shelfSlug}`);
@@ -750,7 +807,10 @@ export async function deletePage(_prev: ActionState, fd: FormData): Promise<Acti
         { bind: [bookSlug], transaction: t, type: QueryTypes.SELECT },
       );
       const book = meta[0];
-      if (book && Number(book.n) <= 1 && book.published) {
+      // Không có quyển nào mang slug đó thì phép kiểm bên dưới không có gì để dựa vào,
+      // và câu DELETE (ràng theo `book_slug`) cũng sẽ trúng 0 dòng. Nói thẳng ra đây.
+      if (!book) return { error: "Không tìm thấy quyển sách này." };
+      if (Number(book.n) <= 1 && book.published) {
         // Quyển 0 trang mà published là trạng thái `complete_book` từ chối bằng
         // `Book has no pages` — nó biến quyển sách thành ngõ cụt cho học sinh.
         return {
@@ -760,11 +820,18 @@ export async function deletePage(_prev: ActionState, fd: FormData): Promise<Acti
         };
       }
 
-      const [, affected] = (await sequelize.query("DELETE FROM public.pages WHERE id = $1::uuid", {
-        bind: [id],
-        transaction: t,
-      })) as [unknown, number];
-      if (affected === 0) return { error: "Không xóa được trang này." };
+      // `AND book_slug = $2` — hàng rào "trang cuối của quyển đang xuất bản" ở trên tra
+      // theo `bookSlug` của form, nên câu xóa cũng phải ràng theo đúng quyển đó. Xóa
+      // theo mỗi `id` là gọi thẳng action với một id lạ thì lách được cả hàng rào.
+      const affected = rowsAffected(
+        await sequelize.query("DELETE FROM public.pages WHERE id = $1::uuid AND book_slug = $2", {
+          bind: [id, bookSlug],
+          transaction: t,
+        }),
+      );
+      if (affected === 0) {
+        return { error: "Không xóa được trang này (không tồn tại, hoặc không thuộc quyển này)." };
+      }
 
       // Vị trí còn lại có thể thành 1,2,4… (thủng chỗ vừa xóa). Không sao: mọi truy vấn
       // đều ORDER BY position, và lần đổi thứ tự kế tiếp sẽ ghi lại thành 1..n. Đánh số
@@ -774,7 +841,7 @@ export async function deletePage(_prev: ActionState, fd: FormData): Promise<Acti
       revalidatePath(`/${shelfSlug}`);
       return { ok: "Đã xóa trang." };
     });
-  });
+  }, true);
 }
 
 /** Đổi chỗ trang với trang liền kề. `direction` là -1 (lên) hoặc 1 (xuống). */
@@ -789,15 +856,15 @@ export async function movePage(_prev: ActionState, fd: FormData): Promise<Action
       return { error: "Yêu cầu không hợp lệ." };
     }
 
-    await withRole(userId, async (t) => {
-      const rows = await sequelize.query<{ id: string }>(
-        "SELECT id FROM public.pages WHERE book_slug = $1 ORDER BY position",
+    const moved = await withRole(userId, async (t) => {
+      const rows = await sequelize.query<{ id: string; heading: string }>(
+        "SELECT id, heading FROM public.pages WHERE book_slug = $1 ORDER BY position",
         { bind: [bookSlug], transaction: t, type: QueryTypes.SELECT },
       );
       const order = rows.map((r) => r.id);
       const i = order.indexOf(id);
       const j = i + direction;
-      if (i === -1 || j < 0 || j >= order.length) return;
+      if (i === -1 || j < 0 || j >= order.length) return null;
 
       [order[i], order[j]] = [order[j], order[i]];
       await sequelize.query("SELECT public.reorder_pages($1, $2::uuid[])", {
@@ -805,10 +872,13 @@ export async function movePage(_prev: ActionState, fd: FormData): Promise<Action
         transaction: t,
         type: QueryTypes.SELECT,
       });
+      return { heading: rows[i].heading, pos: j + 1, n: order.length };
     });
 
     revalidatePath(`/quan-tri/${shelfSlug}/${bookSlug}`);
     revalidatePath(`/${shelfSlug}`);
-    return EMPTY;
+    return moved
+      ? { ok: `Đã đưa trang “${moved.heading}” về vị trí ${moved.pos}/${moved.n}.` }
+      : { error: "Trang này đã ở đầu hoặc cuối quyển." };
   });
 }
