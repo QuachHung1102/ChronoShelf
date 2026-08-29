@@ -1,0 +1,54 @@
+// Túi hành trang — tủ kính bảo tàng (content.md §4.5).
+
+// Mặt kính: một lớp phản chiếu chéo rất nhẹ phủ trên tủ. Thuần trang trí nên
+// `pointer-events: none` để không nuốt thao tác lên các ô bên dưới.
+.tu {
+  position: relative;
+  isolation: isolate;
+
+  &::after {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    content: '';
+    pointer-events: none;
+    background: linear-gradient(
+      104deg,
+      theme('colors.surface / 0%') 0%,
+      theme('colors.surface / 14%') 38%,
+      theme('colors.surface / 0%') 52%
+    );
+  }
+}
+
+// Bóng mờ của vật phẩm chưa có: đổ ảnh thật thành một khối tối duy nhất. Dùng chính ảnh
+// nên hình dáng đúng tuyệt đối, và người học vẫn đoán được đó là cái gì — đủ để tò mò mà
+// không lộ hết.
+.bongMo {
+  filter: grayscale(1) brightness(0) opacity(0.22);
+}
+
+// Tam giác chỉ hướng của <details>. Ẩn dấu mặc định của trình duyệt rồi tự vẽ, vì dấu mặc
+// định mỗi trình duyệt một kiểu và không đổi màu theo token được.
+.o > summary {
+  list-style: none;
+  cursor: pointer;
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+}
+
+.o[open] .mui {
+  rotate: 90deg;
+}
+
+.mui {
+  transition: rotate 200ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mui {
+    transition: none;
+  }
+}

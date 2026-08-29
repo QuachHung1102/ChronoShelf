@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { Book, Item, Page, Shelf } from "@/lib/db/models";
+import { Book, Item, Page, Shelf, UserItem } from "@/lib/db/models";
 import { withRole } from "@/lib/db/tx";
 import { getSessionUserId } from "@/lib/auth/session";
 import type { ContentBook, ContentItem, ContentPage, ContentShelf } from "./types";
@@ -158,4 +158,73 @@ export const readShelfChains = cache(async function readShelfChains(): Promise<S
       rewardItemSlug: b.rewardItemSlug,
     })),
   }));
+});
+
+export interface VatPhamTuiHanhTrang {
+  slug: string;
+  name: string;
+  description: string;
+  image: string | null;
+  imageSource: string | null;
+  imageCredit: string | null;
+  /** Quyển sách thưởng ra vật phẩm này. `null` khi quyển đó chưa xuất bản (RLS giấu). */
+  tuQuyen: { slug: string; title: string; shelfSlug: string } | null;
+  daCo: boolean;
+}
+
+/**
+ * Toàn bộ vật phẩm của sản phẩm, kèm cờ "đã có hay chưa" (content.md §4.5).
+ *
+ * Trả về CẢ vật phẩm chưa sở hữu, cố ý: tủ kính phải có ô trống hiện bóng mờ thì mới tạo
+ * được động lực sưu tầm. Đây không phải rò rỉ — `items` vốn là bảng công khai, ai chưa
+ * đăng nhập cũng đọc được; thứ riêng tư là `user_items`, và nó chỉ được hỏi khi có phiên.
+ *
+ * Hai truy vấn chạy TUẦN TỰ trong cùng một transaction, không `Promise.all`: hai truy vấn
+ * Sequelize song song trên cùng một connection sẽ chồng lên nhau (bẫy đã ghi ở CLAUDE.md).
+ */
+export const readTuiHanhTrang = cache(async function readTuiHanhTrang(): Promise<{
+  vatPham: VatPhamTuiHanhTrang[];
+  daDangNhap: boolean;
+}> {
+  const userId = await getSessionUserId();
+
+  const { items, books, owned } = await withRole(userId, async (t) => {
+    const items = await Item.findAll({
+      attributes: ["slug", "name", "description", "imageUrl", "imageSource", "imageCredit"],
+      order: [["slug", "ASC"]],
+      transaction: t,
+    });
+    const books = await Book.findAll({
+      attributes: ["slug", "title", "shelfSlug", "rewardItemSlug"],
+      transaction: t,
+    });
+    // `user_items` chỉ hỏi khi đã đăng nhập: chưa đăng nhập thì `chronoshelf_anon` không có
+    // GRANT nào trên bảng đó và truy vấn sẽ NỔ, chứ không trả rỗng.
+    const owned = userId
+      ? await UserItem.findAll({ attributes: ["itemSlug"], transaction: t })
+      : [];
+    return { items, books, owned };
+  });
+
+  const quyenTheoVatPham = new Map(
+    books.filter((b) => b.rewardItemSlug).map((b) => [b.rewardItemSlug as string, b]),
+  );
+  const daCo = new Set(owned.map((o) => o.itemSlug));
+
+  return {
+    daDangNhap: Boolean(userId),
+    vatPham: items.map((i) => {
+      const b = quyenTheoVatPham.get(i.slug);
+      return {
+        slug: i.slug,
+        name: i.name,
+        description: i.description,
+        image: i.imageUrl,
+        imageSource: i.imageSource,
+        imageCredit: i.imageCredit,
+        tuQuyen: b ? { slug: b.slug, title: b.title, shelfSlug: b.shelfSlug } : null,
+        daCo: daCo.has(i.slug),
+      };
+    }),
+  };
 });

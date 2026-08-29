@@ -132,7 +132,7 @@ async function guard(fn: () => Promise<ActionState>, deleting = false): Promise<
  *
  * Thêm một thư mục route gốc CÓ `page.tsx` thì phải cập nhật danh sách này.
  */
-const RESERVED_SLUGS = ["vat-pham", "quan-tri", "dang-nhap"];
+const RESERVED_SLUGS = ["vat-pham", "quan-tri", "dang-nhap", "tui-hanh-trang"];
 
 export async function createShelf(_prev: ActionState, fd: FormData): Promise<ActionState> {
   return guard(async () => {
