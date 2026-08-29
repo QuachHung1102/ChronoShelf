@@ -54,3 +54,48 @@ GRANT SELECT ON public.media TO chronoshelf_anon, chronoshelf_auth;
 -- nội dung tại một sha256 không thể đổi, vì đổi byte là đổi sha256. Nới GRANT ở đây là
 -- biến header đó thành nói dối — `90-verify.sql` khẳng định lại điều này.
 GRANT INSERT ON public.media TO chronoshelf_auth;
+
+-- ---------------------------------------------------------------------------
+-- Neo `byte_len` vào kích thước THẬT của blob.
+--
+-- Không có ràng buộc này thì `byte_len <= 2097152` ở trên là TRẦN GIẢ: nó chỉ chặn một
+-- CON SỐ do người ghi tự khai, không chặn byte. Một `INSERT` gõ tay qua psql — đúng con
+-- đường CLAUDE.md nói là vẫn đang dùng cho tới khi `/quan-tri` hoàn thiện — đặt
+-- `byte_len = 1` kèm 200 MB bytea vẫn lọt, rồi `/media/[id]` nạp cả 200 MB đó vào RAM và
+-- trả về kèm `Cache-Control: immutable`. Hai CHECK ghép lại mới thành trần thật.
+--
+-- VIẾT THEO LỐI ALTER, KHÔNG SỬA THÂN `CREATE TABLE IF NOT EXISTS`: trên database đã có
+-- bảng, sửa thân CREATE là không-op — `db:migrate` báo xanh mà ràng buộc không hề được
+-- thêm. Cùng lối với `db/schema/10-image-credit.sql`.
+--
+-- Vá dữ liệu TRƯỚC, thêm ràng buộc SAU (đảo lại thì ADD CONSTRAINT roll back cả file).
+-- `bytes` là sự thật, `byte_len` chỉ là số dẫn xuất, nên hướng vá là tính lại từ blob.
+-- Đo trên DB thật 2026-08-29: 3 dòng, 0 dòng lệch, lớn nhất 70 byte — câu UPDATE này
+-- hiện không khớp dòng nào. Nếu ở đâu đó nó gặp một blob quá 2 MiB thì việc tính lại làm
+-- CHECK trần nổ và `db:migrate` dừng ầm ĩ — đúng thứ phải xảy ra khi có blob khổng lồ.
+-- ---------------------------------------------------------------------------
+UPDATE public.media SET byte_len = octet_length(bytes) WHERE byte_len <> octet_length(bytes);
+
+ALTER TABLE public.media DROP CONSTRAINT IF EXISTS media_byte_len_thuc_ck;
+ALTER TABLE public.media ADD  CONSTRAINT media_byte_len_thuc_ck
+  CHECK (byte_len = octet_length(bytes));
+
+-- === TỰ KIỂM ===
+-- Ràng buộc phải THẬT SỰ chặn, không chỉ có mặt trong catalog. Chèn thử một dòng khai
+-- man rồi đòi nó nổ; nổ đúng tên thì nuốt, không nổ thì báo lỗi to.
+DO $$
+DECLARE v_msg text;
+BEGIN
+  BEGIN
+    INSERT INTO public.media (sha256, mime, bytes, byte_len)
+         VALUES (repeat('a', 64), 'image/png', '\x0001'::bytea, 1);
+    RAISE EXCEPTION 'media_byte_len_thuc_ck KHÔNG chặn — byte_len vẫn khai man được';
+  EXCEPTION WHEN check_violation THEN
+    GET STACKED DIAGNOSTICS v_msg = CONSTRAINT_NAME;
+    IF v_msg <> 'media_byte_len_thuc_ck' THEN
+      RAISE EXCEPTION 'sai ràng buộc bắt được: %', v_msg;
+    END IF;
+  END;
+
+  RAISE NOTICE 'C. media.byte_len neo vào octet_length(bytes) OK';
+END $$;

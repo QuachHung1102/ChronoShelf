@@ -207,10 +207,38 @@ BEGIN
 
   -- SVG không được nằm trong allowlist mime. Nó là XML — phục vụ cùng origin thì script
   -- bên trong chạy thật, thành stored XSS.
-  IF EXISTS (SELECT 1 FROM pg_constraint
-              WHERE conrelid = 'public.media'::regclass
-                AND pg_get_constraintdef(oid) ILIKE '%svg%') THEN
-    RAISE EXCEPTION 'media chấp nhận SVG — đường thẳng tới stored XSS';
+  --
+  -- Khẳng định neo vào trạng thái CÒN NGUYÊN, đúng nguyên tắc ở đầu file: so khớp CHÍNH
+  -- XÁC định nghĩa ràng buộc. Bản trước đi TÌM chuỗi 'svg' trong pg_get_constraintdef và
+  -- vì thế không thể kêu — một allowlist bị XÓA hẳn cũng không chứa chữ 'svg', nên
+  -- `DROP CONSTRAINT media_mime_check` lọt qua trong im lặng rồi database nhận
+  -- `image/svg+xml`. Đã đo trên DB thật.
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint
+                  WHERE conrelid = 'public.media'::regclass
+                    AND conname = 'media_mime_check'
+                    AND pg_get_constraintdef(oid) =
+                        'CHECK ((mime = ANY (ARRAY[''image/png''::text, ''image/jpeg''::text, ''image/webp''::text, ''image/gif''::text])))') THEN
+    RAISE EXCEPTION 'allowlist mime của media không còn đúng bốn kiểu ảnh raster — SVG có thể đã lọt vào, thẳng tới stored XSS';
+  END IF;
+
+  -- `byte_len` phải neo vào kích thước THẬT của blob. Thiếu ràng buộc này thì
+  -- `byte_len <= 2097152` ở `09-media.sql` chỉ chặn một CON SỐ do người ghi tự khai: một
+  -- INSERT gõ tay đặt `byte_len = 1` kèm 200 MB bytea vẫn lọt, rồi `/media/[id]` nạp cả
+  -- 200 MB đó vào RAM kèm `Cache-Control: immutable`.
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint
+                  WHERE conrelid = 'public.media'::regclass
+                    AND conname = 'media_byte_len_thuc_ck'
+                    AND pg_get_constraintdef(oid) = 'CHECK ((byte_len = octet_length(bytes)))') THEN
+    RAISE EXCEPTION 'media.byte_len không còn neo vào octet_length(bytes) — trần 2 MiB thành trần giả';
+  END IF;
+
+  -- Policy đọc ảnh phải là "ai cũng đọc được" (`qual = true`, chỉ cho SELECT). Phép
+  -- `has_table_privilege` ở trên chỉ nói về GRANT; nếu policy này bị siết lại thì GRANT
+  -- vẫn còn nguyên mà mọi ảnh biến mất — hai chuyện khác nhau, cần hai khẳng định.
+  IF NOT EXISTS (SELECT 1 FROM pg_policies
+                  WHERE schemaname='public' AND tablename='media' AND policyname='read media'
+                    AND qual='true' AND cmd='SELECT') THEN
+    RAISE EXCEPTION 'policy "read media" thiếu, hoặc không còn là SELECT USING (true) — ảnh sẽ vỡ hết';
   END IF;
 
   -- Ba ràng buộc ảnh-phải-có-credit (điều kiện CC BY-SA, spec §6).
@@ -221,4 +249,103 @@ BEGIN
   END IF;
 
   RAISE NOTICE 'D. kho ảnh OK';
+END $$;
+
+-- === E. Tiến độ đọc và túi vật phẩm ===
+-- Hai bảng này giữ TOÀN BỘ lịch sử đọc và túi đồ của từng người. `GET /api/me/state` CỐ Ý
+-- không có `where user_id = ...` (xem chú thích trong route: "policy lo lọc"), nên policy ở
+-- đây là hàng rào DUY NHẤT. Trước mục này không cổng nào nhìn tới chúng — hai bảng chỉ xuất
+-- hiện đúng một lần trong cả file, ở vòng lặp NOINHERIT của mục A.
+DO $$
+DECLARE t text; n int;
+BEGIN
+  FOREACH t IN ARRAY ARRAY['user_book_progress','user_items'] LOOP
+    IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE schemaname='public' AND tablename=t AND rowsecurity) THEN
+      RAISE EXCEPTION 'bảng % chưa bật RLS', t;
+    END IF;
+    -- has_table_privilege KHÔNG thấy GRANT mức cột: nó trả false khi role chỉ được cấp
+    -- vài cột. Muốn hỏi "có chạm được gì không" thì phải dùng has_any_column_privilege —
+    -- nhưng hàm đó chỉ nhận bốn quyền cấp được theo cột (SELECT/INSERT/UPDATE/REFERENCES);
+    -- hỏi nó về DELETE thì chính phép kiểm nổ với 22023, nên DELETE hỏi ở mức bảng.
+    IF has_any_column_privilege('chronoshelf_anon','public.'||t,'SELECT')
+    OR has_any_column_privilege('chronoshelf_anon','public.'||t,'INSERT')
+    OR has_any_column_privilege('chronoshelf_anon','public.'||t,'UPDATE')
+    OR has_any_column_privilege('chronoshelf_anon','public.'||t,'REFERENCES')
+    OR has_table_privilege('chronoshelf_anon','public.'||t,'DELETE')
+    OR has_table_privilege('chronoshelf_anon','public.'||t,'TRUNCATE') THEN
+      RAISE EXCEPTION 'người chưa đăng nhập chạm được % — đây là dữ liệu riêng của từng người', t;
+    END IF;
+  END LOOP;
+
+  -- user_items: hàng rào là CHÍNH GRANT, không phải policy — cửa duy nhất để có vật phẩm
+  -- là complete_book (SECURITY DEFINER). Đúng khuôn đã ghi trong CLAUDE.md, và vì vậy
+  -- khẳng định ở đây hỏi về GRANT chứ không hỏi về biểu thức policy.
+  IF NOT has_table_privilege('chronoshelf_auth','public.user_items','SELECT') THEN
+    RAISE EXCEPTION 'người đã đăng nhập không đọc được túi vật phẩm của chính mình';
+  END IF;
+  IF has_any_column_privilege('chronoshelf_auth','public.user_items','INSERT')
+  OR has_any_column_privilege('chronoshelf_auth','public.user_items','UPDATE')
+  OR has_table_privilege('chronoshelf_auth','public.user_items','DELETE') THEN
+    RAISE EXCEPTION 'chronoshelf_auth ghi được user_items — tự trao vật phẩm cho mình được';
+  END IF;
+
+  -- user_book_progress: ghi được, nhưng ĐÚNG BA CỘT, và `completed`/`completed_at` không
+  -- nằm trong đó. Phải hỏi cả INSERT lẫn UPDATE: dòng tiến độ chưa tồn tại cho tới lần lưu
+  -- đầu tiên, nên đường vào `completed` tự nhiên là INSERT chứ không phải UPDATE.
+  IF NOT has_table_privilege('chronoshelf_auth','public.user_book_progress','SELECT') THEN
+    RAISE EXCEPTION 'người đã đăng nhập không đọc được tiến độ của chính mình';
+  END IF;
+  IF has_table_privilege('chronoshelf_auth','public.user_book_progress','DELETE') THEN
+    RAISE EXCEPTION 'chronoshelf_auth xóa được tiến độ đọc';
+  END IF;
+  FOREACH t IN ARRAY ARRAY['user_id','book_slug','current_page'] LOOP
+    IF NOT has_column_privilege('chronoshelf_auth','public.user_book_progress',t,'INSERT') THEN
+      RAISE EXCEPTION 'thiếu GRANT INSERT (%) trên user_book_progress — lưu tiến độ lần đầu sẽ hỏng', t;
+    END IF;
+  END LOOP;
+  IF NOT has_column_privilege('chronoshelf_auth','public.user_book_progress','current_page','UPDATE') THEN
+    RAISE EXCEPTION 'mất GRANT UPDATE (current_page) — lưu trang đang đọc sẽ hỏng';
+  END IF;
+  FOREACH t IN ARRAY ARRAY['completed','completed_at'] LOOP
+    IF has_column_privilege('chronoshelf_auth','public.user_book_progress',t,'INSERT')
+    OR has_column_privilege('chronoshelf_auth','public.user_book_progress',t,'UPDATE') THEN
+      RAISE EXCEPTION 'chronoshelf_auth ghi được cột % trên user_book_progress — tự đánh dấu đọc xong được', t;
+    END IF;
+  END LOOP;
+  FOREACH t IN ARRAY ARRAY['id','user_id','book_slug'] LOOP
+    IF has_column_privilege('chronoshelf_auth','public.user_book_progress',t,'UPDATE') THEN
+      RAISE EXCEPTION 'chronoshelf_auth sửa được cột % trên user_book_progress — dời tiến độ sang người khác được', t;
+    END IF;
+  END LOOP;
+
+  -- Bốn policy, khớp ĐÚNG TỪNG BIỂU THỨC. Dùng IS NOT DISTINCT FROM chứ không `=`: policy
+  -- FOR INSERT không có USING nên Postgres lưu qual = NULL, điều kiện nằm ở with_check —
+  -- viết `qual = '...'` cho cả bốn sẽ BÁO ĐỘNG GIẢ ngay trên một schema hoàn toàn lành lặn.
+  IF EXISTS (
+    SELECT 1 FROM (VALUES
+      ('user_book_progress','own progress select','SELECT','(app.current_user_id() = user_id)', NULL),
+      ('user_book_progress','own progress insert','INSERT', NULL, '(app.current_user_id() = user_id)'),
+      ('user_book_progress','own progress update','UPDATE','(app.current_user_id() = user_id)','(app.current_user_id() = user_id)'),
+      ('user_items',        'own items select',   'SELECT','(app.current_user_id() = user_id)', NULL)
+    ) AS want(tbl,pol,cmd,q,wc)
+    WHERE NOT EXISTS (
+      SELECT 1 FROM pg_policies p
+       WHERE p.schemaname='public' AND p.tablename=want.tbl AND p.policyname=want.pol
+         AND p.cmd        =                   want.cmd
+         AND p.qual       IS NOT DISTINCT FROM want.q
+         AND p.with_check IS NOT DISTINCT FROM want.wc)
+  ) THEN
+    RAISE EXCEPTION 'một trong bốn policy của user_book_progress/user_items không còn đúng biểu thức';
+  END IF;
+
+  -- Phép ĐẾM. Bốn khẳng định trên KHÔNG bắt được một policy THỨ NĂM `USING (true)` thêm vào
+  -- bên cạnh — policy cũ vẫn nguyên vẹn nên khớp vẫn xanh, mà dữ liệu đã rò. Đã tái hiện
+  -- thật trên bảng tạm: khớp qual = true, trong khi A đọc được cả dòng của B.
+  SELECT count(*) INTO n FROM pg_policies
+   WHERE schemaname='public' AND tablename IN ('user_book_progress','user_items');
+  IF n <> 4 THEN
+    RAISE EXCEPTION 'có % policy trên user_book_progress/user_items, chờ đúng 4 — ai đó vừa thêm một cửa', n;
+  END IF;
+
+  RAISE NOTICE 'E. tiến độ đọc + túi vật phẩm OK';
 END $$;

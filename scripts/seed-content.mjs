@@ -50,12 +50,18 @@ for (const shelf of shelves) {
   );
 
   // items trước books: books.reward_item_slug tham chiếu tới nó.
+  //
+  // `imageSource`/`imageCredit` PHẢI đi kèm mỗi khi có `image`: ràng buộc
+  // `items_image_credit_ck` (db/schema/10-image-credit.sql) cưỡng chế điều đó, nên bỏ
+  // hai cột này ra khỏi câu INSERT là seed nổ 23514 trên mọi database trống.
   for (const item of shelf.items) {
     out.push(
-      `INSERT INTO public.items (slug, name, description, image_url) VALUES\n` +
-        `  (${q(item.slug)}, ${q(item.name)}, ${q(item.description)}, ${q(item.image)})\n` +
+      `INSERT INTO public.items (slug, name, description, image_url, image_source, image_credit) VALUES\n` +
+        `  (${q(item.slug)}, ${q(item.name)}, ${q(item.description)}, ${q(item.image)},\n` +
+        `   ${q(item.imageSource)}, ${q(item.imageCredit)})\n` +
         `ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name,\n` +
-        `  description = EXCLUDED.description, image_url = EXCLUDED.image_url;`,
+        `  description = EXCLUDED.description, image_url = EXCLUDED.image_url,\n` +
+        `  image_source = EXCLUDED.image_source, image_credit = EXCLUDED.image_credit;`,
     );
   }
 

@@ -23,7 +23,11 @@ import path from "node:path";
 
 const root = path.join(import.meta.dirname, "..");
 const DESIGN = path.join(root, "DESIGN.md");
-const THEME = path.join(root, "tailwind.theme.json");
+// Đường dẫn nhận qua argv để `design:verify` vá được vào một BẢN SAO tạm rồi đem so với
+// file đang commit. Trước đây đường dẫn bị neo cứng và argv bị bỏ qua hoàn toàn, nên bản
+// tạm mãi mãi thiếu lineHeight còn file thật thì bị vá — `git diff` đỏ 33 dòng ngay cả khi
+// hai bên đồng bộ hoàn hảo. Một cổng luôn-đỏ còn tệ hơn không có cổng.
+const THEME = process.argv[2] ? path.resolve(process.argv[2]) : path.join(root, "tailwind.theme.json");
 
 const design = await readFile(DESIGN, "utf8");
 
