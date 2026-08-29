@@ -18,7 +18,7 @@ quyển thì nhận được một vật phẩm, và chính vật phẩm đó m�
 | `DESIGN.md` | Hệ thiết kế (format `design.md` của Google Labs): toàn bộ color/typography/spacing token + lý do. Nguồn sự thật về *trông như thế nào*. |
 | `db/schema/README.md` | Thứ tự chạy schema, ba role và lý do. **Đọc trước khi đụng SQL.** |
 | `docs/superpowers/specs/` | Spec đã được duyệt, mỗi subsystem một file. |
-| `docs/superpowers/plans/` | Kế hoạch triển khai từng bước. Chỉ còn chặng C; các plan đã hoàn thành bị xóa ngày 2026-08-28 vì chúng hướng dẫn theo backend cũ — git history vẫn giữ. |
+| `docs/superpowers/plans/` | Kế hoạch triển khai từng bước. Chặng C đã hoàn tất; các plan cũ bị xóa ngày 2026-08-28 vì hướng dẫn theo backend cũ — git history vẫn giữ. |
 | `pen.dev/design.pen` | File thiết kế Pencil — mockup UI đã duyệt. |
 | `db/schema/` | SQL schema, nguồn sự thật cho cấu trúc DB. |
 
@@ -47,10 +47,18 @@ spec → plan → code riêng: **kệ sách + đọc sách** (cơ chế lõi), t
 - **Tailwind CSS 3.4, không nâng lên v4.** Version pin cứng trong `package.json`. Nâng lên v4
   là một task RIÊNG: v4 đổi cả cách cấu hình theme, tức là đụng vào đường sinh
   `DESIGN.md → tailwind.theme.json`. Đừng nâng kèm theo việc khác.
-- **Logic mở khóa phải nằm ở phía server.** Client chỉ báo "đã đọc xong quyển X"; việc trao vật
-  phẩm và mở khóa quyển kế tiếp do RPC `complete_book` (`SECURITY DEFINER`) quyết định. Không bao
-  giờ chuyển logic này xuống client, và không cấp quyền INSERT/UPDATE trực tiếp lên `user_items`
-  hay cột `user_book_progress.completed` cho role `chronoshelf_auth`.
+- **Việc trao vật phẩm phải nằm ở phía server.** Client chỉ báo "đã đọc xong quyển X"; RPC
+  `complete_book` (`SECURITY DEFINER`) là cửa DUY NHẤT ghi được vào `user_items`. Không bao
+  giờ chuyển logic này xuống client, và không cấp quyền INSERT/UPDATE trực tiếp lên
+  `user_items` hay cột `user_book_progress.completed` cho role `chronoshelf_auth`.
+  **Đừng hứa quá phạm vi nó bảo đảm:** chỉ máy chủ mới trao được vật phẩm, không hoàn thành
+  được sách hay kệ chưa xuất bản, không hoàn thành được quyển rỗng — nhưng nó **KHÔNG ép thứ
+  tự đọc** (đã đo 2026-08-29: gọi thẳng quyển cuối kệ với túi đồ rỗng vẫn được trao thưởng).
+  Khóa/mở chỉ là chuyện hiển thị — `resolveState` ở `lib/api/unlock.ts` vẽ bìa sách — và nội
+  dung quyển "bị khóa" vốn đã công khai. Ngày nào cần ép thật (streak, bảng xếp hạng so người
+  với người) thì theo đường nâng cấp ghi sẵn ở `lib/api/unlock.ts`; **đừng suy thứ tự từ
+  `position`** — `08-reorder.sql` cho đổi position nên nó không cố định, và một lần admin chèn
+  sách vào giữa là làm đứt chuỗi của người đang đọc.
 - **Bí mật không vào git.** `.env.local` giữ `DATABASE_URL` và `SESSION_SECRET`; nó đã bị dòng
   `.env*` trong `.gitignore` chặn. Đừng chép giá trị thật sang `.env.example` hay bất kỳ file
   được commit nào. Mật khẩu superuser của Postgres **không nằm trong dự án** — truyền qua
@@ -80,8 +88,12 @@ npm run design:build    # DESIGN.md -> tailwind.theme.json
 ## Nội dung nằm trong database
 
 Nội dung bài học (kệ, sách, trang, vật phẩm) nằm ở 4 bảng `shelves`, `items`, `books`,
-`pages`. **`/quan-tri` CHƯA được xây** — đó là chặng C. Cho tới khi nó có, cách DUY NHẤT để đổi
-nội dung đang chạy là viết SQL `INSERT`/`UPDATE` tay rồi chạy bằng `psql` dưới quyền superuser —
+`pages`. Sửa nội dung đang chạy bằng **màn quản trị `/quan-tri`** (chặng C đã xong: `/quan-tri`,
+`/quan-tri/[shelf]`, `/quan-tri/[shelf]/[book]`, `/quan-tri/vat-pham`; server action ở
+`lib/admin/actions.ts`, upload ảnh qua `/api/quan-tri/anh` vào bảng `media`). `psql` dưới quyền
+superuser chỉ còn dùng cho bootstrap (`seed:content`), đổi schema (`db:migrate`) và cấp quyền
+admin — **đừng dùng nó để sửa nội dung**: superuser bỏ qua RLS và không đi qua
+`readImageFields()`, nên ảnh sẽ không vào bảng `media` —
 **không sửa bằng cách đụng vào file** (`db/seed/*.json` là bootstrap một chiều, xem đoạn dưới).
 Admin phải tạo được sách lúc chạy mà không cần build lại. Lý do đầy đủ ở
 `docs/superpowers/specs/2026-08-24-noi-dung-dong-va-quan-tri-design.md` §2.1, §5.
@@ -210,13 +222,47 @@ phải JWT**: định dạng này không có trường `alg`, nên không có g�
 - **Ghi file vào `public/` LÚC CHẠY không phục vụ được.** `next start` trả 404, `next dev` trả
   200 — bẫy "chạy tốt trên máy tôi" chỉ nổ ở production. File commit sẵn thì vẫn bình thường. Đó
   là lý do ảnh nằm trong bảng `media` (bytea) chứ không nằm trên đĩa.
+- **`sequelize.query()` không truyền `type` trả `[rows, pg.Result]` — phần tử thứ hai là OBJECT,
+  không phải số dòng.** Mười phép `affected === 0` trong `lib/admin/actions.ts` vì thế là mã chết
+  suốt một thời gian dài: ép kiểu `as [unknown, number]` che mất điều đó lúc biên dịch, nên khi RLS
+  chặn một UPDATE thì giao diện vẫn báo "Đã lưu." Dùng `rowsAffected()` ở `lib/db/rows-affected.ts`,
+  và `db:check` có một phép chạy UPDATE trúng 0 dòng để bắt khi Sequelize đổi hình dạng trả về.
+- **`RAISE EXCEPTION` trong hàm SECURITY DEFINER hủy CẢ transaction của request — kể cả câu UPDATE
+  ngay phía trên nó.** Giới hạn 5 lần thử mã OTP từng hoàn toàn vô hiệu vì đúng chuyện này:
+  `UPDATE login_codes SET attempts = attempts + 1` bị roll back cùng exception, nên bộ đếm vĩnh viễn
+  bằng 0 và nhánh `attempts + 1 > 5` không bao giờ với tới — tức là chiếm tài khoản từ xa chỉ bằng
+  cách thử hết 10^6 mã. Hàm nào cần GHI LẠI dấu vết của một lần gọi thất bại thì phải `RETURN NULL`
+  rồi để tầng Node ném lỗi SAU khi transaction đã commit — xem `app.consume_login_code` và
+  `lib/auth/otp.ts`.
+- **Phép kiểm khóa ngoại của Postgres BỎ QUA row-level security** (tài liệu PG, mục Row Security
+  Policies). Một INSERT tham chiếu tới dòng mà RLS đang giấu vẫn thành công, nên route nào phân biệt
+  "khóa ngoại hỏng" với "ok" thì thành máy dò slug sách nháp. Cho câu lệnh tự đi qua RLS
+  (`INSERT … SELECT … FROM public.books WHERE slug = $2`) thay vì để khóa ngoại trả lời.
+- **`crypto.timingSafeEqual` so BYTE, còn `String.length` đếm KÝ TỰ.** Chốt chặn độ dài viết theo ký
+  tự để lọt một chữ ký 43 ký tự nhưng 44 byte, và hàm ném `RangeError` thay vì trả `null`.
+  `getSessionUserId()` được gọi ở `/`, `/[shelf]`, `/dang-nhap`, `/quan-tri`, nên đó là 500 toàn site
+  gây ra bởi một cookie méo. Dựng `Buffer` trước rồi so `.length` của buffer.
+- **`empty:hidden` trên một vùng `aria-live` giết chính vùng đó.** `display: none` gỡ phần tử khỏi
+  cây trợ năng, nên khi Server Action trả kết quả thì nội dung VÀ việc hiện lại xảy ra trong cùng một
+  lần cập nhật DOM — trình đọc màn hình coi đó là vùng live vừa được THÊM chứ không phải một thay
+  đổi, và thường không đọc. Vùng live phải có mặt sẵn: rỗng nhưng vẫn hiện.
+- **`design:lint` KHÔNG tự chặn lỗi tương phản.** Rule `contrast-ratio` có severity `warning`, mà CLI
+  đặt `exitCode = errors > 0` — cảnh báo in ra rồi thoát 0. Đó là lý do ô nhập quản trị chạy ở 1.00:1
+  cho tới lúc có người mở trình duyệt ra đo. Nay `design:lint` đi qua `scripts/design-lint-gate.mjs`,
+  thoát 1 khi có BẤT KỲ error hoặc warning nào; và `design:verify` (trong `check`) chặn `DESIGN.md`
+  trôi lệch khỏi `tailwind.theme.json`.
+- **Agent nền chết vì hết hạn mức thì trả `null`, và script nào gộp `null` với "đã bị bác bỏ" sẽ báo
+  cáo NGƯỢC sự thật.** Một đợt review đối kháng từng mất 101/120 agent phản biện đúng kiểu đó:
+  workflow vẫn kết thúc `status: completed`, tổng kết ghi "33 phát hiện bị bác" trong khi 32 cái chưa
+  từng được ai xem — và cả 25 cái sau đó được xác nhận là lỗi thật. Luôn tách BA trạng thái —
+  sống-sót, bị-bác, CHƯA-XỬ — rồi chạy lại nhóm cuối. Đừng để phiếu trắng đếm thành phiếu chống.
 
 ## Lệnh
 
 ```bash
 npm run check          # CỔNG DUY NHẤT cho code — chạy trước khi nói "xong". ~13s
-npm run db:check       # 27 phép hàng rào, nối bằng đúng role ứng dụng. Sau mỗi lần đổi db/schema/
-npm run db:mutation    # phá 7 hàng rào rồi đòi 90-verify.sql phải kêu. Cần PGADMIN_URL
+npm run db:check       # hàng rào nhìn từ ứng dụng, nối bằng đúng role ứng dụng. Sau mỗi lần đổi db/schema/
+npm run db:mutation    # phá từng hàng rào rồi đòi 90-verify.sql phải kêu. Cần PGADMIN_URL
 npm run db:migrate     # chạy db/schema/*.sql theo thứ tự. Cần PGADMIN_URL
 npm run seed:content   # bootstrap db/seed/*.json -> bảng nội dung. Cần PGADMIN_URL
 npm run dev            # dev server
@@ -248,7 +294,7 @@ Không route nào gọi database lúc build vì tất cả đều `force-dynamic
 máy mới clone là có hook luôn — không cần husky). Cần bỏ qua một lần thì `git commit --no-verify`.
 
 `npm run check` chạy tuần tự, dừng ở lỗi đầu tiên, xếp theo thứ tự nhanh-hỏng-trước:
-`design:lint` → `test` → `lint` → `build`. Từng cái vẫn gọi riêng được
+`design:lint` → `design:verify` → `test` → `lint` → `build`. Từng cái vẫn gọi riêng được
 khi cần lặp nhanh. Đừng tự bịa ra một tổ hợp lệnh khác — nếu thiếu cổng nào thì thêm vào
 `check`, để chỗ nào cũng chỉ có một câu trả lời cho câu hỏi "đã xong chưa".
 
@@ -296,10 +342,10 @@ Cần cả ba vì mỗi cái mù ở chỗ cái kia nhìn thấy. SQL chạy b�
 `has_function_privilege` nhưng không kiểm được thứ quan trọng hơn — cái mà một request thật
 làm được. Ngược lại, `db:check` không thấy được `condeferred` hay biểu thức policy.
 
-`scripts/db-check.mjs` hiện có **27 phép** (đọc output thay vì tin con số này — nó chỉ để biết
-thứ tự lớn). Script tự tạo tài khoản test qua chính luồng OTP nên **không cần biến môi trường
-nào ngoài `DATABASE_URL`**. Một bản trước đây đòi tài khoản test qua biến môi trường và âm
-thầm BỎ QUA 6 phép khi thiếu — "bỏ qua" thì không phải "đạt", đừng làm lại kiểu đó.
+`scripts/db-check.mjs` liệt kê số phép ở cuối output — đọc output, đừng nhớ con số. Script tự
+tạo tài khoản test qua chính luồng OTP nên **không cần biến môi trường nào ngoài
+`DATABASE_URL`**. Một bản trước đây đòi tài khoản test qua biến môi trường và âm thầm BỎ QUA
+6 phép khi thiếu — "bỏ qua" thì không phải "đạt", đừng làm lại kiểu đó.
 
 ### Ba bài học phải giữ
 
@@ -331,11 +377,13 @@ báo hỏng — nhưng schema đúng, khuôn mới sai.)
 | `CLAUDE.md` (file này) | Toàn bộ kiến thức dự án. |
 | `db/schema/README.md` | Thứ tự chạy schema, ba role và lý do. Đọc trước khi đụng SQL. |
 | `scripts/db-migrate.mjs` | Chạy `db/schema/NN-*.sql` theo thứ tự, mỗi file một transaction. |
-| `scripts/db-mutation-check.mjs` | Phá 7 hàng rào rồi đòi `90-verify.sql` phải kêu. |
+| `scripts/db-mutation-check.mjs` | Phá từng hàng rào (mỗi cái trong một transaction rồi ROLLBACK) và đòi `90-verify.sql` phải kêu. |
 | `.claude/settings.json` | Allowlist lệnh + deny rule `pen.dev/**` + đăng ký hook. |
 | `.claude/hooks/guard-pen-dev.mjs` | `PreToolUse(Bash)`, chặn mọi lệnh shell chạm `pen.dev`. |
 | `.githooks/pre-commit` | Chạy `npm run check` trước mỗi commit. Nối bằng `npm run prepare`. |
-| `scripts/db-check.mjs` | Self-check 15 ranh giới bảo mật tầng DB (`npm run db:check`). |
+| `scripts/db-check.mjs` | Self-check ranh giới bảo mật tầng DB (`npm run db:check`). |
+| `scripts/design-lint-gate.mjs` | Biến `designmd lint` thành cổng thật — cảnh báo tương phản cũng thoát 1. |
+| `lib/db/rows-affected.ts` | Đọc số dòng UPDATE/DELETE chạm tới, chịu được cả hai hình dạng Sequelize trả về. |
 | `docs/agents/` | Quy ước cho skill: `issue-tracker.md`, `domain.md`. |
 | `.scratch/<feature>/` | Issue tracker (repo chưa có remote nên không dùng GitHub Issues). |
 | `docs/superpowers/specs/` + `plans/` | Spec và kế hoạch dài theo cả subsystem. |

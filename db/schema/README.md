@@ -19,6 +19,8 @@ EXISTS` trước khi tạo).
 | `06-user-state.sql` | `user_book_progress`, `user_items` | |
 | `07-complete-book.sql` | `_complete_book_for`, `complete_book` | |
 | `08-reorder.sql` | `reorder_books`, `reorder_pages` | |
+| `09-media.sql` | `media` — kho ảnh bytea, khóa chính là sha256 của chính nội dung; policy đọc-công-khai + GRANT chỉ-ghi-thêm | |
+| `10-image-credit.sql` | Vá dữ liệu ảnh cũ RỒI thêm ràng buộc "có ảnh thì phải có nguồn + tác giả" — thứ tự trong file quan trọng | |
 | `90-verify.sql` | Khẳng định cấu trúc — nổ nếu hàng rào bị nới | |
 
 ## Ba role, không phải một
@@ -48,8 +50,9 @@ nó thì mọi policy trong `05-content-rls.sql` im lặng ngừng tác dụng, 
 ## Cái gì KHÔNG nằm ở đây
 
 `90-verify.sql` chỉ kiểm **cấu trúc** (grant, biểu thức policy, deferrable) nên chạy
-được trên database rỗng. Phần kiểm **hành vi** của `complete_book` cần dữ liệu seed,
-nên nằm ở `db/verify/` và chạy sau khi seed.
+được trên database rỗng. Phần kiểm **hành vi** của `complete_book` và các RPC đổi thứ tự
+cần dữ liệu seed, nên nằm ở `scripts/db-check.mjs` và chạy sau khi seed. (Trước đây đoạn
+này trỏ tới một thư mục `db/verify/` **chưa từng tồn tại** — đã kiểm bằng `ls`.)
 
 Hàng rào nhìn từ ngoài Internet — thứ một request thật làm được — do
 `npm run db:check` lo, không phải file ở đây: SQL trong này chạy bằng quyền admin nên

@@ -22,6 +22,17 @@ DECLARE
   v_has_next          boolean := false;
   v_next_unlocked     boolean := false;
 BEGIN
+  -- PHẠM VI: bốn phép kiểm dưới đây là TOÀN BỘ những gì hàm này bảo đảm — đã đăng nhập,
+  -- sách và kệ đều published, sách có trang, và đã đọc đủ số trang. KHÔNG có phép kiểm nào
+  -- ép thứ tự đọc: gọi thẳng quyển cuối kệ khi `user_items` còn rỗng vẫn được trao thưởng
+  -- (đo ngày 2026-08-29). Chuỗi khóa/mở chỉ là chuyện hiển thị, do `resolveState` ở
+  -- `lib/api/unlock.ts` lo, và nội dung quyển "bị khóa" vốn đã công khai.
+  --
+  -- ĐỪNG "vá" bằng cách đòi vật phẩm thưởng của quyển liền trước. Nó vừa không chặn được —
+  -- kẻ gian chỉ cần duyệt kệ theo thứ tự, mỗi bước tự trao chìa khóa cho bước sau — vừa đẻ
+  -- ra lỗi thật: `08-reorder.sql` cho đổi `position`, nên "quyển liền trước" không cố định
+  -- và một lần admin chèn sách vào giữa là làm đứt chuỗi của người đang đọc. Đường nâng cấp
+  -- đúng (cột `required_item_slug` tường minh) ghi ở `lib/api/unlock.ts`.
   IF p_user_id IS NULL THEN
     RAISE EXCEPTION 'Not authenticated';
   END IF;
