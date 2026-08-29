@@ -34,6 +34,8 @@ function toPage(row: Page): ContentPage {
     body: row.body,
     image: row.imageUrl,
     caption: row.caption,
+    imageSource: row.imageSource,
+    imageCredit: row.imageCredit,
     ...(row.summary?.length ? { summary: row.summary } : {}),
   };
 }
@@ -55,6 +57,8 @@ function toItem(row: Item): ContentItem {
     name: row.name,
     description: row.description,
     image: row.imageUrl,
+    imageSource: row.imageSource,
+    imageCredit: row.imageCredit,
   };
 }
 

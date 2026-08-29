@@ -45,6 +45,16 @@ export function ItemDropOverlay({
             <p className="mt-sm max-w-xl font-body text-body-md text-secondary-light">
               {item.description}
             </p>
+            {/* Ghi công ảnh vật phẩm. Đây là chỗ DUY NHẤT trong giao diện học sinh đang
+                thật sự có ảnh kèm credit (5/5 dòng `items`), nên nếu thiếu dòng này thì
+                điều kiện BY của CC BY-SA không được thỏa ở đúng chỗ nó có hiệu lực.
+                Là văn bản thường chứ không phải liên kết — cùng lý do như `BookPage`. */}
+            {item.image && item.imageCredit && (
+              <p className="mt-xs font-body text-caption text-secondary">
+                Ảnh: {item.imageCredit}
+                {item.imageSource && <> — Nguồn: {item.imageSource}</>}
+              </p>
+            )}
           </div>
         </>
       )}

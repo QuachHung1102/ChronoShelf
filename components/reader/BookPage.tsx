@@ -45,9 +45,22 @@ export function BookPage({
             alt={page.caption ?? page.heading}
             className="aspect-[4/3] w-full rounded-sm object-cover"
           />
-          {page.caption && (
-            <figcaption className="font-body text-caption italic text-secondary">
-              {page.caption}
+          {/* Một `<figure>` chỉ được có ĐÚNG MỘT `<figcaption>`, nên chú thích và dòng ghi
+              công nằm chung một thẻ chứ không phải hai. */}
+          {(page.caption || page.imageCredit) && (
+            <figcaption className="font-body text-caption text-secondary">
+              {page.caption && <span className="italic">{page.caption}</span>}
+              {/* Nguồn hiển thị dưới dạng VĂN BẢN THƯỜNG, cố ý không bọc `<a href>`: giá trị
+                  thật trong DB là chuỗi mô tả có khoảng trắng và gạch ngang dài
+                  ("https://github.com/…/ChronoShelf — public/items/x.svg"), bọc vào liên kết
+                  chỉ ra một link chết 404. Điều kiện BY của CC BY-SA đòi ghi công và nêu
+                  nguồn, không đòi nguồn phải bấm được. */}
+              {page.imageCredit && (
+                <span className="block">
+                  Ảnh: {page.imageCredit}
+                  {page.imageSource && <> — Nguồn: {page.imageSource}</>}
+                </span>
+              )}
             </figcaption>
           )}
         </figure>

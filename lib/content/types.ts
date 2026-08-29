@@ -2,6 +2,13 @@ export interface ContentItem {
   slug: string;
   name: string;
   image: string | null;
+  /**
+   * Cùng lý do như `ContentPage.imageSource`/`imageCredit` — ràng buộc
+   * `items_image_credit_ck` bắt buộc có cả hai khi `image` khác null, nên chúng phải đi
+   * tới tận màn hình. Đây còn là chỗ DUY NHẤT hiện đang thật sự có ảnh trong database.
+   */
+  imageSource: string | null;
+  imageCredit: string | null;
   description: string;
 }
 
@@ -9,6 +16,14 @@ export interface ContentPage {
   heading: string;
   image: string | null;
   caption: string | null;
+  /**
+   * Nguồn ảnh và dòng ghi công (tác giả + giấy phép). DB bắt buộc có cả hai khi `image`
+   * khác null — ràng buộc `pages_image_credit_ck` trong `db/schema/10-image-credit.sql`.
+   * Ràng buộc đó dựng lên vì điều kiện BY của CC BY-SA, nên hai trường này PHẢI đi tới
+   * tận người đọc; thiếu chỗ hiển thị thì cả ràng buộc lẫn công thu thập đều vô nghĩa.
+   */
+  imageSource: string | null;
+  imageCredit: string | null;
   body: string;
   /** Chỉ có ở trang cuối — 3-5 ý chính (content.md 4.3). */
   summary?: string[];
