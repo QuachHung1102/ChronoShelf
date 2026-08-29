@@ -14,7 +14,8 @@ import {
 
 const ICON_BUTTON =
   "inline-flex h-8 w-8 items-center justify-center rounded-sm text-secondary transition-colors " +
-  "duration-200 ease-out hover:text-tertiary-deep disabled:opacity-30 disabled:hover:text-secondary " +
+  "duration-200 ease-out hover:text-tertiary-deep aria-disabled:cursor-not-allowed " +
+  "aria-disabled:opacity-30 aria-disabled:hover:text-secondary " +
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 " +
   "focus-visible:ring-offset-surface";
 
@@ -77,26 +78,39 @@ export function PageAdmin({ book, pages }: { book: AdminBookHeader; pages: Admin
                 )}
               </div>
 
+              {/* `aria-disabled` + `type="button"` thay cho `disabled` — xem chú thích dài
+                  ở `ShelfAdmin.tsx`: nút `disabled` bị trình duyệt lấy mất tiêu điểm đúng
+                  vào lúc admin vừa bấm nó để đẩy trang tới đầu/cuối quyển. */}
               <div className="flex items-center gap-xs">
                 <ActionForm action={movePage}>
                   <input type="hidden" name="id" value={page.id} />
                   <input type="hidden" name="bookSlug" value={book.slug} />
                   <input type="hidden" name="shelfSlug" value={book.shelfSlug} />
                   <input type="hidden" name="direction" value="-1" />
-                  <SubmitButton className={ICON_BUTTON} disabled={index === 0} title="Lên trên">
+                  <button
+                    type={index === 0 ? "button" : "submit"}
+                    aria-disabled={index === 0 || undefined}
+                    className={ICON_BUTTON}
+                    title="Lên trên"
+                  >
                     <ChevronUp aria-hidden className="h-5 w-5" />
                     <span className="sr-only">Đưa trang {index + 1} lên trên</span>
-                  </SubmitButton>
+                  </button>
                 </ActionForm>
                 <ActionForm action={movePage}>
                   <input type="hidden" name="id" value={page.id} />
                   <input type="hidden" name="bookSlug" value={book.slug} />
                   <input type="hidden" name="shelfSlug" value={book.shelfSlug} />
                   <input type="hidden" name="direction" value="1" />
-                  <SubmitButton className={ICON_BUTTON} disabled={index === last} title="Xuống dưới">
+                  <button
+                    type={index === last ? "button" : "submit"}
+                    aria-disabled={index === last || undefined}
+                    className={ICON_BUTTON}
+                    title="Xuống dưới"
+                  >
                     <ChevronDown aria-hidden className="h-5 w-5" />
                     <span className="sr-only">Đưa trang {index + 1} xuống dưới</span>
-                  </SubmitButton>
+                  </button>
                 </ActionForm>
               </div>
             </header>

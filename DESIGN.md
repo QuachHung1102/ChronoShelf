@@ -182,6 +182,10 @@ components:
   eyebrow:
     textColor: "{colors.tertiary-deep}"
     typography: "{typography.label-caps}"
+  input-border:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.surface-locked}"
+    rounded: "{rounded.md}"
   focus-ring:
     backgroundColor: "{colors.neutral}"
     textColor: "{colors.ring}"
@@ -418,6 +422,19 @@ thành phần accent duy nhất mang chữ; mọi chỗ accent khác đều là 
 
 `eyebrow` dùng `tertiary-deep` chứ không phải `tertiary`, vì nó là chữ nhỏ đặt trên nền
 `neutral` sáng.
+
+`input-border` khai báo **viền của ô nhập**, không phải chữ. Preflight của Tailwind zero hóa
+`border-width` trên mọi phần tử, nên ô nhập không còn viền mặc định của trình duyệt; mà form
+lại nằm trên thẻ `bg-surface`, tức ô nhập cùng màu nền của thẻ chứa nó — 1.00:1, người dùng
+không thấy ô ở đâu cho tới khi bấm trúng. Viền là `surface-locked` (9.20:1 trên `surface`,
+7.93:1 trên `neutral`), cùng màu với đường kẻ chia phần đã dùng trong khu quản trị. Hai lựa
+chọn khác đã tính: `secondary` đạt 5.22:1 cũng qua, `secondary-light` chỉ 2.06:1 nên **không
+dùng được** — nó trượt ngưỡng 3:1 của WCAG 1.4.11.
+
+Khai báo này dùng đúng thủ thuật của `focus-ring`: `components` trong `design.md` chỉ có
+`backgroundColor` và `textColor` — không có `borderColor` — nên một cặp màu-ranh-giới phải
+mượn khe `textColor` thì `design:lint` mới tính tương phản cho nó. Ngưỡng lint là 4.5:1, chặt
+hơn mức 3:1 mà ranh giới cần, nên qua được lint là dư an toàn.
 
 ## Do's and Don'ts
 

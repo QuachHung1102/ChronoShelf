@@ -30,12 +30,17 @@ export function ItemAdmin({ items }: { items: AdminItemRow[] }) {
           Thêm vật phẩm
         </h2>
         <ActionForm action={createItem} className="flex flex-col gap-sm">
+          {/* Tiền tố `them-` là không gian tên riêng của form TẠO. Hàng sửa bên dưới sinh
+              id `ten-${slug}` / `mota-${slug}`, mà slug là `text PRIMARY KEY` không có
+              CHECK và còn đặt được bằng SQL tay — nên một vật phẩm slug `vp-moi` sẽ sinh
+              đúng `ten-vp-moi` và đụng id với form này. Trùng id thì `<label htmlFor>`
+              trỏ vào ô đầu tiên trong DOM, tức nhãn ở đây kéo tiêu điểm xuống hàng sửa. */}
           <span className="flex flex-col gap-xs">
-            <label className={LABEL} htmlFor="ten-vp-moi">
+            <label className={LABEL} htmlFor="them-vp-ten">
               Tên vật phẩm
             </label>
             <input
-              id="ten-vp-moi"
+              id="them-vp-ten"
               name="name"
               required
               maxLength={120}
@@ -44,11 +49,11 @@ export function ItemAdmin({ items }: { items: AdminItemRow[] }) {
             />
           </span>
           <span className="flex flex-col gap-xs">
-            <label className={LABEL} htmlFor="mo-ta-vp-moi">
+            <label className={LABEL} htmlFor="them-vp-mota">
               Mô tả ngắn
             </label>
             <textarea
-              id="mo-ta-vp-moi"
+              id="them-vp-mota"
               name="description"
               rows={2}
               maxLength={500}

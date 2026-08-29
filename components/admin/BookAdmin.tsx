@@ -32,7 +32,8 @@ import {
 
 const ICON_BUTTON =
   "inline-flex h-8 w-8 items-center justify-center rounded-sm text-secondary transition-colors " +
-  "duration-200 ease-out hover:text-tertiary-deep disabled:opacity-30 disabled:hover:text-secondary " +
+  "duration-200 ease-out hover:text-tertiary-deep aria-disabled:cursor-not-allowed " +
+  "aria-disabled:opacity-30 aria-disabled:hover:text-secondary " +
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 " +
   "focus-visible:ring-offset-surface";
 
@@ -43,15 +44,22 @@ const ICON_BUTTON =
  * (`lib/api/unlock.ts`). Không có `<input>` hay `<select>` nào cho "vật phẩm cần để mở",
  * và không phải vì quên: cột đó KHÔNG TỒN TẠI. Hiện nó ra bằng chữ là cách duy nhất để
  * admin hiểu cơ chế mà không tạo ra một bề mặt làm đứt chuỗi.
+ *
+ * Chuỗi tính trên ĐÚNG tập mà học sinh thấy — chỉ sách đã xuất bản. Danh sách này còn
+ * kèm cả sách nháp, nên "quyển ngay trước" của admin không phải "quyển ngay trước" của
+ * học sinh: một quyển nháp chen vào giữa sẽ làm hai bên nói hai câu khác nhau. Vì thế
+ * cũng không đánh số "quyển {index}" nữa — số thứ tự hiển thị đếm cả nháp.
  */
 function unlockSentence(books: AdminBookRow[], index: number): string {
-  if (index === 0) return "Mở sẵn — quyển đầu kệ.";
+  const book = books[index];
+  if (!book.published) return "Còn nháp — chưa nằm trong chuỗi của học sinh.";
 
-  const prev = books[index - 1];
+  const prev = books.slice(0, index).filter((b) => b.published).at(-1);
+  if (!prev) return "Mở sẵn — quyển đầu kệ (tính trên sách đã xuất bản).";
   if (!prev.rewardItemSlug) {
     return `Mở sẵn — quyển “${prev.title}” ngay trước không thưởng vật phẩm nào.`;
   }
-  return `Mở bằng: ${prev.rewardItemName ?? prev.rewardItemSlug} — thưởng của quyển ${index} (“${prev.title}”).`;
+  return `Mở bằng: ${prev.rewardItemName ?? prev.rewardItemSlug} — thưởng của “${prev.title}”.`;
 }
 
 export function BookAdmin({
@@ -153,28 +161,37 @@ export function BookAdmin({
                 </span>
               </div>
 
+              {/* `aria-disabled` + `type="button"` thay cho `disabled` — xem chú thích dài
+                  ở `ShelfAdmin.tsx`: nút `disabled` bị trình duyệt lấy mất tiêu điểm đúng
+                  vào lúc admin vừa bấm nó để đẩy quyển tới đầu/cuối kệ. */}
               <div className="flex items-center gap-xs">
                 <ActionForm action={moveBook}>
                   <input type="hidden" name="slug" value={book.slug} />
                   <input type="hidden" name="shelfSlug" value={shelf.slug} />
                   <input type="hidden" name="direction" value="-1" />
-                  <SubmitButton className={ICON_BUTTON} disabled={index === 0} title="Lên trên">
+                  <button
+                    type={index === 0 ? "button" : "submit"}
+                    aria-disabled={index === 0 || undefined}
+                    className={ICON_BUTTON}
+                    title="Lên trên"
+                  >
                     <ChevronUp aria-hidden className="h-5 w-5" />
                     <span className="sr-only">Đưa “{book.title}” lên trên</span>
-                  </SubmitButton>
+                  </button>
                 </ActionForm>
                 <ActionForm action={moveBook}>
                   <input type="hidden" name="slug" value={book.slug} />
                   <input type="hidden" name="shelfSlug" value={shelf.slug} />
                   <input type="hidden" name="direction" value="1" />
-                  <SubmitButton
+                  <button
+                    type={index === books.length - 1 ? "button" : "submit"}
+                    aria-disabled={index === books.length - 1 || undefined}
                     className={ICON_BUTTON}
-                    disabled={index === books.length - 1}
                     title="Xuống dưới"
                   >
                     <ChevronDown aria-hidden className="h-5 w-5" />
                     <span className="sr-only">Đưa “{book.title}” xuống dưới</span>
-                  </SubmitButton>
+                  </button>
                 </ActionForm>
               </div>
             </header>

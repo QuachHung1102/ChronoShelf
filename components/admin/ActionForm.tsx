@@ -42,14 +42,14 @@ export function ActionForm({
     >
       {children}
 
-      {/* aria-live để trình đọc màn hình đọc kết quả mà không cần chuyển tiêu điểm. */}
-      <p aria-live="polite" className="empty:hidden">
-        {state.error && (
-          <span className="mt-xs flex items-start gap-xs font-body text-body-sm text-destructive">
-            <AlertCircle aria-hidden className="mt-[0.15em] h-4 w-4 shrink-0" />
-            {state.error}
-          </span>
-        )}
+      {/* aria-live để trình đọc màn hình đọc kết quả mà không cần chuyển tiêu điểm.
+          KHÔNG được `empty:hidden` ở đây: lúc rỗng thẻ này bị `display:none`, tức bị gỡ
+          khỏi cây trợ năng — rồi nội dung và việc hiện lại xảy ra trong CÙNG một lần cập
+          nhật DOM, nên trình đọc màn hình coi đây là một vùng live vừa được thêm chứ
+          không phải một thay đổi, và thường im lặng. Vùng live phải có sẵn, rỗng nhưng
+          hiện, TRƯỚC khi nội dung được chèn vào. Thẻ `<p>` rỗng cao 0px nên không chiếm
+          chỗ. */}
+      <p aria-live="polite">
         {state.ok && (
           <span className="mt-xs flex items-start gap-xs font-body text-body-sm text-secondary">
             <CheckCircle2 aria-hidden className="mt-[0.15em] h-4 w-4 shrink-0 text-tertiary-deep" />
@@ -57,6 +57,19 @@ export function ActionForm({
           </span>
         )}
       </p>
+
+      {/* Lỗi thì `role="alert"` chứ không phải polite — nó được đọc ngay lúc chèn vào
+          DOM, và với nhánh này lời báo thường là phản hồi DUY NHẤT (danh sách không đổi
+          gì cả). Cùng khuôn với `LoginForm` và `BookReaderModal`. */}
+      {state.error && (
+        <p
+          role="alert"
+          className="mt-xs flex items-start gap-xs font-body text-body-sm text-destructive"
+        >
+          <AlertCircle aria-hidden className="mt-[0.15em] h-4 w-4 shrink-0" />
+          {state.error}
+        </p>
+      )}
     </form>
   );
 }

@@ -13,9 +13,17 @@ export const FOCUS_RING =
 
 export const LABEL = "font-body text-label-md text-primary-dark";
 
+/**
+ * `border-surface-locked` là bắt buộc, không phải trang trí. Preflight của Tailwind zero hóa
+ * `border-width` trên mọi phần tử, nên ô nhập mất viền mặc định của trình duyệt; mà mọi form
+ * quản trị lại nằm trong thẻ `bg-surface`, tức ô nhập chìm hẳn vào nền — 1.00:1, trong khi
+ * WCAG 1.4.11 đòi 3:1 cho ranh giới thành phần giao diện. `surface-locked` trên `surface` là
+ * 9.20:1, và nó đã là màu đường kẻ của khu quản trị (`border-t` ở cuối mỗi thẻ). Cặp màu này
+ * được khai báo thành component `input-border` trong DESIGN.md để `design:lint` giữ được nó.
+ */
 export const FIELD =
-  "w-full rounded-md bg-surface px-md py-sm font-body text-body-md text-primary-dark " +
-  `placeholder:text-secondary ${FOCUS_RING}`;
+  "w-full rounded-md border border-surface-locked bg-surface px-md py-sm font-body text-body-md " +
+  `text-primary-dark placeholder:text-secondary ${FOCUS_RING}`;
 
 export const PRIMARY_BUTTON =
   "inline-flex items-center justify-center gap-sm rounded-full bg-tertiary-deep px-lg py-sm " +

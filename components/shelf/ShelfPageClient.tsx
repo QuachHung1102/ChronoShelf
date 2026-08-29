@@ -1,5 +1,6 @@
 "use client";
 
+import { AlertCircle } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BookReaderModal } from "@/components/reader/BookReaderModal";
 import { findBook } from "@/lib/content/find";
@@ -25,6 +26,7 @@ export function ShelfPageClient({ shelf }: { shelf: ContentShelf }) {
   const [userState, setUserState] = useState<UserShelfState>(SIGNED_OUT);
   const [openBookSlug, setOpenBookSlug] = useState<string | null>(null);
   const [justUnlockedSlugs, setJustUnlockedSlugs] = useState<Set<string>>(new Set());
+  const [stateError, setStateError] = useState<string | null>(null);
 
   /**
    * Quyển nào VỪA chuyển từ khóa sang mở.
@@ -55,9 +57,18 @@ export function ShelfPageClient({ shelf }: { shelf: ContentShelf }) {
             : new Set([...before].filter((slug) => !nextLocked.has(slug))),
         );
         lockedBefore.current = nextLocked;
+        // Xóa lỗi cũ khi lấy lại được: `refresh()` chạy ít nhất ba dịp (mount, đổi phiên,
+        // đóng trình đọc), nên nếu chỉ đặt mà không bao giờ xóa thì một cú nấc duy nhất
+        // để lại băng lỗi vĩnh viễn trên màn hình — nói dối theo chiều ngược lại.
+        setStateError(null);
         setUserState(next);
       })
-      .catch(() => setUserState(SIGNED_OUT));
+      // Lỗi ở đây KHÔNG có nghĩa "chưa đăng nhập": `/api/me/state` trả 200 với danh sách
+      // rỗng cho người chưa đăng nhập, kể cả khi cookie phiên hỏng. Nhánh này chỉ chạy khi
+      // lỗi thật — 500, mất mạng, JSON hỏng. Đặt `SIGNED_OUT` ở đây sẽ khóa lại cả kệ ngay
+      // sau khi học sinh vừa nhận vật phẩm, nên giữ nguyên trạng thái đang có và nói ra.
+      // (`SIGNED_OUT` vẫn là giá trị khởi tạo nên lần tải đầu tiên hỏng vẫn hiện đúng.)
+      .catch(() => setStateError("Không tải được tiến độ. Tải lại trang để xem đúng trạng thái."));
   }, [shelf]);
 
   // Đăng nhập/đăng xuất ở header không đổi route, nên kệ phải tự nghe sự kiện phiên
@@ -72,6 +83,16 @@ export function ShelfPageClient({ shelf }: { shelf: ContentShelf }) {
 
   return (
     <>
+      {/* Vùng aria-live có sẵn từ đầu (chỉ ẩn khi rỗng) để trình đọc màn hình đọc được lỗi
+          lúc nó xuất hiện; dựng mới cả thẻ thì thông báo hay bị bỏ qua. */}
+      <p aria-live="polite" className="empty:hidden">
+        {stateError && (
+          <span className="flex items-start gap-xs bg-destructive px-page-margin py-sm font-body text-body-sm text-on-destructive">
+            <AlertCircle aria-hidden className="mt-[0.15em] h-4 w-4 shrink-0" />
+            {stateError}
+          </span>
+        )}
+      </p>
       <BookShelf
         shelf={view}
         onOpenBook={setOpenBookSlug}

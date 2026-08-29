@@ -26,12 +26,20 @@ export function AuthMenu() {
 
   useEffect(() => {
     let alive = true;
+    // Lỗi TRUYỀN TẢI không phải là "đã đăng xuất". `.catch(() => null)` trước đây gộp hai
+    // thứ đó làm một, nên một cú nấc wifi là header đổi sang nút "Đăng nhập" trong khi
+    // phiên vẫn còn nguyên — người dùng tưởng mình bị đá ra. Giữ nguyên trạng thái đang
+    // có và để lần `load()` sau (mount, onAuthChange) sửa lại.
     const load = () =>
       getSignedInUser()
-        .catch(() => null)
         .then((signedIn) => {
           if (!alive) return;
           setUser(signedIn);
+          setReady(true);
+        })
+        .catch(() => {
+          if (!alive) return;
+          // Vẫn cho hiện: đứng im mãi ở `null` thì header trống trơn cũng là nói dối.
           setReady(true);
         });
 

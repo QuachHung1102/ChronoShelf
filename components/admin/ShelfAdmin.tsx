@@ -20,7 +20,8 @@ import {
 
 const ICON_BUTTON =
   "inline-flex h-8 w-8 items-center justify-center rounded-sm text-secondary transition-colors " +
-  "duration-200 ease-out hover:text-tertiary-deep disabled:opacity-30 disabled:hover:text-secondary " +
+  "duration-200 ease-out hover:text-tertiary-deep aria-disabled:cursor-not-allowed " +
+  "aria-disabled:opacity-30 aria-disabled:hover:text-secondary " +
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 " +
   "focus-visible:ring-offset-surface";
 
@@ -41,11 +42,18 @@ export function ShelfAdmin({ shelves }: { shelves: AdminShelfRow[] }) {
         </h2>
         <ActionForm action={createShelf} className="flex flex-wrap items-end gap-sm">
           <span className="flex min-w-[18rem] flex-1 flex-col gap-xs">
-            <label className={LABEL} htmlFor="ten-ke-moi">
+            {/* `them-ke-ten`, không phải `ten-ke-moi`: id của hàng sửa là `ten-${slug}`,
+                nên một kệ có slug `ke-moi` sinh ra đúng `ten-ke-moi` và trang có hai id
+                trùng nhau — `<label htmlFor>` khi đó trỏ vào ô đầu tiên trong DOM, tức là
+                nhãn của form tạo nhảy sang ô của hàng sửa. Slug là `text PRIMARY KEY`
+                không có CHECK và nội dung còn sửa được bằng SQL tay, nên không có gì cấm
+                slug đó tồn tại. Tiền tố `them-` là không gian tên mà không hàng nào với
+                tới: hàng sửa chỉ sinh `ten-`, `qg-`, `gt-`. */}
+            <label className={LABEL} htmlFor="them-ke-ten">
               Tên kệ
             </label>
             <input
-              id="ten-ke-moi"
+              id="them-ke-ten"
               name="name"
               required
               maxLength={120}
@@ -95,26 +103,42 @@ export function ShelfAdmin({ shelves }: { shelves: AdminShelfRow[] }) {
                 </span>
               </div>
 
+              {/* Nút ▲/▼ dùng `aria-disabled` chứ KHÔNG dùng `disabled`. Khi admin bấm ▲
+                  liên tiếp để đẩy kệ lên đầu, chính cái nút vừa bấm trở thành vô hiệu —
+                  trình duyệt lấy luôn tiêu điểm khỏi một phần tử `disabled`, nên người
+                  dùng bàn phím rơi về `<body>` và phải Tab lại từ đầu trang.
+                  `aria-disabled` giữ nút ở trong luồng Tab; thứ chặn submit là
+                  `type="button"` — thuần HTML, không cần JavaScript. Cùng kỹ thuật với
+                  `components/shelf/BookCover.tsx`.
+                  Đánh đổi: mất phần tự khóa lúc đang gửi của `SubmitButton`, nên bấm
+                  nhanh hai lần có thể đổi chỗ hai lần. Không mất mát gì và hoàn tác được
+                  bằng nút ngược lại. */}
               <div className="flex items-center gap-xs">
                 <ActionForm action={moveShelf}>
                   <input type="hidden" name="slug" value={shelf.slug} />
                   <input type="hidden" name="direction" value="-1" />
-                  <SubmitButton className={ICON_BUTTON} disabled={index === 0} title="Lên trên">
+                  <button
+                    type={index === 0 ? "button" : "submit"}
+                    aria-disabled={index === 0 || undefined}
+                    className={ICON_BUTTON}
+                    title="Lên trên"
+                  >
                     <ChevronUp aria-hidden className="h-5 w-5" />
                     <span className="sr-only">Đưa kệ {shelf.name} lên trên</span>
-                  </SubmitButton>
+                  </button>
                 </ActionForm>
                 <ActionForm action={moveShelf}>
                   <input type="hidden" name="slug" value={shelf.slug} />
                   <input type="hidden" name="direction" value="1" />
-                  <SubmitButton
+                  <button
+                    type={index === shelves.length - 1 ? "button" : "submit"}
+                    aria-disabled={index === shelves.length - 1 || undefined}
                     className={ICON_BUTTON}
-                    disabled={index === shelves.length - 1}
                     title="Xuống dưới"
                   >
                     <ChevronDown aria-hidden className="h-5 w-5" />
                     <span className="sr-only">Đưa kệ {shelf.name} xuống dưới</span>
-                  </SubmitButton>
+                  </button>
                 </ActionForm>
               </div>
             </header>

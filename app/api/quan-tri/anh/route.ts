@@ -52,7 +52,18 @@ export async function POST(req: Request): Promise<Response> {
   // Cổng kích thước THỨ NHẤT: chặn theo `content-length` TRƯỚC khi gọi `formData()`, vì
   // `formData()` nạp cả body vào RAM. Không có cổng này thì một body 500 MB vẫn được đọc
   // hết rồi mới bị từ chối.
-  const declared = Number(req.headers.get("content-length") ?? 0);
+  //
+  // KHÔNG KHAI BÁO ĐỘ DÀI LÀ KHÔNG HỢP LỆ, chứ không phải bằng 0. Bản trước viết
+  // `Number(header ?? 0)`: thiếu header ra 0, header rác ("abc") ra NaN, và cả hai đều làm
+  // phép so `> MAX_BYTES` thành false — nên chỉ cần BỎ header đi là vô hiệu hóa được cổng
+  // này, gửi `Transfer-Encoding: chunked` với thân 4 GB rồi để `formData()` nuốt hết vào
+  // heap. Route Handler của Next không có trần body mặc định (khác Server Action).
+  // Đường dùng thật không hỏng: `fetch` với body là FormData luôn tự đặt `Content-Length`
+  // vì trình duyệt biết trước độ dài.
+  const declared = Number(req.headers.get("content-length"));
+  if (!Number.isFinite(declared) || declared <= 0) {
+    return fail("Yêu cầu phải khai báo Content-Length.", 411);
+  }
   if (declared > MAX_BYTES * 1.1) {
     return fail(`Ảnh quá lớn. Tối đa ${MAX_BYTES / 1024 / 1024} MB.`, 413);
   }
