@@ -244,8 +244,9 @@ BEGIN
   -- Ba ràng buộc ảnh-phải-có-credit (điều kiện CC BY-SA, spec §6).
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'items_image_credit_ck')
   OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'books_cover_credit_ck')
-  OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'pages_image_credit_ck') THEN
-    RAISE EXCEPTION 'thiếu ràng buộc ảnh-phải-có-nguồn-và-tác-giả trên items/books/pages';
+  OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'pages_image_credit_ck')
+  OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'shelves_cover_credit_ck') THEN
+    RAISE EXCEPTION 'thiếu ràng buộc ảnh-phải-có-nguồn-và-tác-giả trên items/books/pages/shelves';
   END IF;
 
   RAISE NOTICE 'D. kho ảnh OK';

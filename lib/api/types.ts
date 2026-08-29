@@ -15,6 +15,11 @@ export interface BookView {
 export interface ShelfView {
   slug: string;
   name: string;
+  /** Ảnh nền căn phòng + ghi công của nó. Đi thẳng từ `ContentShelf`, không phụ thuộc
+   *  trạng thái người dùng — nhưng `BookShelf` chỉ nhận `ShelfView` nên phải qua đây. */
+  cover: string | null;
+  coverSource: string | null;
+  coverCredit: string | null;
   books: BookView[];
 }
 

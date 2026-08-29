@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BookOpen, ChevronDown, ChevronUp, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
 import { ActionForm, SubmitButton } from "./ActionForm";
+import { ImageField } from "./ImageField";
 import {
   createShelf,
   deleteShelf,
@@ -187,6 +188,16 @@ export function ShelfAdmin({ shelves }: { shelves: AdminShelfRow[] }) {
                   rows={2}
                   maxLength={500}
                   className={FIELD}
+                />
+              </span>
+              <span className="sm:col-span-2">
+                <ImageField
+                  prefix="cover"
+                  label="Ảnh bìa kệ"
+                  hint="Ảnh nền của kệ trên trang học sinh. PNG, JPEG, WebP hoặc GIF, tối đa 2 MB."
+                  defaultUrl={shelf.coverUrl}
+                  defaultSource={shelf.coverSource}
+                  defaultCredit={shelf.coverCredit}
                 />
               </span>
               <span className="sm:col-span-2">

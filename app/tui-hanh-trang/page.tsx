@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { BookOpen, ChevronRight, Sparkles } from "lucide-react";
 import { Header } from "@/components/Header";
+import { GhiCongAnh } from "@/components/ui/GhiCongAnh";
 import s from "@/components/bag/bag.module.scss";
 import { readShelfList, readTuiHanhTrang } from "@/lib/content/read";
 
@@ -102,11 +103,12 @@ export default async function TuiHanhTrang() {
                       )}
 
                       {/* Ghi công ảnh — cùng điều kiện BY như mọi chỗ khác có ảnh. */}
-                      {v.image && v.imageCredit && (
-                        <p className="mt-sm font-body text-caption text-secondary">
-                          Ảnh: {v.imageCredit}
-                          {v.imageSource && <> — Nguồn: {v.imageSource}</>}
-                        </p>
+                      {v.image && (
+                        <GhiCongAnh
+                          credit={v.imageCredit}
+                          nguon={v.imageSource}
+                          className="mt-sm font-body text-caption text-secondary"
+                        />
                       )}
                     </div>
                   </details>

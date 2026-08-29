@@ -110,6 +110,11 @@ const MUTATIONS = [
     "trần giả",
   ],
   [
+    "shelves mất ràng buộc bìa-phải-có-credit",
+    "ALTER TABLE public.shelves DROP CONSTRAINT shelves_cover_credit_ck",
+    "items/books/pages/shelves",
+  ],
+  [
     'policy "read media" bị siết lại',
     `DROP POLICY "read media" ON public.media;
      CREATE POLICY "read media" ON public.media FOR SELECT USING (public.is_admin())`,

@@ -50,6 +50,9 @@ export function buildShelfView(shelf: ContentShelf, state: UserShelfState): Shel
   return {
     slug: shelf.slug,
     name: shelf.name,
+    cover: shelf.cover,
+    coverSource: shelf.coverSource,
+    coverCredit: shelf.coverCredit,
     books: shelf.books.map((book, index): BookView => {
       const progress = state.progressByBook.get(book.slug);
       // Vật phẩm mở quyển này = vật phẩm thưởng của quyển ngay trước (spec §2.2).

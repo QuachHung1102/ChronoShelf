@@ -486,3 +486,15 @@ $half: 490px;
     zoom: 0.72;
   }
 }
+
+// Ảnh bìa sách trên MẶT BÌA trong trình đọc. Cùng lý do làm tối như `.coverArt` của
+// `BookCover`: tên sách và niên đại là chữ sáng, nên một tấm bìa sáng sẽ nuốt mất chúng.
+.coverArt {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.5) saturate(0.85);
+}

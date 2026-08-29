@@ -16,6 +16,9 @@ export interface AdminBookRow {
   /** Tên vật phẩm thưởng, để hiện chuỗi mở khóa mà không phải tra lại danh sách. */
   rewardItemName: string | null;
   published: boolean;
+  coverUrl: string | null;
+  coverSource: string | null;
+  coverCredit: string | null;
   pageCount: number;
 }
 
@@ -33,6 +36,9 @@ interface BookRow {
   reward_item_slug: string | null;
   reward_item_name: string | null;
   published: boolean;
+  cover_url: string | null;
+  cover_source: string | null;
+  cover_credit: string | null;
   page_count: string;
 }
 
@@ -57,6 +63,7 @@ export async function listBooks(shelfSlug: string): Promise<AdminBookRow[]> {
   const rows = await withRole(userId, (t) =>
     sequelize.query<BookRow>(
       `SELECT b.slug, b.title, b.era, b.position, b.reward_item_slug, b.published,
+              b.cover_url, b.cover_source, b.cover_credit,
               i.name AS reward_item_name,
               (SELECT count(*) FROM public.pages p WHERE p.book_slug = b.slug) AS page_count
          FROM public.books b
@@ -75,6 +82,9 @@ export async function listBooks(shelfSlug: string): Promise<AdminBookRow[]> {
     rewardItemSlug: r.reward_item_slug,
     rewardItemName: r.reward_item_name,
     published: r.published,
+    coverUrl: r.cover_url,
+    coverSource: r.cover_source,
+    coverCredit: r.cover_credit,
     pageCount: Number(r.page_count),
   }));
 }

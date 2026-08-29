@@ -1,4 +1,5 @@
 import { LockOpen, Sparkles } from "lucide-react";
+import { GhiCongAnh } from "@/components/ui/GhiCongAnh";
 import { findBook, findItem } from "@/lib/content/find";
 import type { ContentShelf } from "@/lib/content/types";
 import type { CompleteBookResult } from "@/lib/api/types";
@@ -45,15 +46,16 @@ export function ItemDropOverlay({
             <p className="mt-sm max-w-xl font-body text-body-md text-secondary-light">
               {item.description}
             </p>
-            {/* Ghi công ảnh vật phẩm. Đây là chỗ DUY NHẤT trong giao diện học sinh đang
-                thật sự có ảnh kèm credit (5/5 dòng `items`), nên nếu thiếu dòng này thì
-                điều kiện BY của CC BY-SA không được thỏa ở đúng chỗ nó có hiệu lực.
-                Là văn bản thường chứ không phải liên kết — cùng lý do như `BookPage`. */}
-            {item.image && item.imageCredit && (
-              <p className="mt-xs font-body text-caption text-secondary">
-                Ảnh: {item.imageCredit}
-                {item.imageSource && <> — Nguồn: {item.imageSource}</>}
-              </p>
+            {/* Ghi công ảnh vật phẩm. Năm vật phẩm seed là chỗ DUY NHẤT hôm nay thật sự
+                có ảnh kèm credit, nên thiếu dòng này thì điều kiện BY của CC BY-SA không
+                được thỏa ở đúng chỗ nó có hiệu lực. `GhiCongAnh` tự quyết định bọc liên
+                kết hay in nguyên văn — xem lý do trong chính component đó. */}
+            {item.image && (
+              <GhiCongAnh
+                credit={item.imageCredit}
+                nguon={item.imageSource}
+                className="mt-xs font-body text-caption text-secondary"
+              />
             )}
           </div>
         </>

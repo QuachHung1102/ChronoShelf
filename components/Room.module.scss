@@ -176,3 +176,17 @@
   );
   filter: blur(28px);
 }
+
+// Ảnh bìa kệ, phủ lên lớp nền vẽ bằng CSS nhưng nằm DƯỚI mọi lớp ánh sáng và nội dung.
+//
+// Làm tối mạnh và giảm bão hòa: căn phòng là bối cảnh, không phải chủ thể. Một tấm ảnh
+// nguyên bản sẽ nuốt sạch bìa sách — thứ mà cả màn hình này tồn tại để làm nổi bật.
+.anhNen {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.32) saturate(0.6);
+}

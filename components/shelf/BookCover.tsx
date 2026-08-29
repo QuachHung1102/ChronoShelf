@@ -77,6 +77,13 @@ export function BookCover({
             : "cursor-pointer hover:-translate-y-2 motion-reduce:hover:translate-y-0"
         } ${!isLocked && !isCompleted ? s.glow : ""}`}
       >
+        {/* Ảnh bìa do admin tải lên. Không có thì bìa vẫn vẽ bằng CSS như cũ — đó là
+            trạng thái mặc định, không phải trạng thái hỏng. */}
+        {book.cover && (
+          // eslint-disable-next-line @next/next/no-img-element -- ảnh trong bảng media, phục vụ qua /media/[id]
+          <img src={book.cover} alt="" className={s.coverArt} loading="lazy" decoding="async" />
+        )}
+
         {isCompleted && (
           <span className="flex justify-end">
             <span className="flex h-lg w-lg items-center justify-center rounded-full bg-tertiary-deep">

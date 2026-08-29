@@ -61,6 +61,8 @@ export class Shelf extends Model<InferAttributes<Shelf>, InferCreationAttributes
   declare countryCode: string | null;
   declare blurb: CreationOptional<string>;
   declare coverUrl: string | null;
+  declare coverSource: string | null;
+  declare coverCredit: string | null;
   declare published: CreationOptional<boolean>;
   declare books?: NonAttribute<Book[]>;
 }
@@ -72,6 +74,8 @@ Shelf.init(
     countryCode: { type: DataTypes.TEXT },
     blurb: { type: DataTypes.TEXT, allowNull: false, defaultValue: "" },
     coverUrl: { type: DataTypes.TEXT },
+    coverSource: { type: DataTypes.TEXT },
+    coverCredit: { type: DataTypes.TEXT },
     published: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
   },
   { ...base, tableName: "shelves" },

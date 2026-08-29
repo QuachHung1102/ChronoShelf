@@ -12,6 +12,7 @@ import {
   Unlock,
 } from "lucide-react";
 import { ActionForm, SubmitButton } from "./ActionForm";
+import { ImageField } from "./ImageField";
 import {
   createBook,
   deleteBook,
@@ -253,6 +254,16 @@ export function BookAdmin({
                   Đổi phần thưởng làm đổi luôn điều kiện mở quyển kế tiếp. Người đã nhận vật phẩm cũ
                   sẽ thấy quyển sau khóa lại.
                 </span>
+              </span>
+              <span className="sm:col-span-2">
+                <ImageField
+                  prefix="cover"
+                  label="Ảnh bìa sách"
+                  hint="Hiện trên gáy sách ở kệ. Không tải ảnh thì bìa vẽ bằng CSS như hiện nay."
+                  defaultUrl={book.coverUrl}
+                  defaultSource={book.coverSource}
+                  defaultCredit={book.coverCredit}
+                />
               </span>
               <span className="sm:col-span-2">
                 <SubmitButton className={PRIMARY_BUTTON} pendingLabel="Đang lưu…">

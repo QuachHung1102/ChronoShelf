@@ -182,6 +182,12 @@ export async function updateShelf(_prev: ActionState, fd: FormData): Promise<Act
       return { error: "Mã quốc gia phải là số ISO-3166-1 numeric, ví dụ 704 cho Việt Nam." };
     }
 
+    // Ảnh bìa kệ. Ràng buộc `shelves_cover_credit_ck` (db/schema/12) cưỡng chế ở tầng
+    // database, còn `readImageFields` chặn sớm để lỗi dễ hiểu — cả hai đều cần: cái sau
+    // quên gọi được, cái trước thì không.
+    const bia = readImageFields(fd, "cover");
+    if ("error" in bia) return { error: bia.error };
+
     // Policy chặn thì UPDATE trúng 0 dòng mà KHÔNG báo lỗi. Không có phép so này thì
     // giao diện báo "đã lưu" trong khi database không đổi gì. Phải qua `rowsAffected`
     // chứ không ép kiểu phần tử thứ hai thành số — nó là một đối tượng `pg.Result`, và
@@ -189,8 +195,14 @@ export async function updateShelf(_prev: ActionState, fd: FormData): Promise<Act
     const affected = rowsAffected(
       await withRole(userId, (t) =>
         sequelize.query(
-          `UPDATE public.shelves SET name = $2, blurb = $3, country_code = $4 WHERE slug = $1`,
-          { bind: [slug, name, blurb, countryCode || null], transaction: t },
+          `UPDATE public.shelves
+              SET name = $2, blurb = $3, country_code = $4,
+                  cover_url = $5, cover_source = $6, cover_credit = $7
+            WHERE slug = $1`,
+          {
+            bind: [slug, name, blurb, countryCode || null, bia.url, bia.source, bia.credit],
+            transaction: t,
+          },
         ),
       ),
     );
@@ -459,7 +471,6 @@ export async function createBook(_prev: ActionState, fd: FormData): Promise<Acti
     // `era` là NOT NULL và không có DEFAULT trong schema, nên bỏ trống là vỡ ở tầng DB
     // với một thông điệp khó hiểu. Chặn ở đây cho câu rõ ràng.
     if (!era) return { error: "Niên đại không được để trống (ví dụ: Năm 938)." };
-
     const base = slugify(title);
     if (!base) return { error: "Tiêu đề phải có ít nhất một chữ cái hoặc chữ số." };
 
@@ -501,13 +512,22 @@ export async function updateBook(_prev: ActionState, fd: FormData): Promise<Acti
     if (!title) return { error: "Tiêu đề không được để trống." };
     if (!era) return { error: "Niên đại không được để trống (ví dụ: Năm 938)." };
 
+    // Ảnh bìa sách. Ràng buộc `books_cover_credit_ck` cưỡng chế ở tầng database;
+    // `readImageFields` chặn sớm để lỗi dễ hiểu — cả hai đều cần.
+    const bia = readImageFields(fd, "cover");
+    if ("error" in bia) return { error: bia.error };
+
     const affected = rowsAffected(
       await withRole(userId, (t) =>
         sequelize.query(
           `UPDATE public.books
-              SET title = $2, era = $3, reward_item_slug = $4, updated_at = now()
+              SET title = $2, era = $3, reward_item_slug = $4, updated_at = now(),
+                  cover_url = $5, cover_source = $6, cover_credit = $7
             WHERE slug = $1`,
-          { bind: [slug, title, era, rewardItemSlug], transaction: t },
+          {
+            bind: [slug, title, era, rewardItemSlug, bia.url, bia.source, bia.credit],
+            transaction: t,
+          },
         ),
       ),
     );

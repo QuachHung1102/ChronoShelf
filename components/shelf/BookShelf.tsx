@@ -2,6 +2,7 @@
 
 import { Check, Lock } from "lucide-react";
 import { Room } from "@/components/Room";
+import { GhiCongAnh } from "@/components/ui/GhiCongAnh";
 import type { ShelfView } from "@/lib/api/types";
 import { BookCover } from "./BookCover";
 import s from "./BookShelf.module.scss";
@@ -19,7 +20,7 @@ export function BookShelf({
   const opened = shelf.books.filter((b) => b.state !== "locked").length;
 
   return (
-    <Room className="flex flex-1 flex-col">
+    <Room className="flex flex-1 flex-col" anhNen={shelf.cover}>
       {/* justify-center: tủ sách nằm giữa khung nhìn thay vì dồn lên đỉnh trang và
           bỏ trống hai phần ba phía dưới như bản trước. */}
       <section className="mx-auto flex w-full max-w-[1180px] flex-1 flex-col justify-center gap-lg px-page-margin py-xl">
@@ -29,6 +30,16 @@ export function BookShelf({
           <p className="mt-xs font-body text-body-md text-secondary-light">
             Bạn đã mở {opened}/{shelf.books.length} quyển
           </p>
+          {/* Ghi công ảnh nền căn phòng. Ảnh là bối cảnh chứ không phải nội dung, nhưng
+              điều kiện BY của giấy phép không phân biệt hai thứ đó. */}
+          {shelf.cover && (
+            <GhiCongAnh
+              nhan="Ảnh nền"
+              credit={shelf.coverCredit}
+              nguon={shelf.coverSource}
+              className="mt-xs font-body text-caption text-secondary-light"
+            />
+          )}
         </header>
 
         <div className={s.cabinet}>

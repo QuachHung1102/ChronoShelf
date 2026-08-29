@@ -297,7 +297,13 @@ export function BookReaderModal({
                           }`}
                         >
                           {front.kind === "cover" ? (
-                            <CoverFace title={book.title} era={book.era} />
+                            <CoverFace
+                              title={book.title}
+                              era={book.era}
+                              anhBia={book.cover}
+                              credit={book.coverCredit}
+                              nguon={book.coverSource}
+                            />
                           ) : front.kind === "end" ? (
                             <EndFace />
                           ) : (
@@ -387,13 +393,42 @@ export function BookReaderModal({
   );
 }
 
-function CoverFace({ title, era }: { title: string; era: string }) {
+function CoverFace({
+  title,
+  era,
+  anhBia,
+  credit,
+  nguon,
+}: {
+  title: string;
+  era: string;
+  anhBia: string | null;
+  credit: string | null;
+  nguon: string | null;
+}) {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center p-xl text-center">
-      <p className="font-body text-label-caps uppercase text-tertiary-light">Cửa sổ lịch sử</p>
-      <p className="mt-md font-heading text-headline-md text-on-primary">{title}</p>
+    <div className="relative flex h-full w-full flex-col items-center justify-center p-xl text-center">
+      {anhBia && (
+        // eslint-disable-next-line @next/next/no-img-element -- ảnh trong bảng media
+        <img src={anhBia} alt="" className={s.coverArt} />
+      )}
+      <p className="relative font-body text-label-caps uppercase text-tertiary-light">
+        Cửa sổ lịch sử
+      </p>
+      <p className="relative mt-md font-heading text-headline-md text-on-primary">{title}</p>
       <span aria-hidden className={s.coverRule} />
-      <p className="font-body text-body-md text-secondary-light">{era}</p>
+      <p className="relative font-body text-body-md text-secondary-light">{era}</p>
+
+      {/* Ghi công ảnh bìa. Trên kệ thì bìa sách quá nhỏ để chứa dòng này, nên đây là chỗ
+          đầu tiên đủ rộng mà người đọc chắc chắn đi qua — mở sách ra là thấy. Điều kiện BY
+          của giấy phép đòi ghi công ở nơi nhìn được, không đòi ghi ngay cạnh mọi lần ảnh
+          xuất hiện. */}
+      {anhBia && credit && (
+        <p className="absolute inset-x-xl bottom-lg font-body text-caption text-secondary-light">
+          Ảnh bìa: {credit}
+          {nguon && <> — Nguồn: {nguon}</>}
+        </p>
+      )}
     </div>
   );
 }

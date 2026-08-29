@@ -35,6 +35,9 @@ export interface ContentBook {
   /** Niên đại dập trên bìa sách — chuỗi ngắn, ví dụ "Năm 938". */
   era: string;
   cover: string | null;
+  /** Ghi công ảnh bìa. Ràng buộc `books_cover_credit_ck` đòi có đủ khi `cover` khác null. */
+  coverSource: string | null;
+  coverCredit: string | null;
   /**
    * Vật phẩm nhận được khi đọc xong. Đây cũng là thứ mở khóa quyển kế tiếp —
    * không có trường `requiredItem`, xem lib/api/unlock.ts.
@@ -49,6 +52,10 @@ export interface ContentShelf {
   order: number;
   /** Mã ISO-3166-1 numeric để nối với bản đồ thế giới; null nghĩa là chưa gắn. */
   countryCode: string | null;
+  /** Ảnh nền của căn phòng khi vào kệ này. Không có thì phòng vẽ hoàn toàn bằng CSS. */
+  cover: string | null;
+  coverSource: string | null;
+  coverCredit: string | null;
   items: ContentItem[];
   books: ContentBook[];
 }

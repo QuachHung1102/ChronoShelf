@@ -19,6 +19,9 @@ export interface AdminShelfRow {
   countryCode: string | null;
   blurb: string;
   published: boolean;
+  coverUrl: string | null;
+  coverSource: string | null;
+  coverCredit: string | null;
   /** Số sách trong kệ — quyết định kệ có xóa được không, và hiện ngay trên danh sách. */
   bookCount: number;
 }
@@ -30,6 +33,9 @@ interface Row {
   country_code: string | null;
   blurb: string;
   published: boolean;
+  cover_url: string | null;
+  cover_source: string | null;
+  cover_credit: string | null;
   book_count: string;
 }
 
@@ -45,6 +51,7 @@ export async function listShelves(): Promise<AdminShelfRow[]> {
   const rows = await withRole(userId, (t) =>
     sequelize.query<Row>(
       `SELECT s.slug, s.name, s.position, s.country_code, s.blurb, s.published,
+              s.cover_url, s.cover_source, s.cover_credit,
               (SELECT count(*) FROM public.books b WHERE b.shelf_slug = s.slug) AS book_count
          FROM public.shelves s
         ORDER BY s.position`,
@@ -59,6 +66,9 @@ export async function listShelves(): Promise<AdminShelfRow[]> {
     countryCode: r.country_code,
     blurb: r.blurb,
     published: r.published,
+    coverUrl: r.cover_url,
+    coverSource: r.cover_source,
+    coverCredit: r.cover_credit,
     // count() của Postgres là bigint; driver trả về chuỗi để không mất chính xác ở
     // số lớn. Ở đây luôn nhỏ nên ép sang number là an toàn.
     bookCount: Number(r.book_count),

@@ -288,3 +288,27 @@
     opacity: 0;
   }
 }
+
+// Ảnh bìa thật, khi admin đã tải lên. Nằm dưới mọi thứ khác trong nút: số hiệu, ổ khóa và
+// tên sách vẫn phải đọc được, nên ảnh chỉ là nền chứ không thay thế bố cục.
+//
+// `inset: 9px` chứ không phải 0: mặt bìa có một nét khung nhũ chìm ở đúng 9px (xem `.cover`
+// ở trên), và ảnh tràn ra ngoài nét đó sẽ nuốt mất nó.
+.coverArt {
+  position: absolute;
+  inset: 9px;
+  z-index: 0;
+  width: calc(100% - 18px);
+  height: calc(100% - 18px);
+  object-fit: cover;
+  border-radius: theme('borderRadius.sm');
+  // Tối đi để chữ trắng trên nền ảnh vẫn đạt tương phản, bất kể admin tải ảnh sáng hay tối.
+  // Đây là lý do KHÔNG để ảnh nguyên bản: một tấm bìa sáng làm tên sách biến mất.
+  filter: brightness(0.55) saturate(0.85);
+}
+
+// Nội dung nút phải nổi lên trên ảnh.
+.coverArt ~ * {
+  position: relative;
+  z-index: 1;
+}

@@ -12,13 +12,20 @@ import s from "./Room.module.scss";
 export function Room({
   children,
   className = "",
+  anhNen = null,
 }: {
   children: ReactNode;
   className?: string;
+  /** Ảnh bìa kệ do admin tải lên. Không có thì phòng vẽ hoàn toàn bằng CSS như trước. */
+  anhNen?: string | null;
 }) {
   return (
     <div className={`${s.room} ${className}`}>
       <div aria-hidden className={s.backdrop} />
+      {anhNen && (
+        // eslint-disable-next-line @next/next/no-img-element -- ảnh trong bảng media
+        <img aria-hidden alt="" src={anhNen} className={s.anhNen} />
+      )}
       <div aria-hidden className={s.floor} />
       <div aria-hidden className={s.lightShaft} />
       <div aria-hidden className={s.lightBeam} />

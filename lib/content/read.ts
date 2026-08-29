@@ -46,6 +46,8 @@ function toBook(row: Book): ContentBook {
     title: row.title,
     era: row.era,
     cover: row.coverUrl,
+    coverSource: row.coverSource,
+    coverCredit: row.coverCredit,
     rewardItem: row.rewardItemSlug,
     pages: byPosition(row.pages ?? []).map(toPage),
   };
@@ -95,6 +97,9 @@ export const readShelf = cache(async function readShelf(slug: string): Promise<C
       name: shelf.name,
       order: shelf.position,
       countryCode: shelf.countryCode,
+      cover: shelf.coverUrl,
+      coverSource: shelf.coverSource,
+      coverCredit: shelf.coverCredit,
       items: items.map(toItem),
       books: byPosition(shelf.books ?? []).map(toBook),
     };
