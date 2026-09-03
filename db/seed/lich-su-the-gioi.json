@@ -1,0 +1,193 @@
+{
+  "slug": "lich-su-the-gioi",
+  "name": "Lịch sử Thế giới",
+  "order": 2,
+  "items": [
+    {
+      "slug": "vien-da-giza",
+      "name": "Viên đá Giza",
+      "image": null,
+      "imageSource": null,
+      "imageCredit": null,
+      "description": "Một khối đá vôi từ cao nguyên Giza — mảnh nhỏ của công trình giữ kỷ lục cao nhất thế giới suốt hơn bốn nghìn năm."
+    },
+    {
+      "slug": "huy-hieu-quan-doan",
+      "name": "Huy hiệu quân đoàn La Mã",
+      "image": null,
+      "imageSource": null,
+      "imageCredit": null,
+      "description": "Hình chim đại bàng mà mỗi quân đoàn La Mã mang theo ra trận. Mất huy hiệu bị coi là nỗi nhục lớn nhất của cả quân đoàn."
+    },
+    {
+      "slug": "la-ban-hang-hai",
+      "name": "La bàn hàng hải",
+      "image": null,
+      "imageSource": null,
+      "imageCredit": null,
+      "description": "Chiếc kim luôn chỉ hướng bắc đã cho phép thủy thủ rời khỏi tầm nhìn bờ biển mà vẫn biết mình đang ở đâu."
+    },
+    {
+      "slug": "mo-hinh-dau-may",
+      "name": "Mô hình đầu máy hơi nước",
+      "image": null,
+      "imageSource": null,
+      "imageCredit": null,
+      "description": "Cỗ máy biến than thành chuyển động, và biến khoảng cách hàng trăm cây số thành vài giờ đồng hồ."
+    }
+  ],
+  "books": [
+    {
+      "slug": "kim-tu-thap-ai-cap",
+      "title": "Kim tự tháp Ai Cập",
+      "era": "Khoảng 2560 TCN",
+      "cover": null,
+      "rewardItem": "vien-da-giza",
+      "pages": [
+        {
+          "heading": "Người khổng lồ bằng đá",
+          "image": null,
+          "caption": null,
+          "body": "Kim tự tháp Kheops cao 146 mét, giữ kỷ lục công trình cao nhất thế giới suốt hơn bốn nghìn năm. Người Ai Cập cổ xếp khoảng 2,3 triệu khối đá vôi, mỗi khối nặng trung bình 2,5 tấn."
+        },
+        {
+          "heading": "Tổng kết",
+          "image": null,
+          "caption": null,
+          "body": "Kim tự tháp không phải do nô lệ xây như phim ảnh thường kể. Các ngôi làng thợ tìm thấy gần Giza cho thấy đó là những đội thợ được trả công, có khẩu phần bánh mì và bia hẳn hoi.",
+          "summary": [
+            "Kim tự tháp Kheops cao 146 m, giữ kỷ lục cao nhất thế giới hơn bốn nghìn năm.",
+            "Khoảng 2,3 triệu khối đá vôi, mỗi khối nặng trung bình 2,5 tấn.",
+            "Người xây là thợ được trả công, không phải nô lệ."
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "de-che-la-ma",
+      "title": "Đế chế La Mã",
+      "era": "753 TCN – 476",
+      "cover": null,
+      "rewardItem": "huy-hieu-quan-doan",
+      "pages": [
+        {
+          "heading": "Từ một thị trấn bên sông Tiber",
+          "image": null,
+          "caption": null,
+          "body": "Truyền thuyết chép rằng thành Roma được dựng năm 753 trước Công nguyên, ban đầu chỉ là một thị trấn nhỏ bên sông Tiber. Đến năm 509 TCN, người La Mã lật đổ vua và lập nền cộng hòa: quyền lực chia cho Viện nguyên lão và các quan chấp chính được bầu hằng năm. Chính cái khung đó — không ai nắm quyền trọn đời — đã giúp một thị trấn nhỏ dần thu phục toàn bộ bán đảo Ý, rồi vượt biển Địa Trung Hải.",
+          "summary": null
+        },
+        {
+          "heading": "Đường sá, luật pháp và quân đoàn",
+          "image": null,
+          "caption": null,
+          "body": "Sức mạnh La Mã không chỉ nằm ở lưỡi gươm. Họ lát hơn tám vạn cây số đường đá nối các tỉnh về Roma, dựng cầu dẫn nước đưa nước sạch vào thành phố, và viết ra một hệ thống luật mà luật pháp châu Âu ngày nay vẫn kế thừa. Quân đoàn La Mã là đội quân chuyên nghiệp: lính phục vụ hai mươi năm, được trả lương, và khi giải ngũ được cấp đất. Mỗi quân đoàn mang theo một huy hiệu hình đại bàng — mất nó là nỗi nhục của cả đơn vị.",
+          "summary": null
+        },
+        {
+          "heading": "Từ cộng hòa sang đế chế",
+          "image": null,
+          "caption": null,
+          "body": "Chiến thắng liên tiếp mang về của cải khổng lồ, và cùng với nó là những vị tướng mạnh hơn cả nhà nước. Sau nhiều chục năm nội chiến, năm 27 trước Công nguyên Octavianus nhận danh hiệu Augustus và trở thành hoàng đế đầu tiên. Nền cộng hòa chấm dứt trên thực tế, dù danh nghĩa Viện nguyên lão vẫn còn. Hai thế kỷ sau đó tương đối yên ổn, đủ để thương nhân đi từ Anh tới Ai Cập mà chỉ dùng một đồng tiền và một thứ tiếng.",
+          "summary": null
+        },
+        {
+          "heading": "Vì sao một đế chế sụp đổ",
+          "image": null,
+          "caption": null,
+          "body": "Không có một cú đánh duy nhất nào hạ gục La Mã. Biên giới quá dài để giữ, thuế khóa nặng dần, quyền lực chuyển tay bằng đảo chính liên tục. Năm 395 đế chế tách hẳn thành hai nửa Đông và Tây. Nửa phía Tây mất dần từng tỉnh vào tay các bộ tộc từ phương bắc, và năm 476 vị hoàng đế cuối cùng bị phế truất. Nửa phía Đông — Byzantine — còn tồn tại thêm gần một nghìn năm nữa.",
+          "summary": [
+            "Roma dựng năm 753 TCN, lập nền cộng hòa năm 509 TCN.",
+            "Đường sá, cầu dẫn nước và luật pháp là di sản bền hơn cả quân đội.",
+            "Năm 27 TCN Augustus lên ngôi, cộng hòa chuyển thành đế chế.",
+            "Năm 395 đế chế tách đôi; nửa phía Tây sụp đổ năm 476."
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "ky-nguyen-phat-kien-dia-ly",
+      "title": "Kỷ nguyên phát kiến địa lý",
+      "era": "Thế kỷ XV – XVI",
+      "cover": null,
+      "rewardItem": "la-ban-hang-hai",
+      "pages": [
+        {
+          "heading": "Vì sao người ta ra khơi",
+          "image": null,
+          "caption": null,
+          "body": "Cuối thế kỷ XV, hồ tiêu, quế và đinh hương từ châu Á về tới châu Âu phải qua tay hàng chục người trung gian, giá đội lên nhiều lần. Ai tìm được đường biển thẳng tới nguồn hàng sẽ giàu có khủng khiếp. Cùng lúc đó, ba công cụ chín muồi: la bàn cho biết hướng khi không thấy bờ, thước trắc tinh đo được vĩ độ bằng sao, và tàu caravel nhỏ nhưng đi ngược gió được.",
+          "summary": null
+        },
+        {
+          "heading": "Những chuyến đi đổi bản đồ",
+          "image": null,
+          "caption": null,
+          "body": "Trước cả châu Âu, từ năm 1405 đến 1433 đô đốc Trịnh Hòa của nhà Minh đã bảy lần dẫn hạm đội tới Ấn Độ Dương và bờ Đông Phi. Ở châu Âu, năm 1488 Bartolomeu Dias vòng qua mũi Hảo Vọng. Năm 1492 Cristoforo Colombo vượt Đại Tây Dương và cập vào vùng Caribe — ông tin tới cuối đời rằng mình đã tới châu Á. Năm 1498 Vasco da Gama tới được Ấn Độ bằng đường biển. Đoàn tàu của Magellan rời cảng năm 1519; ông tử trận giữa đường, và năm 1522 chỉ một con tàu về tới nơi, hoàn tất vòng quanh thế giới đầu tiên.",
+          "summary": null
+        },
+        {
+          "heading": "Hai mặt của một cuộc gặp gỡ",
+          "image": null,
+          "caption": null,
+          "body": "Các chuyến đi nối liền hai nửa thế giới vốn không biết nhau. Khoai tây, ngô, cà chua, ớt từ châu Mỹ sang, đổi lại lúa mì, ngựa, mía từ lục địa cũ — bữa ăn của cả hai bên thay đổi vĩnh viễn. Nhưng cùng chuyến tàu ấy là bệnh đậu mùa, sởi và thương hàn, những thứ mà cư dân bản địa châu Mỹ chưa từng có sức đề kháng; nhiều cộng đồng mất phần lớn dân số. Kèm theo là ba thế kỷ buôn bán nô lệ xuyên Đại Tây Dương.",
+          "summary": null
+        },
+        {
+          "heading": "Thế giới thu nhỏ lại",
+          "image": null,
+          "caption": null,
+          "body": "Sau một thế kỷ, bản đồ thế giới lần đầu có hình dạng gần đúng như ta biết hôm nay, và lần đầu tiên hàng hóa, cây trồng, con người và mầm bệnh đi vòng quanh Trái Đất một cách thường xuyên. Đó là bước khởi đầu của cái mà ngày nay ta gọi là toàn cầu hóa — với cả phần lợi lẫn phần giá phải trả.",
+          "summary": [
+            "Động lực là con đường buôn gia vị; điều kiện là la bàn, thước trắc tinh và tàu caravel.",
+            "Trịnh Hòa đi trước từ 1405; Dias 1488, Colombo 1492, Da Gama 1498, đoàn Magellan về năm 1522.",
+            "Cây trồng hai lục địa đổi chỗ cho nhau, làm thay đổi bữa ăn toàn thế giới.",
+            "Cái giá là dịch bệnh tàn phá cư dân bản địa và ba thế kỷ buôn bán nô lệ."
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "cach-mang-cong-nghiep",
+      "title": "Cách mạng công nghiệp",
+      "era": "Từ khoảng 1760",
+      "cover": null,
+      "rewardItem": "mo-hinh-dau-may",
+      "pages": [
+        {
+          "heading": "Khi sức người không còn là giới hạn",
+          "image": null,
+          "caption": null,
+          "body": "Suốt hàng nghìn năm, mọi thứ con người làm ra đều bị chặn bởi sức cơ bắp của người và vật, cộng thêm chút gió và nước chảy. Từ khoảng năm 1760 ở nước Anh, giới hạn đó bị phá vỡ. Than đá cho nhiệt, máy hơi nước biến nhiệt thành chuyển động, và chuyển động ấy chạy suốt ngày đêm, không mệt, không phụ thuộc mùa.",
+          "summary": null
+        },
+        {
+          "heading": "Máy móc và nhà xưởng",
+          "image": null,
+          "caption": null,
+          "body": "Ngành dệt đi trước. Máy kéo sợi Jenny của James Hargreaves cho một người kéo cùng lúc nhiều sợi thay vì một. Năm 1769 James Watt được cấp bằng sáng chế cho cải tiến máy hơi nước, giúp nó tiết kiệm nhiên liệu tới mức đặt ở đâu cũng được — không cần cạnh dòng nước nữa. Từ đó nhà xưởng mọc lên quanh mỏ than và thành phố, và lần đầu tiên hàng vạn người rời làng quê đi làm công ăn lương theo tiếng còi tầm.",
+          "summary": null
+        },
+        {
+          "heading": "Đường sắt và tốc độ",
+          "image": null,
+          "caption": null,
+          "body": "Năm 1825 tuyến đường sắt công cộng đầu tiên nối Stockton và Darlington đi vào hoạt động; năm 1829 đầu máy Rocket của George Stephenson thắng cuộc thi Rainhill và định hình dáng của mọi đầu máy sau đó. Chuyến đi mất nhiều ngày bằng ngựa rút xuống còn vài giờ. Hàng hóa rẻ đi, thư từ nhanh hơn, và các thành phố xa nhau bắt đầu phải dùng chung một giờ — giờ đường sắt chính là khởi đầu của múi giờ thống nhất.",
+          "summary": null
+        },
+        {
+          "heading": "Cái giá và di sản",
+          "image": null,
+          "caption": null,
+          "body": "Sản lượng tăng vọt, nhưng thành phố công nghiệp thời đầu là nơi khói than phủ kín, nước thải chảy ra sông, trẻ em mười tuổi làm mười hai giờ mỗi ngày. Chính những điều kiện đó đã sinh ra công đoàn, luật lao động và luật vệ sinh đô thị — những thứ hôm nay ta coi là hiển nhiên. Cách mạng công nghiệp vì thế không chỉ đổi cách làm ra đồ vật, nó đổi luôn cách xã hội tự tổ chức.",
+          "summary": [
+            "Từ khoảng 1760 tại Anh, than và máy hơi nước phá vỡ giới hạn sức cơ bắp.",
+            "Máy kéo sợi Jenny và cải tiến của Watt (bằng sáng chế 1769) đưa sản xuất vào nhà xưởng.",
+            "Đường sắt công cộng đầu tiên năm 1825; đầu máy Rocket năm 1829.",
+            "Cái giá là ô nhiễm và lao động trẻ em — cũng chính là nguồn gốc của luật lao động."
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -18,7 +18,7 @@ quyển thì nhận được một vật phẩm, và chính vật phẩm đó m�
 | `DESIGN.md` | Hệ thiết kế (format `design.md` của Google Labs): toàn bộ color/typography/spacing token + lý do. Nguồn sự thật về *trông như thế nào*. |
 | `db/schema/README.md` | Thứ tự chạy schema, ba role và lý do. **Đọc trước khi đụng SQL.** |
 | `docs/superpowers/specs/` | Spec đã được duyệt, mỗi subsystem một file. |
-| `docs/superpowers/plans/2026-08-30-ban-giao-phien-sau.md` | **Đọc đầu tiên khi mở phiên mới**: đã làm gì, cổng đang ở đâu, việc kế tiếp là gì và thứ đang chặn nó. Ảnh chụp một thời điểm — xóa khi các mục "còn lại" xong hết. |
+| `docs/superpowers/plans/2026-09-04-ban-giao-phien-sau.md` | **Đọc đầu tiên khi mở phiên mới**: đã làm gì, cổng đang ở đâu, việc kế tiếp là gì và thứ đang chặn nó. Ảnh chụp một thời điểm — xóa khi các mục "còn lại" xong hết. |
 | `docs/superpowers/plans/` | Kế hoạch triển khai từng bước. Chặng C đã hoàn tất; các plan cũ bị xóa ngày 2026-08-28 vì hướng dẫn theo backend cũ — git history vẫn giữ. |
 | `pen.dev/design.pen` | File thiết kế Pencil — mockup UI đã duyệt. |
 | `db/schema/` | SQL schema, nguồn sự thật cho cấu trúc DB. |
@@ -89,9 +89,11 @@ npm run design:build    # DESIGN.md -> tailwind.theme.json
 ## Nội dung nằm trong database
 
 Nội dung bài học (kệ, sách, trang, vật phẩm) nằm ở 4 bảng `shelves`, `items`, `books`,
-`pages`. Sửa nội dung đang chạy bằng **màn quản trị `/quan-tri`** (chặng C đã xong: `/quan-tri`,
-`/quan-tri/[shelf]`, `/quan-tri/[shelf]/[book]`, `/quan-tri/vat-pham`; server action ở
-`lib/admin/actions.ts`, upload ảnh qua `/api/quan-tri/anh` vào bảng `media`). `psql` dưới quyền
+`pages`; bài giảng & slide nằm ở `lessons` + `documents`. Sửa nội dung đang chạy bằng
+**màn quản trị `/quan-tri`** (`/quan-tri`, `/quan-tri/[shelf]`, `/quan-tri/[shelf]/[book]`,
+`/quan-tri/vat-pham`, `/quan-tri/bai-giang`; server action ở `lib/admin/actions.ts`, upload
+ảnh qua `/api/quan-tri/anh` vào bảng `media`, upload `.pptx` qua `/api/quan-tri/tai-lieu` vào
+bảng `documents`). `psql` dưới quyền
 superuser chỉ còn dùng cho bootstrap (`seed:content`), đổi schema (`db:migrate`) và cấp quyền
 admin — **đừng dùng nó để sửa nội dung**: superuser bỏ qua RLS và không đi qua
 `readImageFields()`, nên ảnh sẽ không vào bảng `media` —
@@ -219,7 +221,22 @@ phải JWT**: định dạng này không có trường `alg`, nên không có g�
   `undefined` — xem `pgInfo()` ở `lib/admin/actions.ts`.
 - **Đoạn tĩnh thắng đoạn động trong App Router.** `/quan-tri/vat-pham` che `/quan-tri/[shelf]`,
   nên một kệ đặt tên "Vật phẩm" (slug `vat-pham`) sẽ mất màn quản trị. `createShelf` coi slug đó
-  như đã dùng.
+  như đã dùng. **Thêm route TĨNH nào ở gốc URL thì phải thêm slug đó vào `RESERVED_SLUGS`
+  (`lib/admin/actions.ts`) trong cùng lượt.** Đã quên hai lần: `cong-dong` và `media` lọt ra
+  ngoài danh sách cho tới 2026-09-04 — một kệ đặt tên "Cộng đồng" sẽ vào `/cong-dong` ra bảng
+  tin, và màn quản trị của kệ đó biến mất.
+- **Kho địa chỉ hóa theo nội dung phải trả về TÊN ĐÃ LƯU, không vọng lại tên vừa gửi.** Cùng
+  byte = cùng dòng, nên `ON CONFLICT DO NOTHING` giữ tên của lần tải đầu; trả tên mới về cho
+  form là để người dùng thấy một tên rồi tải về ra tên khác. Đã đo thật trong trình duyệt trên
+  `/api/quan-tri/tai-lieu`. Sửa bằng một câu `SELECT` đọc lại sau khi ghi.
+- **Tên tệp đi vào `Content-Disposition` phải có bản chỉ-ASCII.** Giá trị header đi qua undici,
+  và một ký tự ngoài Latin-1 làm chính `new Response()` NÉM — route chết, không phải tải về sai
+  tên. Tên bài giảng tiếng Việt gần như chắc chắn có dấu. Dùng `filename=` bản ASCII đã lọc +
+  `filename*=UTF-8''…` bản đủ dấu.
+- **Hai nhánh của một điều kiện mà cùng mở đầu bằng `<input>` thì React TÁI DÙNG phần tử đó.**
+  Ô file (uncontrolled) biến thành ô hidden (controlled) và console cảnh báo đúng thế. Xảy ra ở
+  `SlideField`; `ImageField` thoát vì nhánh sau của nó mở đầu bằng `<div>`. Cho hai nhánh hai
+  `key` khác nhau để React tháo ra dựng lại.
 - **Ghi file vào `public/` LÚC CHẠY không phục vụ được.** `next start` trả 404, `next dev` trả
   200 — bẫy "chạy tốt trên máy tôi" chỉ nổ ở production. File commit sẵn thì vẫn bình thường. Đó
   là lý do ảnh nằm trong bảng `media` (bytea) chứ không nằm trên đĩa.
