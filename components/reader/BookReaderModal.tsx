@@ -233,7 +233,7 @@ export function BookReaderModal({
 
         {result ? (
           <div className="flex flex-1 items-center justify-center">
-            <ItemDropOverlay result={result} shelf={shelf} onClose={close} />
+            <ItemDropOverlay result={result} shelf={shelf} book={book} onClose={close} />
           </div>
         ) : (
           // Sách và ruy băng tiến độ là MỘT khối căn giữa. Trước đây ruy băng bị ghim đáy

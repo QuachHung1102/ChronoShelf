@@ -177,6 +177,52 @@ const MUTATIONS = [
     "trigger giữ lửa",
   ],
 
+  // --- mục H: thư viện bài giảng.
+  [
+    "chronoshelf_auth được GRANT UPDATE trên documents",
+    "GRANT UPDATE ON public.documents TO chronoshelf_auth",
+    "chỉ-ghi-thêm",
+  ],
+  [
+    "documents mất allowlist mime — nhận được tệp bất kỳ",
+    `ALTER TABLE public.documents DROP CONSTRAINT documents_mime_check`,
+    "allowlist mime của documents",
+  ],
+  [
+    "documents.byte_len mất ràng buộc neo vào octet_length",
+    "ALTER TABLE public.documents DROP CONSTRAINT documents_byte_len_thuc_ck",
+    "trần 25 MiB thành trần giả",
+  ],
+  [
+    'policy "read documents" bị siết lại',
+    `DROP POLICY "read documents" ON public.documents;
+     CREATE POLICY "read documents" ON public.documents FOR SELECT USING (public.is_admin())`,
+    "mọi liên kết tải về sẽ chết",
+  ],
+  [
+    "người chưa đăng nhập mất quyền tải slide về",
+    "REVOKE SELECT ON public.documents FROM chronoshelf_anon",
+    "slide thành thứ phải đăng nhập mới có",
+  ],
+  [
+    'policy "read published" của lessons nới thành USING (true)',
+    `DROP POLICY "read published" ON public.lessons;
+     CREATE POLICY "read published" ON public.lessons FOR SELECT USING (true)`,
+    "read published",
+  ],
+  [
+    'policy "admin write" của lessons nới thành is_admin() OR true',
+    `DROP POLICY "admin write" ON public.lessons;
+     CREATE POLICY "admin write" ON public.lessons FOR ALL
+       USING (public.is_admin() OR true) WITH CHECK (public.is_admin() OR true)`,
+    "admin write",
+  ],
+  [
+    "lessons mất ràng buộc ảnh-phải-có-credit",
+    "ALTER TABLE public.lessons DROP CONSTRAINT lessons_mindmap_credit_ck",
+    "ảnh-phải-có-nguồn-và-tác-giả trên lessons",
+  ],
+
 ];
 
 const verifySql = await readFile(VERIFY, "utf8");

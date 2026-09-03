@@ -95,6 +95,8 @@ for (const obj of [
   "public.user_roles",
   "public.community_posts",
   "public.community_comments",
+  "public.documents",
+  "public.lessons",
 ]) {
   const got = (await c.query("SELECT has_table_privilege('chronoshelf_app',$1,'SELECT') AS ok", [obj])).rows[0].ok;
   check(got === false, `catalog: chronoshelf_app KHÔNG có SELECT trên ${obj}`, "NOINHERIT mất tác dụng");
@@ -696,6 +698,182 @@ for (const [name, constraint, sql] of [
     check(e.code === "23514" && e.constraint === constraint, name,
       `chờ 23514 constraint=${constraint}, nhận ${e.code} constraint=${e.constraint} "${e.message}"`);
   }
+}
+
+
+// ---------------------------------------------------------------------------
+// Thư viện bài giảng (content.md §7)
+// ---------------------------------------------------------------------------
+console.log("\n-- Thư viện bài giảng --");
+
+/** Gói ZIP 4 byte — đúng thứ `laGoiZip()` nhận, đủ để làm mồi nhử cho `documents`. */
+const ZIP4 = "\\x504b0304";
+const DOC_SHA = "d".repeat(64);
+
+{
+  // Vòng tròn thật admin-ghi → anon-đọc, cho CẢ tài liệu lẫn bài giảng đã xuất bản.
+  // Bảng rỗng vẫn kiểm được policy đọc, nên không có phép đếm rỗng nghĩa nào ở đây.
+  await c.query("BEGIN");
+  try {
+    await c.query("SET LOCAL ROLE chronoshelf_auth");
+    await c.query("SELECT set_config('app.user_id', $1, true)", [ADMIN_DECOY]);
+    await c.query(
+      `INSERT INTO public.documents (sha256, mime, filename, bytes, byte_len)
+       VALUES ($1, 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+               'bai-giang.pptx', $2::bytea, 4)`,
+      [DOC_SHA, ZIP4],
+    );
+    await c.query(
+      `INSERT INTO public.lessons (slug, grade, title, slide_sha256, slide_filename, published)
+       VALUES ('dbcheck-bai', 10, 'Bài mồi nhử', $1, 'bai-giang.pptx', true)`,
+      [DOC_SHA],
+    );
+    await c.query(
+      `INSERT INTO public.lessons (slug, grade, title, published)
+       VALUES ('dbcheck-nhap', 11, 'Bài còn nháp', false)`,
+    );
+
+    await c.query("SELECT set_config('app.user_id', '', true)");
+    await c.query("SET LOCAL ROLE chronoshelf_anon");
+
+    const doc = await c.query(
+      "SELECT octet_length(bytes)::int AS n FROM public.documents WHERE sha256=$1",
+      [DOC_SHA],
+    );
+    check(doc.rows[0]?.n === 4,
+      "người chưa đăng nhập TẢI ĐƯỢC bộ slide (content.md §7: tải về miễn phí)",
+      `nhận ${doc.rows[0]?.n ?? "không có dòng nào"}, chờ 4 byte`);
+
+    const daXuatBan = await c.query(
+      "SELECT count(*)::int AS n FROM public.lessons WHERE slug='dbcheck-bai'",
+    );
+    check(daXuatBan.rows[0].n === 1,
+      "người chưa đăng nhập đọc được bài giảng đã xuất bản",
+      `thấy ${daXuatBan.rows[0].n} dòng, chờ 1`);
+
+    const conNhap = await c.query(
+      "SELECT count(*)::int AS n FROM public.lessons WHERE slug='dbcheck-nhap'",
+    );
+    check(conNhap.rows[0].n === 0,
+      "người chưa đăng nhập KHÔNG đọc được bài giảng còn nháp",
+      `thấy ${conNhap.rows[0].n} dòng, chờ 0`);
+  } finally {
+    await c.query("ROLLBACK").catch(() => {});
+  }
+}
+
+await denied(
+  "người chưa đăng nhập không tải tài liệu lên được",
+  "chronoshelf_anon",
+  `INSERT INTO public.documents (sha256, mime, filename, bytes, byte_len)
+   VALUES ('${"e".repeat(64)}',
+           'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+           'x.pptx', '${ZIP4}'::bytea, 4)`,
+  "permission denied for table documents",
+);
+
+// Bảng CHỈ-GHI-THÊM. Hàng rào ở đây là chính GRANT, không phải policy — nên thông điệp
+// đúng phải là "permission denied for table". Nếu một ngày nó đổi thành "violates
+// row-level security policy" thì nghĩa là ai đó vừa CẤP THÊM GRANT UPDATE/DELETE, đúng
+// thứ phải nổ. (Bài học 3 trong CLAUDE.md: mỗi hàng rào khẳng định theo cơ chế của CHÍNH NÓ.)
+await denied(
+  "không SỬA được dòng documents đã có — chặn ở tầng GRANT",
+  "chronoshelf_auth",
+  "UPDATE public.documents SET filename = 'doi.pptx'",
+  "permission denied for table documents",
+);
+await denied(
+  "không XÓA được dòng documents đã có — chặn ở tầng GRANT",
+  "chronoshelf_auth",
+  "DELETE FROM public.documents",
+  "permission denied for table documents",
+);
+
+await deniedByPolicy(
+  "người thường không tải tài liệu lên được",
+  userA,
+  `INSERT INTO public.documents (sha256, mime, filename, bytes, byte_len)
+   VALUES ('${"f".repeat(64)}',
+           'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+           'x.pptx', '${ZIP4}'::bytea, 4)`,
+);
+await deniedByPolicy(
+  "người thường không tạo được bài giảng",
+  userA,
+  "INSERT INTO public.lessons (slug, grade, title) VALUES ('dbcheck-lop', 10, 'x')",
+);
+
+// Ràng buộc dữ liệu: ĐÚNG check_violation VÀ ĐÚNG tên ràng buộc. 42501 ở đây nghĩa là
+// mồi nhử mất quyền admin và phép kiểm đang đo nhầm lớp — cũng là hỏng.
+for (const [name, conname, sql] of [
+  [
+    "admin cũng không ghi được sơ đồ tư duy thiếu credit",
+    "lessons_mindmap_credit_ck",
+    `INSERT INTO public.lessons (slug, grade, title, mindmap_url)
+     VALUES ('dbcheck-mm', 10, 'x', '/media/${FAKE_SHA}')`,
+  ],
+  [
+    "admin cũng không ghi được ảnh xem trước thiếu credit",
+    "lessons_preview_credit_ck",
+    `INSERT INTO public.lessons (slug, grade, title, preview_url)
+     VALUES ('dbcheck-pv', 10, 'x', '/media/${FAKE_SHA}')`,
+  ],
+  [
+    "khối lớp ngoài 10/11/12 bị ràng buộc DB chặn",
+    "lessons_grade_check",
+    "INSERT INTO public.lessons (slug, grade, title) VALUES ('dbcheck-g', 9, 'x')",
+  ],
+  [
+    "có tệp slide mà thiếu tên tệp bị chặn — Content-Disposition không được rỗng",
+    "lessons_slide_filename_ck",
+    `WITH d AS (
+       INSERT INTO public.documents (sha256, mime, filename, bytes, byte_len)
+       VALUES ('${"a".repeat(63)}9',
+               'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+               'x.pptx', '${ZIP4}'::bytea, 4)
+       RETURNING sha256
+     )
+     INSERT INTO public.lessons (slug, grade, title, slide_sha256)
+     SELECT 'dbcheck-sf', 10, 'x', sha256 FROM d`,
+  ],
+]) {
+  try {
+    await asRoleUndo("chronoshelf_auth", ADMIN_DECOY, [sql]);
+    bad(name, "GHI ĐƯỢC — ràng buộc không chặn");
+  } catch (e) {
+    check(e.code === "23514" && e.constraint === conname, name,
+      `chờ 23514 constraint=${conname}, nhận ${e.code} constraint=${e.constraint} "${e.message}"`);
+  }
+}
+
+// Trần 25 MiB phải neo vào byte THẬT, không phải vào con số người ghi tự khai.
+{
+  const name = "byte_len của documents không khai man được";
+  try {
+    await asRoleUndo("chronoshelf_auth", ADMIN_DECOY, [
+      `INSERT INTO public.documents (sha256, mime, filename, bytes, byte_len)
+       VALUES ('${"b".repeat(64)}',
+               'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+               'x.pptx', '${ZIP4}'::bytea, 1)`,
+    ]);
+    bad(name, "GHI ĐƯỢC — trần 25 MiB là trần giả");
+  } catch (e) {
+    check(e.code === "23514" && e.constraint === "documents_byte_len_thuc_ck", name,
+      `chờ 23514 constraint=documents_byte_len_thuc_ck, nhận ${e.code} constraint=${e.constraint}`);
+  }
+}
+
+// Đối chứng: GRANT phải còn nguyên, nếu không thì mọi phép trên đạt vì lý do sai —
+// admin thật cũng ghi hỏng — chứ không phải vì ràng buộc chặn.
+try {
+  await asRoleUndo("chronoshelf_auth", ADMIN_DECOY, [
+    `INSERT INTO public.lessons (slug, grade, title, mindmap_url, mindmap_source, mindmap_credit)
+     VALUES ('dbcheck-ok', 12, 'x', '/media/${FAKE_SHA}', 'src', 'cc')`,
+  ]);
+  ok("đối chứng: admin tạo ĐƯỢC bài giảng có đủ credit (GRANT còn nguyên)");
+} catch (e) {
+  bad("đối chứng: admin tạo ĐƯỢC bài giảng có đủ credit (GRANT còn nguyên)",
+    `${e.code} "${e.message}"`);
 }
 
 console.log(`\n${pass} đạt / ${fail} hỏng`);

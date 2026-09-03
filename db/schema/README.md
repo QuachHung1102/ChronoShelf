@@ -24,6 +24,7 @@ EXISTS` trước khi tạo).
 | `11-activity.sql` | `user_activity` — mỗi người mỗi ngày một dòng, nguồn của chuỗi giữ lửa; chỉ-đọc với mọi role, cửa ghi duy nhất là `record_activity()` SECURITY DEFINER | |
 | `12-shelf-cover-credit.sql` | Nguồn + tác giả cho ảnh bìa kệ, cùng ràng buộc credit như ảnh sách/trang/vật phẩm | |
 | `13-community.sql` | `community_posts` + `community_comments` — đọc công khai, người đăng nhập chỉ INSERT dưới đúng danh tính | |
+| `14-learning-hub.sql` | `documents` (byte của bộ slide `.pptx`, khóa chính là sha256, chỉ-ghi-thêm như `media`) + `lessons` (bài giảng theo lớp 10/11/12) | |
 | `90-verify.sql` | Khẳng định cấu trúc — nổ nếu hàng rào bị nới | |
 
 ## Ba role, không phải một

@@ -1,7 +1,8 @@
-import { LockOpen, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { GraduationCap, LockOpen, Sparkles } from "lucide-react";
 import { GhiCongAnh } from "@/components/ui/GhiCongAnh";
 import { findBook, findItem } from "@/lib/content/find";
-import type { ContentShelf } from "@/lib/content/types";
+import type { ContentBook, ContentShelf } from "@/lib/content/types";
 import type { CompleteBookResult } from "@/lib/api/types";
 import s from "./reader.module.scss";
 
@@ -13,10 +14,13 @@ import s from "./reader.module.scss";
 export function ItemDropOverlay({
   result,
   shelf,
+  book,
   onClose,
 }: {
   result: CompleteBookResult;
   shelf: ContentShelf;
+  /** Quyển vừa đọc xong — cần để gợi ý bài giảng của đúng chương đó. */
+  book: ContentBook;
   onClose: () => void;
 }) {
   const item = result.grantedItemSlug ? findItem(shelf, result.grantedItemSlug) : null;
@@ -74,6 +78,21 @@ export function ItemDropOverlay({
           <p className="font-body text-body-md text-tertiary-light">
             Bạn đã đọc hết kệ sách này.
           </p>
+        )}
+
+        {/* Liên kết chéo (content.md §7). `book.baiGiang` do `readShelf()` gắn sẵn và
+            policy `read published` đã lọc bản nháp, nên khối này chỉ hiện khi thật sự có
+            bài giảng đã xuất bản để tới — không hứa suông rồi dẫn vào trang rỗng. */}
+        {book.baiGiang.length > 0 && (
+          <Link
+            href={`/bai-giang#bai-${book.baiGiang[0].slug}`}
+            className="flex items-center gap-sm rounded-sm font-body text-body-md text-tertiary-light underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-on-dark focus-visible:ring-offset-2 focus-visible:ring-offset-surface-reader"
+          >
+            <GraduationCap aria-hidden className="h-5 w-5" />
+            {book.baiGiang.length === 1
+              ? `Xem slide & sơ đồ tư duy: ${book.baiGiang[0].title}`
+              : `Xem ${book.baiGiang.length} bài giảng của chương này`}
+          </Link>
         )}
 
         <button

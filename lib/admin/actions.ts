@@ -132,7 +132,19 @@ async function guard(fn: () => Promise<ActionState>, deleting = false): Promise<
  *
  * Thêm một thư mục route gốc CÓ `page.tsx` thì phải cập nhật danh sách này.
  */
-const RESERVED_SLUGS = ["vat-pham", "quan-tri", "dang-nhap", "tui-hanh-trang"];
+// Mọi đoạn TĨNH ở gốc URL. Đoạn tĩnh thắng đoạn động trong App Router, nên một kệ mang
+// slug trùng ở đây sẽ bị route tĩnh che mất — vào `/<slug>` ra trang khác, và màn quản
+// trị của kệ đó biến mất. Thêm route gốc mới thì THÊM VÀO ĐÂY.
+const RESERVED_SLUGS = [
+  "vat-pham",
+  "quan-tri",
+  "dang-nhap",
+  "tui-hanh-trang",
+  "cong-dong",
+  "bai-giang",
+  "tai-lieu",
+  "media",
+];
 
 export async function createShelf(_prev: ActionState, fd: FormData): Promise<ActionState> {
   return guard(async () => {
@@ -901,4 +913,166 @@ export async function movePage(_prev: ActionState, fd: FormData): Promise<Action
       ? { ok: `Đã đưa trang “${moved.heading}” về vị trí ${moved.pos}/${moved.n}.` }
       : { error: "Trang này đã ở đầu hoặc cuối quyển." };
   });
+}
+
+// ---------------------------------------------------------------------------
+// Bài giảng & slide (content.md §7)
+//
+// KHÔNG có đổi thứ tự: `lessons` cố ý không có cột `position` — thứ tự hiển thị là
+// `grade, title`. Lý do đầy đủ ở db/schema/14-learning-hub.sql.
+// ---------------------------------------------------------------------------
+
+/** Đọc và kiểm khối lớp. Chuỗi rỗng hoặc ngoài 10/11/12 đều là `null`. */
+function readGrade(fd: FormData): number | null {
+  const raw = field(fd, "grade");
+  return raw === "10" || raw === "11" || raw === "12" ? Number(raw) : null;
+}
+
+/**
+ * Bộ slide đã tải lên: `/tai-lieu/<sha256>` cộng tên tệp. Cả hai cùng có hoặc cùng vắng —
+ * `lessons_slide_filename_ck` cưỡng chế lại điều đó ở tầng DB.
+ */
+function readSlide(fd: FormData): { sha: string | null; ten: string | null } | { error: string } {
+  const url = field(fd, "slideUrl");
+  if (!url) return { sha: null, ten: null };
+
+  const m = /^\/tai-lieu\/([0-9a-f]{64})$/.exec(url);
+  if (!m) return { error: "Đường dẫn slide không hợp lệ — hãy tải tệp lên thay vì dán liên kết." };
+
+  const ten = field(fd, "slideFilename");
+  if (!ten) return { error: "Thiếu tên tệp slide." };
+  return { sha: m[1], ten };
+}
+
+export async function createLesson(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  return guard(async () => {
+    const userId = await requireAdmin();
+    const title = field(fd, "title");
+    const grade = readGrade(fd);
+    if (!title) return { error: "Tên bài giảng không được để trống." };
+    if (grade === null) return { error: "Phải chọn khối lớp 10, 11 hoặc 12." };
+
+    const base = slugify(title);
+    if (!base) return { error: "Tên bài giảng phải có ít nhất một chữ cái hoặc chữ số." };
+
+    await withRole(userId, async (t) => {
+      const taken = await sequelize.query<{ slug: string }>("SELECT slug FROM public.lessons", {
+        transaction: t,
+        type: QueryTypes.SELECT,
+      });
+      const slug = uniqueSlug(base, new Set(taken.map((r) => r.slug)));
+
+      // Luôn ở trạng thái nháp. Xuất bản là một hành động riêng, có ý thức — tạo xong đã
+      // hiện ngay cho học sinh là cách chắc chắn nhất để một bài rỗng lọt ra ngoài.
+      await sequelize.query(
+        `INSERT INTO public.lessons (slug, grade, title) VALUES ($1, $2, $3)`,
+        { bind: [slug, grade, title], transaction: t, type: QueryTypes.INSERT },
+      );
+    });
+
+    revalidatePath("/quan-tri/bai-giang");
+    revalidatePath("/bai-giang");
+    return { ok: `Đã tạo bài giảng "${title}". Bài đang ở dạng nháp.` };
+  });
+}
+
+export async function updateLesson(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  return guard(async () => {
+    const userId = await requireAdmin();
+    const slug = field(fd, "slug");
+    const title = field(fd, "title");
+    const grade = readGrade(fd);
+    if (!slug) return { error: "Thiếu bài giảng cần sửa." };
+    if (!title) return { error: "Tên bài giảng không được để trống." };
+    if (grade === null) return { error: "Phải chọn khối lớp 10, 11 hoặc 12." };
+
+    const preview = readImageFields(fd, "preview");
+    if ("error" in preview) return { error: preview.error };
+    const mindmap = readImageFields(fd, "mindmap");
+    if ("error" in mindmap) return { error: mindmap.error };
+    const slide = readSlide(fd);
+    if ("error" in slide) return { error: slide.error };
+
+    // Chuỗi rỗng ⇒ NULL, không phải chuỗi rỗng: cột này là khóa ngoại sang `books.slug`.
+    const bookSlug = field(fd, "bookSlug") || null;
+
+    const affected = rowsAffected(
+      await withRole(userId, (t) =>
+        sequelize.query(
+          `UPDATE public.lessons
+              SET grade = $2, title = $3, summary = $4, book_slug = $5,
+                  slide_sha256 = $6, slide_filename = $7,
+                  preview_url = $8, preview_source = $9, preview_credit = $10,
+                  mindmap_url = $11, mindmap_source = $12, mindmap_credit = $13
+            WHERE slug = $1`,
+          {
+            bind: [
+              slug, grade, title, field(fd, "summary"), bookSlug,
+              slide.sha, slide.ten,
+              preview.url, preview.source, preview.credit,
+              mindmap.url, mindmap.source, mindmap.credit,
+            ],
+            transaction: t,
+          },
+        ),
+      ),
+    );
+    if (affected === 0) return { error: "Không tìm thấy bài giảng này." };
+
+    revalidatePath("/quan-tri/bai-giang");
+    revalidatePath("/bai-giang");
+    return { ok: "Đã lưu." };
+  });
+}
+
+export async function setLessonPublished(
+  _prev: ActionState,
+  fd: FormData,
+): Promise<ActionState> {
+  return guard(async () => {
+    const userId = await requireAdmin();
+    const slug = field(fd, "slug");
+    const published = field(fd, "published") === "1";
+    if (!slug) return { error: "Thiếu bài giảng." };
+
+    const affected = rowsAffected(
+      await withRole(userId, (t) =>
+        sequelize.query("UPDATE public.lessons SET published = $2 WHERE slug = $1", {
+          bind: [slug, published],
+          transaction: t,
+        }),
+      ),
+    );
+    if (affected === 0) return { error: "Không tìm thấy bài giảng này." };
+
+    revalidatePath("/quan-tri/bai-giang");
+    revalidatePath("/bai-giang");
+    return { ok: published ? "Đã xuất bản bài giảng." : "Đã đưa bài giảng về dạng nháp." };
+  });
+}
+
+export async function deleteLesson(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  return guard(async () => {
+    const userId = await requireAdmin();
+    const slug = field(fd, "slug");
+    if (!slug) return { error: "Thiếu bài giảng cần xóa." };
+
+    const affected = rowsAffected(
+      await withRole(userId, (t) =>
+        sequelize.query("DELETE FROM public.lessons WHERE slug = $1", {
+          bind: [slug],
+          transaction: t,
+        }),
+      ),
+    );
+    if (affected === 0) return { error: "Không tìm thấy bài giảng này." };
+
+    revalidatePath("/quan-tri/bai-giang");
+    revalidatePath("/bai-giang");
+    // Byte của bộ slide KHÔNG bị xóa theo: `documents` là bảng chỉ-ghi-thêm và không role
+    // nào có GRANT DELETE. Đổi lại thì một tệp bị nhiều bài dùng chung sẽ chết theo bài
+    // đầu tiên bị xóa. Dọn tệp mồ côi là việc bảo trì bằng superuser, không phải việc của
+    // màn quản trị.
+    return { ok: "Đã xóa bài giảng." };
+  }, true);
 }

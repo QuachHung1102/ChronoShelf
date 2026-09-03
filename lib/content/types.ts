@@ -43,6 +43,12 @@ export interface ContentBook {
    * không có trường `requiredItem`, xem lib/api/unlock.ts.
    */
   rewardItem: string | null;
+  /**
+   * Bài giảng đã xuất bản gắn với quyển này (content.md §7, "liên kết chéo"). Gắn sẵn ở
+   * đây thay vì hỏi thêm một request lúc đọc xong: màn "đọc xong" đã nhận cả kệ, nên
+   * liên kết chỉ hiện khi thật sự có chỗ để tới.
+   */
+  baiGiang: { slug: string; title: string; grade: number }[];
   pages: ContentPage[];
 }
 

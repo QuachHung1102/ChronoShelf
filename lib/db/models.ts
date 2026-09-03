@@ -115,6 +115,7 @@ export class Book extends Model<InferAttributes<Book>, InferCreationAttributes<B
   declare createdAt: CreationOptional<Date>;
   declare updatedAt: CreationOptional<Date>;
   declare pages?: NonAttribute<Page[]>;
+  declare shelf?: NonAttribute<Shelf>;
 }
 Book.init(
   {
@@ -273,6 +274,47 @@ CommunityComment.init(
   { ...base, tableName: "community_comments" },
 );
 
+export class Lesson extends Model<InferAttributes<Lesson>, InferCreationAttributes<Lesson>> {
+  declare slug: string;
+  declare grade: number;
+  declare title: string;
+  declare summary: string;
+  declare bookSlug: string | null;
+  declare slideSha256: string | null;
+  declare slideFilename: string | null;
+  declare previewUrl: string | null;
+  declare previewSource: string | null;
+  declare previewCredit: string | null;
+  declare mindmapUrl: string | null;
+  declare mindmapSource: string | null;
+  declare mindmapCredit: string | null;
+  declare published: CreationOptional<boolean>;
+  declare createdAt: CreationOptional<Date>;
+  declare book?: NonAttribute<Book>;
+}
+Lesson.init(
+  {
+    slug: { type: DataTypes.TEXT, primaryKey: true },
+    // `smallint` của Postgres về JS là number, nhưng driver trả `bigint`/`numeric` dưới
+    // dạng chuỗi — `grade` là smallint nên không dính, vẫn ghi rõ để khỏi ai đổi kiểu cột.
+    grade: { type: DataTypes.SMALLINT, allowNull: false },
+    title: { type: DataTypes.TEXT, allowNull: false },
+    summary: { type: DataTypes.TEXT, allowNull: false },
+    bookSlug: { type: DataTypes.TEXT },
+    slideSha256: { type: DataTypes.TEXT },
+    slideFilename: { type: DataTypes.TEXT },
+    previewUrl: { type: DataTypes.TEXT },
+    previewSource: { type: DataTypes.TEXT },
+    previewCredit: { type: DataTypes.TEXT },
+    mindmapUrl: { type: DataTypes.TEXT },
+    mindmapSource: { type: DataTypes.TEXT },
+    mindmapCredit: { type: DataTypes.TEXT },
+    published: { type: DataTypes.BOOLEAN, allowNull: false },
+    createdAt: { type: DataTypes.DATE, allowNull: false },
+  },
+  { ...base, tableName: "lessons" },
+);
+
 // `sourceKey`/`targetKey` là bắt buộc: khóa chính ở đây là `slug` dạng text, không
 // phải cột `id` mà Sequelize mặc định giả định.
 Shelf.hasMany(Book, { foreignKey: "shelfSlug", sourceKey: "slug", as: "books" });
@@ -280,3 +322,5 @@ Book.belongsTo(Shelf, { foreignKey: "shelfSlug", targetKey: "slug", as: "shelf" 
 Book.hasMany(Page, { foreignKey: "bookSlug", sourceKey: "slug", as: "pages" });
 Page.belongsTo(Book, { foreignKey: "bookSlug", targetKey: "slug", as: "book" });
 Book.belongsTo(Item, { foreignKey: "rewardItemSlug", targetKey: "slug", as: "rewardItem" });
+
+Lesson.belongsTo(Book, { foreignKey: "bookSlug", targetKey: "slug", as: "book" });

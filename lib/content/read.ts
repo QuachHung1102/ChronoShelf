@@ -1,5 +1,6 @@
 import { cache } from "react";
-import { Book, Item, Page, Shelf, UserItem } from "@/lib/db/models";
+import { Op } from "sequelize";
+import { Book, Item, Lesson, Page, Shelf, UserItem } from "@/lib/db/models";
 import { withRole } from "@/lib/db/tx";
 import { getSessionUserId } from "@/lib/auth/session";
 import type { ContentBook, ContentItem, ContentPage, ContentShelf } from "./types";
@@ -40,8 +41,9 @@ function toPage(row: Page): ContentPage {
   };
 }
 
-function toBook(row: Book): ContentBook {
+function toBook(row: Book, baiGiangTheoSach: Map<string, ContentBook["baiGiang"]>): ContentBook {
   return {
+    baiGiang: baiGiangTheoSach.get(row.slug) ?? [],
     slug: row.slug,
     title: row.title,
     era: row.era,
@@ -92,6 +94,26 @@ export const readShelf = cache(async function readShelf(slug: string): Promise<C
 
     const items = await Item.findAll({ transaction: t });
 
+    // Bài giảng gắn với các quyển của kệ này. Cùng transaction nên vẫn tuần tự. Policy
+    // `read published` tự lọc bản nháp, nên không cần điều kiện `published` ở đây.
+    const lessons = await Lesson.findAll({
+      attributes: ["slug", "title", "grade", "bookSlug"],
+      where: { bookSlug: { [Op.in]: (shelf.books ?? []).map((b) => b.slug) } },
+      order: [
+        ["grade", "ASC"],
+        ["title", "ASC"],
+      ],
+      transaction: t,
+    });
+
+    const baiGiangTheoSach = new Map<string, ContentBook["baiGiang"]>();
+    for (const l of lessons) {
+      if (!l.bookSlug) continue;
+      const ds = baiGiangTheoSach.get(l.bookSlug) ?? [];
+      ds.push({ slug: l.slug, title: l.title, grade: l.grade });
+      baiGiangTheoSach.set(l.bookSlug, ds);
+    }
+
     return {
       slug: shelf.slug,
       name: shelf.name,
@@ -101,7 +123,7 @@ export const readShelf = cache(async function readShelf(slug: string): Promise<C
       coverSource: shelf.coverSource,
       coverCredit: shelf.coverCredit,
       items: items.map(toItem),
-      books: byPosition(shelf.books ?? []).map(toBook),
+      books: byPosition(shelf.books ?? []).map((b) => toBook(b, baiGiangTheoSach)),
     };
   });
 });

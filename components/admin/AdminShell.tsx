@@ -13,6 +13,7 @@ export interface Crumb {
 const SECTIONS = [
   { href: "/quan-tri", label: "Kệ sách" },
   { href: "/quan-tri/vat-pham", label: "Vật phẩm" },
+  { href: "/quan-tri/bai-giang", label: "Bài giảng" },
 ] as const;
 
 export type AdminSection = (typeof SECTIONS)[number]["href"];

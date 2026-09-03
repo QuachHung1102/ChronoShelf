@@ -45,3 +45,33 @@ export function sniffImage(bytes: Uint8Array): ImageMime | null {
   if (startsWith(bytes, RIFF) && startsWith(bytes, WEBP, 8)) return "image/webp";
   return null;
 }
+
+/** MIME của một bộ trình chiếu OOXML (`.pptx`). */
+export const PPTX_MIME =
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+
+const ZIP = [0x50, 0x4b, 0x03, 0x04] as const; // "PK\x03\x04" — local file header đầu tiên
+
+/**
+ * Nhận diện bộ slide tải lên. Hàm này KHẲNG ĐỊNH ĐÚNG MỘT ĐIỀU: **đây là một gói ZIP**.
+ * Nó KHÔNG khẳng định "đây là bản trình chiếu PowerPoint hợp lệ" — một `.docx`, `.xlsx`
+ * hay một file nén bất kỳ đều qua được.
+ *
+ * Cố ý dừng ở đó, vì hai lẽ:
+ *
+ * 1. **Không kiểm chứng được ở đây.** Máy dựng không có PowerPoint và không tải nổi một
+ *    `.pptx` thật để đối chứng (đã thử ba nguồn, cả ba 404). Viết một phép kiểm chặt hơn
+ *    dựa trên suy đoán về bố cục file rồi không chạy thử được với file thật là cách chắc
+ *    chắn nhất để chặn đúng tệp của người dùng — hỏng theo hướng tệ nhất.
+ * 2. **Không cần cho bảo mật.** Khác `sniffImage`: ảnh được phục vụ `inline` nên phép
+ *    sniff ở đó là hàng rào thật chống stored XSS. Tài liệu chỉ admin tải lên được, và
+ *    `/tai-lieu/[id]` trả `Content-Disposition: attachment` kèm `nosniff` — file không bao
+ *    giờ chạy trong ngữ cảnh trang.
+ *
+ * ĐƯỜNG SIẾT CHẶT khi có file thật để đối chứng: OOXML bắt `[Content_Types].xml` là part
+ * đầu tiên của gói, nên tên nó nằm nguyên văn ở offset 30 của local file header đầu tiên.
+ * Thêm phép so đó, kèm một test dùng `.pptx` thật commit vào repo.
+ */
+export function laGoiZip(bytes: Uint8Array): boolean {
+  return startsWith(bytes, ZIP);
+}

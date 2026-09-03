@@ -31,9 +31,10 @@ export type ImageFieldsResult =
   | { error: string }
   | { url: string | null; source: string | null; credit: string | null };
 
-/** `prefix` chỉ có đúng hai giá trị vì schema chỉ có hai tiền tố: `image_*` (items, pages)
- *  và `cover_*` (books). Union chứ không phải `string` để gõ sai là hỏng lúc biên dịch. */
-export type ImagePrefix = "image" | "cover";
+/** Bốn tiền tố ảnh có thật trong schema: `image_*` (items, pages), `cover_*` (books,
+ *  shelves), `preview_*` và `mindmap_*` (lessons). Union chứ không phải `string` để gõ
+ *  sai là hỏng lúc biên dịch chứ không phải lúc chạy. */
+export type ImagePrefix = "image" | "cover" | "preview" | "mindmap";
 
 export function readImageFields(fd: FormData, prefix: ImagePrefix): ImageFieldsResult {
   const get = (suffix: string): string => String(fd.get(prefix + suffix) ?? "").trim();

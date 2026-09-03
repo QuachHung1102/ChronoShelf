@@ -521,3 +521,76 @@ BEGIN
 
   RAISE NOTICE 'G. bảng tin cộng đồng OK';
 END $$;
+
+-- === H. Thư viện bài giảng ===
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE schemaname='public' AND tablename='documents' AND rowsecurity) THEN
+    RAISE EXCEPTION 'documents chưa tồn tại hoặc chưa bật RLS';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE schemaname='public' AND tablename='lessons' AND rowsecurity) THEN
+    RAISE EXCEPTION 'lessons chưa tồn tại hoặc chưa bật RLS';
+  END IF;
+
+  -- Bộ slide phải tải được khi CHƯA đăng nhập: content.md §7 nói "tải về miễn phí", và
+  -- bắt đăng nhập mới tải được là đổi hẳn ý nghĩa đó.
+  IF NOT has_table_privilege('chronoshelf_anon', 'public.documents', 'SELECT') THEN
+    RAISE EXCEPTION 'người chưa đăng nhập không tải được documents — slide thành thứ phải đăng nhập mới có';
+  END IF;
+  IF has_table_privilege('chronoshelf_anon', 'public.documents', 'INSERT') THEN
+    RAISE EXCEPTION 'người chưa đăng nhập ghi được documents';
+  END IF;
+
+  -- Bảng CHỈ-GHI-THÊM, cùng lý do như media: `Cache-Control: immutable` ở /tai-lieu/[id]
+  -- đúng theo cấu tạo chỉ khi không ai sửa/xóa được dòng.
+  IF has_table_privilege('chronoshelf_auth', 'public.documents', 'UPDATE')
+  OR has_table_privilege('chronoshelf_auth', 'public.documents', 'DELETE') THEN
+    RAISE EXCEPTION 'documents không còn chỉ-ghi-thêm — Cache-Control immutable thành nói dối';
+  END IF;
+  IF NOT has_table_privilege('chronoshelf_auth', 'public.documents', 'INSERT') THEN
+    RAISE EXCEPTION 'thiếu GRANT INSERT trên documents — admin thật cũng không tải slide lên được';
+  END IF;
+
+  -- Allowlist mime: so khớp CHÍNH XÁC định nghĩa, không đi tìm chuỗi con. Bài học từ khối
+  -- D: `DROP CONSTRAINT` lọt qua trong im lặng nếu khẳng định chỉ đi tìm cái phải VẮNG.
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint
+                  WHERE conrelid = 'public.documents'::regclass
+                    AND conname = 'documents_mime_check'
+                    AND pg_get_constraintdef(oid) =
+                        'CHECK ((mime = ''application/vnd.openxmlformats-officedocument.presentationml.presentation''::text))') THEN
+    RAISE EXCEPTION 'allowlist mime của documents không còn đúng một kiểu pptx — kho tài liệu nhận được thứ khác';
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint
+                  WHERE conrelid = 'public.documents'::regclass
+                    AND conname = 'documents_byte_len_thuc_ck'
+                    AND pg_get_constraintdef(oid) = 'CHECK ((byte_len = octet_length(bytes)))') THEN
+    RAISE EXCEPTION 'documents.byte_len không còn neo vào octet_length(bytes) — trần 25 MiB thành trần giả';
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_policies
+                  WHERE schemaname='public' AND tablename='documents' AND policyname='read documents'
+                    AND qual='true' AND cmd='SELECT') THEN
+    RAISE EXCEPTION 'policy "read documents" thiếu, hoặc không còn là SELECT USING (true) — mọi liên kết tải về sẽ chết';
+  END IF;
+
+  -- lessons: đọc thấy bản đã xuất bản (admin thấy cả nháp), ghi chỉ admin.
+  IF NOT EXISTS (SELECT 1 FROM pg_policies
+                  WHERE schemaname='public' AND tablename='lessons' AND policyname='read published'
+                    AND qual='(published OR is_admin())' AND cmd='SELECT') THEN
+    RAISE EXCEPTION 'policy "read published" trên lessons thiếu hoặc không còn là (published OR is_admin())';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies
+                  WHERE schemaname='public' AND tablename='lessons' AND policyname='admin write'
+                    AND qual='is_admin()' AND with_check='is_admin()' AND cmd='ALL') THEN
+    RAISE EXCEPTION 'policy "admin write" trên lessons thiếu hoặc không còn là is_admin() ở CẢ USING lẫn WITH CHECK';
+  END IF;
+
+  -- Ràng buộc ảnh-phải-có-credit cho hai ảnh của bài giảng (điều kiện BY của CC BY-SA).
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lessons_preview_credit_ck')
+  OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lessons_mindmap_credit_ck') THEN
+    RAISE EXCEPTION 'thiếu ràng buộc ảnh-phải-có-nguồn-và-tác-giả trên lessons';
+  END IF;
+
+  RAISE NOTICE 'H. thư viện bài giảng OK';
+END $$;
