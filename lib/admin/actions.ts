@@ -94,7 +94,11 @@ async function guard(fn: () => Promise<ActionState>, deleting = false): Promise<
         };
 
       case "23505": // unique_violation
-        return { error: "Giá trị này đã tồn tại." };
+        // `shelves.country_code` là UNIQUE. Với ô nhập số thì lỗi này gần như không ai
+        // gặp; với bản đồ bấm được thì bấm trúng nước kệ khác đang giữ là chuyện thường.
+        return constraint === "shelves_country_code_key"
+          ? { error: "Một kệ khác đã gắn với quốc gia này rồi." }
+          : { error: "Giá trị này đã tồn tại." };
 
       case "23514": // check_violation
         return constraint.endsWith("_credit_ck")

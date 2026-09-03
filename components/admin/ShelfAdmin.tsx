@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BookOpen, ChevronDown, ChevronUp, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
 import { ActionForm, SubmitButton } from "./ActionForm";
+import { CountryPicker } from "./CountryPicker";
 import { ImageField } from "./ImageField";
 import {
   createShelf,
@@ -159,24 +160,12 @@ export function ShelfAdmin({ shelves }: { shelves: AdminShelfRow[] }) {
                   className={FIELD}
                 />
               </span>
-              <span className="flex flex-col gap-xs">
-                <label className={LABEL} htmlFor={`qg-${shelf.slug}`}>
-                  Mã quốc gia (ISO-3166-1 numeric)
-                </label>
-                <input
-                  id={`qg-${shelf.slug}`}
-                  name="countryCode"
-                  defaultValue={shelf.countryCode ?? ""}
-                  inputMode="numeric"
-                  pattern="\d{1,3}"
-                  maxLength={3}
-                  placeholder="704"
-                  className={FIELD}
-                />
-                <span className="font-body text-caption text-secondary">
-                  Để nối với bản đồ thế giới ở chặng sau. 704 = Việt Nam. Bỏ trống cũng được.
-                </span>
-              </span>
+              <CountryPicker
+                id={`qg-${shelf.slug}`}
+                name="countryCode"
+                defaultValue={shelf.countryCode ?? ""}
+                className="sm:col-span-2"
+              />
               <span className="flex flex-col gap-xs sm:col-span-2">
                 <label className={LABEL} htmlFor={`gt-${shelf.slug}`}>
                   Giới thiệu ngắn
