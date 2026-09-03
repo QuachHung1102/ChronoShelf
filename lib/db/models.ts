@@ -231,6 +231,48 @@ UserActivity.init(
   { ...base, tableName: "user_activity" },
 );
 
+export class CommunityPost extends Model<
+  InferAttributes<CommunityPost>,
+  InferCreationAttributes<CommunityPost>
+> {
+  declare id: CreationOptional<string>;
+  declare authorId: string;
+  declare kind: "chia-se" | "cau-hoi";
+  declare body: string;
+  declare createdAt: CreationOptional<Date>;
+}
+CommunityPost.init(
+  {
+    id: { type: DataTypes.UUID, primaryKey: true },
+    authorId: { type: DataTypes.UUID, allowNull: false },
+    kind: { type: DataTypes.TEXT, allowNull: false },
+    body: { type: DataTypes.TEXT, allowNull: false },
+    createdAt: { type: DataTypes.DATE, allowNull: false },
+  },
+  { ...base, tableName: "community_posts" },
+);
+
+export class CommunityComment extends Model<
+  InferAttributes<CommunityComment>,
+  InferCreationAttributes<CommunityComment>
+> {
+  declare id: CreationOptional<string>;
+  declare postId: string;
+  declare authorId: string;
+  declare body: string;
+  declare createdAt: CreationOptional<Date>;
+}
+CommunityComment.init(
+  {
+    id: { type: DataTypes.UUID, primaryKey: true },
+    postId: { type: DataTypes.UUID, allowNull: false },
+    authorId: { type: DataTypes.UUID, allowNull: false },
+    body: { type: DataTypes.TEXT, allowNull: false },
+    createdAt: { type: DataTypes.DATE, allowNull: false },
+  },
+  { ...base, tableName: "community_comments" },
+);
+
 // `sourceKey`/`targetKey` là bắt buộc: khóa chính ở đây là `slug` dạng text, không
 // phải cột `id` mà Sequelize mặc định giả định.
 Shelf.hasMany(Book, { foreignKey: "shelfSlug", sourceKey: "slug", as: "books" });

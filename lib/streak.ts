@@ -14,6 +14,11 @@
 /** Một ngày dạng `YYYY-MM-DD`, đúng thứ Postgres trả về cho kiểu `date`. */
 export type Ngay = string;
 
+/** Ngày hiện tại theo cùng múi giờ mà `record_activity()` dùng trong PostgreSQL. */
+export function homNayVietNam(now = new Date()): Ngay {
+  return now.toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" });
+}
+
 const MOT_NGAY = 86_400_000;
 
 /** `YYYY-MM-DD` -> mốc thời gian UTC giữa trưa. */
@@ -54,4 +59,30 @@ export function tinhStreak(cacNgay: Ngay[], homNay: Ngay): number {
     dem++;
   }
   return dem;
+}
+
+/** Chuỗi ngày liên tiếp dài nhất từng đạt, dùng để mở danh hiệu vĩnh viễn. */
+export function tinhStreakDaiNhat(cacNgay: Ngay[]): number {
+  const rieng = [...new Set(cacNgay)].sort();
+  let daiNhat = 0;
+  let hienTai = 0;
+
+  for (let i = 0; i < rieng.length; i++) {
+    hienTai =
+      i > 0 && Math.round((moc(rieng[i]) - moc(rieng[i - 1])) / MOT_NGAY) === 1
+        ? hienTai + 1
+        : 1;
+    daiNhat = Math.max(daiNhat, hienTai);
+  }
+
+  return daiNhat;
+}
+
+export type DanhHieuStreak = "Sử gia tập sự" | "Nhà thông thái" | null;
+
+/** Danh hiệu vĩnh viễn theo mốc chuỗi dài nhất đã đạt. */
+export function danhHieuTuStreakDaiNhat(streakDaiNhat: number): DanhHieuStreak {
+  if (streakDaiNhat >= 30) return "Nhà thông thái";
+  if (streakDaiNhat >= 7) return "Sử gia tập sự";
+  return null;
 }

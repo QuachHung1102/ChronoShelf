@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { QueryTypes } from "sequelize";
+import type { ActionState } from "@/lib/action-state";
 import { rowsAffected } from "@/lib/db/rows-affected";
 import { sequelize } from "@/lib/db/sequelize";
 import { withRole } from "@/lib/db/tx";
@@ -24,11 +25,6 @@ import { slugify, uniqueSlug } from "./slug";
  * dựa vào đó: thông báo lỗi lúc ấy nói về row-level security, không nói "bạn không có
  * quyền", nên người dùng nhận một lỗi khó hiểu thay vì một câu rõ ràng.
  */
-
-export interface ActionState {
-  error?: string;
-  ok?: string;
-}
 
 /** Lấy một trường chuỗi đã trim từ FormData; `""` khi thiếu. */
 const field = (fd: FormData, key: string): string => String(fd.get(key) ?? "").trim();

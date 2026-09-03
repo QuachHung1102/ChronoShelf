@@ -1,7 +1,7 @@
 import { getSessionUserId } from "@/lib/auth/session";
 import { withRole } from "@/lib/db/tx";
 import { UserActivity, UserBookProgress, UserItem } from "@/lib/db/models";
-import { tinhStreak } from "@/lib/streak";
+import { homNayVietNam, tinhStreak } from "@/lib/streak";
 import { ok } from "@/lib/api/respond";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +34,7 @@ export async function GET(): Promise<Response> {
   // "Hôm nay" theo múi giờ Việt Nam, khớp với cách `record_activity()` ghi ngày. Lấy
   // theo giờ máy chủ chứ không theo đồng hồ trình duyệt: đồng hồ máy khách sửa được, và
   // chuỗi giữ lửa là thứ sẽ gắn với danh hiệu.
-  const homNay = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Ho_Chi_Minh" });
+  const homNay = homNayVietNam();
 
   return ok({
     streak: tinhStreak(

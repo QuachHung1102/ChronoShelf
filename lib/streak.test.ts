@@ -1,6 +1,15 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { tinhStreak } from "./streak.ts";
+import {
+  danhHieuTuStreakDaiNhat,
+  homNayVietNam,
+  tinhStreak,
+  tinhStreakDaiNhat,
+} from "./streak.ts";
+
+test("ngày hiện tại dùng múi giờ Việt Nam", () => {
+  assert.equal(homNayVietNam(new Date("2026-08-30T17:30:00Z")), "2026-08-31");
+});
 
 test("chưa hoạt động ngày nào thì chuỗi bằng 0", () => {
   assert.equal(tinhStreak([], "2026-08-30"), 0);
@@ -53,4 +62,22 @@ test("ngày 29/2 của năm nhuận không làm đứt chuỗi", () => {
 test("ngày ở tương lai không được tính thành chuỗi, và không được làm hàm nổ", () => {
   // Đồng hồ máy khách chạy sai hoặc dữ liệu hỏng thì trả 0, chứ không phải một con số bịa.
   assert.equal(tinhStreak(["2027-01-01"], "2026-08-30"), 0);
+});
+
+test("danh hiệu dùng đoạn ngày liên tiếp dài nhất từng đạt, không chỉ đoạn hiện tại", () => {
+  const ngay = [
+    "2026-08-01",
+    "2026-08-02",
+    "2026-08-03",
+    "2026-08-20",
+    "2026-08-21",
+  ];
+  assert.equal(tinhStreakDaiNhat(ngay), 3);
+});
+
+test("danh hiệu mở đúng ở mốc 7 và 30 ngày", () => {
+  assert.deepEqual(
+    [6, 7, 29, 30].map(danhHieuTuStreakDaiNhat),
+    [null, "Sử gia tập sự", "Sử gia tập sự", "Nhà thông thái"],
+  );
 });

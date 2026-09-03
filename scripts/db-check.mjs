@@ -89,7 +89,13 @@ console.log(`  current_user = ${(await c.query("SELECT current_user")).rows[0].c
 // tiết nội bộ của Postgres và có thể đổi giữa các bản. Nên khẳng định chính xác đặt ở
 // CATALOG — ổn định và nói đúng điều ta muốn — còn phép chạy thật chỉ cần xác nhận nó
 // bị chặn bằng 42501.
-for (const obj of ["public.users", "public.login_codes", "public.user_roles"]) {
+for (const obj of [
+  "public.users",
+  "public.login_codes",
+  "public.user_roles",
+  "public.community_posts",
+  "public.community_comments",
+]) {
   const got = (await c.query("SELECT has_table_privilege('chronoshelf_app',$1,'SELECT') AS ok", [obj])).rows[0].ok;
   check(got === false, `catalog: chronoshelf_app KHÔNG có SELECT trên ${obj}`, "NOINHERIT mất tác dụng");
 }
@@ -211,7 +217,7 @@ check(after.id === null, "app.user_id đã tự xóa khi transaction trước k�
 async function deniedByPolicy(name, userId, sql) {
   try {
     await asRole("chronoshelf_auth", userId, [sql]);
-    return bad(name, "GHI ĐƯỢC — policy \"admin write\" không chặn");
+    return bad(name, "GHI ĐƯỢC — policy ghi không chặn");
   } catch (e) {
     await c.query("ROLLBACK").catch(() => {});
     if (e.code !== "42501") return bad(name, `sqlstate ${e.code}, chờ 42501: ${e.message}`);
@@ -553,6 +559,142 @@ await denied(
     await c.query("ROLLBACK").catch(() => {});
     const intact = e.code === "42501" && e.message.startsWith("permission denied for function");
     check(intact, name, `chờ 42501 "permission denied for function…", nhận ${e.code} "${e.message}"`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Bảng tin cộng đồng (content.md §6)
+// ---------------------------------------------------------------------------
+console.log("\n-- Bảng tin cộng đồng --");
+
+{
+  // Một vòng tròn thật auth-ghi → anon-đọc. Tạo cả bài lẫn bình luận ngay trong
+  // transaction làm mồi nhử; bảng rỗng vẫn kiểm được policy đọc, không có phép đếm
+  // rỗng nghĩa. INSERT bài phải tự kích hoạt ghi hoạt động; bình luận thì không.
+  await c.query("BEGIN");
+  try {
+    await c.query("SET LOCAL ROLE chronoshelf_auth");
+    await c.query("SELECT set_config('app.user_id', $1, true)", [userA]);
+    const post = await c.query(
+      `INSERT INTO public.community_posts (author_id, kind, body)
+       VALUES ($1, 'cau-hoi', 'Trận Bạch Đằng diễn ra năm nào?') RETURNING id`,
+      [userA],
+    );
+    const activityA = await c.query(
+      `SELECT count(*)::int AS n FROM public.user_activity
+       WHERE user_id=$1 AND active_on=(now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date`,
+      [userA],
+    );
+
+    await c.query("SELECT set_config('app.user_id', $1, true)", [userB]);
+    await c.query(
+      `INSERT INTO public.community_comments (post_id, author_id, body)
+       VALUES ($1, $2, 'Năm 938.')`,
+      [post.rows[0].id, userB],
+    );
+    const activityB = await c.query(
+      "SELECT count(*)::int AS n FROM public.user_activity WHERE user_id=$1",
+      [userB],
+    );
+
+    await c.query("SELECT set_config('app.user_id', '', true)");
+    await c.query("SET LOCAL ROLE chronoshelf_anon");
+    const visible = await c.query(
+      `SELECT count(*)::int AS n
+         FROM public.community_posts p
+         JOIN public.community_comments c ON c.post_id=p.id
+        WHERE p.id=$1`,
+      [post.rows[0].id],
+    );
+    check(visible.rows[0].n === 1,
+      "auth đăng bài + bình luận, rồi anon đọc lại được cả hai",
+      `anon thấy ${visible.rows[0].n} cặp, chờ 1`);
+    check(activityA.rows[0].n === 1,
+      "đăng bài ghi đúng một ngày hoạt động cho tác giả",
+      `nhận ${activityA.rows[0].n} dòng, chờ 1`);
+    check(activityB.rows[0].n === 0,
+      "bình luận không tự tính thành nhiệm vụ giữ chuỗi",
+      `nhận ${activityB.rows[0].n} dòng, chờ 0`);
+  } finally {
+    await c.query("ROLLBACK").catch(() => {});
+  }
+}
+
+await denied(
+  "người chưa đăng nhập không đăng được bài",
+  "chronoshelf_anon",
+  "INSERT INTO public.community_posts (author_id,kind,body) VALUES (gen_random_uuid(),'chia-se','x')",
+  "permission denied for table community_posts",
+);
+await denied(
+  "người chưa đăng nhập không bình luận được",
+  "chronoshelf_anon",
+  "INSERT INTO public.community_comments (post_id,author_id,body) VALUES (gen_random_uuid(),gen_random_uuid(),'x')",
+  "permission denied for table community_comments",
+);
+
+await deniedByPolicy(
+  "không đăng bài mạo danh người khác",
+  userA,
+  `INSERT INTO public.community_posts (author_id,kind,body)
+   VALUES ('${userB}','chia-se','mạo danh')`,
+);
+
+{
+  const name = "không bình luận mạo danh người khác";
+  await c.query("BEGIN");
+  try {
+    await c.query("SET LOCAL ROLE chronoshelf_auth");
+    await c.query("SELECT set_config('app.user_id', $1, true)", [userA]);
+    const post = await c.query(
+      `INSERT INTO public.community_posts (author_id,kind,body)
+       VALUES ($1,'chia-se','bài mồi') RETURNING id`,
+      [userA],
+    );
+    await c.query(
+      `INSERT INTO public.community_comments (post_id,author_id,body)
+       VALUES ($1,$2,'mạo danh')`,
+      [post.rows[0].id, userB],
+    );
+    bad(name, "GHI ĐƯỢC — policy nhận author_id từ client");
+  } catch (e) {
+    check(e.code === "42501" && /row-level security policy/.test(e.message), name,
+      `chờ 42501 do policy, nhận ${e.code} "${e.message}"`);
+  } finally {
+    await c.query("ROLLBACK").catch(() => {});
+  }
+}
+
+for (const [name, constraint, sql] of [
+  [
+    "bài chỉ có khoảng trắng bị ràng buộc DB chặn",
+    "community_posts_body_ck",
+    `INSERT INTO public.community_posts (author_id,kind,body)
+     VALUES ('${userA}','chia-se',E'  \\n  ')`,
+  ],
+  [
+    "loại bài ngoài allowlist bị ràng buộc DB chặn",
+    "community_posts_kind_ck",
+    `INSERT INTO public.community_posts (author_id,kind,body)
+     VALUES ('${userA}','khac','x')`,
+  ],
+  [
+    "bình luận quá 500 ký tự bị ràng buộc DB chặn",
+    "community_comments_body_ck",
+    `WITH p AS (
+       INSERT INTO public.community_posts (author_id,kind,body)
+       VALUES ('${userA}','chia-se','bài mồi') RETURNING id
+     )
+     INSERT INTO public.community_comments (post_id,author_id,body)
+     SELECT id,'${userA}',repeat('x',501) FROM p`,
+  ],
+]) {
+  try {
+    await asRoleUndo("chronoshelf_auth", userA, [sql]);
+    bad(name, "GHI ĐƯỢC");
+  } catch (e) {
+    check(e.code === "23514" && e.constraint === constraint, name,
+      `chờ 23514 constraint=${constraint}, nhận ${e.code} constraint=${e.constraint} "${e.message}"`);
   }
 }
 

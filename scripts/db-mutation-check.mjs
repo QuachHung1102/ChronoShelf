@@ -147,6 +147,36 @@ const MUTATIONS = [
     "SECURITY DEFINER",
   ],
 
+  // --- mục G: bảng tin cộng đồng.
+  [
+    "chronoshelf_auth được GRANT UPDATE trên community_posts",
+    "GRANT UPDATE ON public.community_posts TO chronoshelf_auth",
+    "chỉ-ghi-thêm",
+  ],
+  [
+    'policy "own community post insert" nới thành WITH CHECK (true)',
+    `DROP POLICY "own community post insert" ON public.community_posts;
+     CREATE POLICY "own community post insert" ON public.community_posts
+       FOR INSERT WITH CHECK (true)`,
+    "policy bảng tin",
+  ],
+  [
+    "community_comments mọc thêm policy SELECT",
+    `CREATE POLICY "leak" ON public.community_comments FOR SELECT USING (true)`,
+    "chờ đúng 4",
+  ],
+  [
+    "community_posts đổi ràng buộc nội dung thành CHECK luôn đúng",
+    `ALTER TABLE public.community_posts DROP CONSTRAINT community_posts_body_ck;
+     ALTER TABLE public.community_posts ADD CONSTRAINT community_posts_body_ck CHECK (true)`,
+    "ràng buộc CHECK của bảng tin",
+  ],
+  [
+    "community_posts mất trigger giữ lửa",
+    "DROP TRIGGER community_post_records_activity ON public.community_posts",
+    "trigger giữ lửa",
+  ],
+
 ];
 
 const verifySql = await readFile(VERIFY, "utf8");

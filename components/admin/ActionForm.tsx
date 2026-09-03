@@ -1,9 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
-import type { ActionState } from "@/lib/admin/actions";
+import type { ActionState } from "@/lib/action-state";
 
 /**
  * Hai mảnh client DUY NHẤT của khu quản trị. Mọi thứ khác — danh sách, form, nhãn —
@@ -22,16 +22,24 @@ export function ActionForm({
   className,
   /** Thông điệp `confirm()` trước khi gửi. Chỉ dùng cho thao tác không hoàn tác được. */
   confirmText,
+  resetOnSuccess = false,
 }: {
   action: (prev: ActionState, fd: FormData) => Promise<ActionState>;
   children: React.ReactNode;
   className?: string;
   confirmText?: string;
+  resetOnSuccess?: boolean;
 }) {
   const [state, formAction] = useActionState(action, {});
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (resetOnSuccess && state.ok) formRef.current?.reset();
+  }, [resetOnSuccess, state]);
 
   return (
     <form
+      ref={formRef}
       action={formAction}
       className={className}
       onSubmit={(e) => {

@@ -21,7 +21,8 @@ BEGIN
 
   -- Role kết nối phải trống rỗng: mọi quyền chỉ đến sau khi SET LOCAL ROLE.
   FOREACH t IN ARRAY ARRAY['users','login_codes','user_roles','shelves','items','books','pages',
-                           'user_book_progress','user_items','user_activity'] LOOP
+                           'user_book_progress','user_items','user_activity',
+                           'community_posts','community_comments'] LOOP
     IF has_table_privilege('chronoshelf_app', 'public.' || t, 'SELECT') THEN
       RAISE EXCEPTION 'chronoshelf_app đọc thẳng được % mà không cần SET ROLE', t;
     END IF;
@@ -404,4 +405,119 @@ BEGIN
   END IF;
 
   RAISE NOTICE 'F. chuỗi giữ lửa OK';
+END $$;
+
+-- === G. Bảng tin cộng đồng ===
+DO $$
+DECLARE
+  t text;
+  c text;
+  n integer;
+BEGIN
+  FOREACH t IN ARRAY ARRAY['community_posts', 'community_comments'] LOOP
+    IF NOT EXISTS (SELECT 1 FROM pg_tables
+                    WHERE schemaname='public' AND tablename=t AND rowsecurity) THEN
+      RAISE EXCEPTION '% chưa tồn tại hoặc chưa bật RLS', t;
+    END IF;
+    IF NOT has_table_privilege('chronoshelf_anon', 'public.' || t, 'SELECT')
+    OR NOT has_table_privilege('chronoshelf_auth', 'public.' || t, 'SELECT') THEN
+      RAISE EXCEPTION '% không còn đọc công khai cho cả anon/auth', t;
+    END IF;
+    IF has_any_column_privilege('chronoshelf_anon', 'public.' || t, 'INSERT') THEN
+      RAISE EXCEPTION 'người chưa đăng nhập ghi được %', t;
+    END IF;
+    IF has_any_column_privilege('chronoshelf_auth', 'public.' || t, 'UPDATE')
+    OR has_table_privilege('chronoshelf_auth', 'public.' || t, 'DELETE') THEN
+      RAISE EXCEPTION 'chronoshelf_auth sửa/xóa được % — bảng tin bản đầu chỉ-ghi-thêm', t;
+    END IF;
+    FOREACH c IN ARRAY ARRAY['id', 'created_at'] LOOP
+      IF has_column_privilege('chronoshelf_auth', 'public.' || t, c, 'INSERT') THEN
+        RAISE EXCEPTION 'chronoshelf_auth tự đặt được %.% — cột này phải do database sinh', t, c;
+      END IF;
+    END LOOP;
+  END LOOP;
+
+  FOREACH c IN ARRAY ARRAY['author_id', 'kind', 'body'] LOOP
+    IF NOT has_column_privilege('chronoshelf_auth', 'public.community_posts', c, 'INSERT') THEN
+      RAISE EXCEPTION 'thiếu GRANT INSERT (%) trên community_posts — đăng bài sẽ hỏng', c;
+    END IF;
+  END LOOP;
+  FOREACH c IN ARRAY ARRAY['post_id', 'author_id', 'body'] LOOP
+    IF NOT has_column_privilege('chronoshelf_auth', 'public.community_comments', c, 'INSERT') THEN
+      RAISE EXCEPTION 'thiếu GRANT INSERT (%) trên community_comments — bình luận sẽ hỏng', c;
+    END IF;
+  END LOOP;
+
+  IF EXISTS (
+    SELECT 1 FROM (VALUES
+      ('community_posts',   'read community posts',          'SELECT', 'true', NULL),
+      ('community_posts',   'own community post insert',     'INSERT', NULL, '(app.current_user_id() = author_id)'),
+      ('community_comments','read community comments',       'SELECT', 'true', NULL),
+      ('community_comments','own community comment insert',  'INSERT', NULL, '(app.current_user_id() = author_id)')
+    ) AS want(tbl,pol,cmd,q,wc)
+    WHERE NOT EXISTS (
+      SELECT 1 FROM pg_policies p
+       WHERE p.schemaname='public' AND p.tablename=want.tbl AND p.policyname=want.pol
+         AND p.cmd        =                    want.cmd
+         AND p.qual       IS NOT DISTINCT FROM want.q
+         AND p.with_check IS NOT DISTINCT FROM want.wc)
+  ) THEN
+    RAISE EXCEPTION 'một policy bảng tin thiếu hoặc không còn đúng biểu thức';
+  END IF;
+
+  SELECT count(*) INTO n FROM pg_policies
+   WHERE schemaname='public' AND tablename IN ('community_posts','community_comments');
+  IF n <> 4 THEN
+    RAISE EXCEPTION 'có % policy trên hai bảng cộng đồng, chờ đúng 4 — ai đó vừa thêm một cửa', n;
+  END IF;
+
+  -- Neo vào đúng bảng và đúng định nghĩa do PostgreSQL deparse. Chỉ kiểm tên sẽ để lọt
+  -- `DROP CONSTRAINT ...; ADD CONSTRAINT cùng_tên CHECK (true)`.
+  IF EXISTS (
+    SELECT 1 FROM (VALUES
+      ('community_posts',   'community_posts_kind_ck',
+       'CHECK ((kind = ANY (ARRAY[''chia-se''::text, ''cau-hoi''::text])))'),
+      ('community_posts',   'community_posts_body_ck',
+       'CHECK (((body ~ ''[^[:space:]]''::text) AND (char_length(body) <= 1000)))'),
+      ('community_comments','community_comments_body_ck',
+       'CHECK (((body ~ ''[^[:space:]]''::text) AND (char_length(body) <= 500)))')
+    ) AS want(tbl, con, def)
+    WHERE NOT EXISTS (
+      SELECT 1 FROM pg_constraint p
+       WHERE p.conrelid = to_regclass('public.' || want.tbl)
+         AND p.conname = want.con
+         AND pg_get_constraintdef(p.oid) = want.def)
+  ) THEN
+    RAISE EXCEPTION 'một ràng buộc CHECK của bảng tin thiếu hoặc không còn đúng định nghĩa';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM (VALUES
+      ('community_posts',   'community_posts_author_id_fkey',   'users'),
+      ('community_comments','community_comments_post_id_fkey',  'community_posts'),
+      ('community_comments','community_comments_author_id_fkey','users')
+    ) AS want(tbl, con, parent)
+    WHERE NOT EXISTS (
+      SELECT 1 FROM pg_constraint p
+       WHERE p.conrelid = to_regclass('public.' || want.tbl)
+         AND p.conname = want.con
+         AND p.confrelid = to_regclass('public.' || want.parent)
+         AND p.confdeltype = 'c')
+  ) THEN
+    RAISE EXCEPTION 'một khóa ngoại bảng tin thiếu hoặc không còn ON DELETE CASCADE';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger tr
+    JOIN pg_proc fn ON fn.oid=tr.tgfoid
+    JOIN pg_namespace ns ON ns.oid=fn.pronamespace
+     WHERE tr.tgrelid='public.community_posts'::regclass
+       AND tr.tgname='community_post_records_activity'
+       AND NOT tr.tgisinternal AND tr.tgenabled='O'
+       AND ns.nspname='public' AND fn.proname='record_community_post_activity'
+  ) THEN
+    RAISE EXCEPTION 'trigger giữ lửa của bài cộng đồng thiếu, tắt hoặc trỏ sai hàm';
+  END IF;
+
+  RAISE NOTICE 'G. bảng tin cộng đồng OK';
 END $$;

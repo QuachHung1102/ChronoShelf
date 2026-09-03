@@ -20,6 +20,7 @@ export function Header({
   const navItems = [
     { href: "/", label: "Trang chủ" },
     ...shelves.map((s) => ({ href: `/${s.slug}`, label: s.name })),
+    { href: "/cong-dong", label: "Cộng đồng" },
   ];
 
   return (
