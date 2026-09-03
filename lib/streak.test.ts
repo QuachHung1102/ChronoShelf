@@ -75,9 +75,17 @@ test("danh hiệu dùng đoạn ngày liên tiếp dài nhất từng đạt, kh
   assert.equal(tinhStreakDaiNhat(ngay), 3);
 });
 
-test("danh hiệu mở đúng ở mốc 7 và 30 ngày", () => {
+test("danh hiệu mở đúng ở cả ba mốc 7 / 30 / 100 ngày", () => {
   assert.deepEqual(
-    [6, 7, 29, 30].map(danhHieuTuStreakDaiNhat),
-    [null, "Sử gia tập sự", "Sử gia tập sự", "Nhà thông thái"],
+    [6, 7, 29, 30, 99, 100, 500].map(danhHieuTuStreakDaiNhat),
+    [
+      null,
+      "Sử gia tập sự",
+      "Sử gia tập sự",
+      "Nhà thông thái",
+      "Nhà thông thái",
+      "Học giả uyên bác",
+      "Học giả uyên bác",
+    ],
   );
 });

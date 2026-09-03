@@ -87,9 +87,48 @@ const MUTATIONS = [
     "SECURITY DEFINER",
   ],
   [
-    "login_codes mọc thêm một policy",
-    `CREATE POLICY "leak" ON public.login_codes FOR SELECT USING (true)`,
-    "login_codes có policy",
+    "bảng login_codes của luồng OTP được dựng lại",
+    `CREATE TABLE public.login_codes (id uuid PRIMARY KEY DEFAULT gen_random_uuid())`,
+    "login_codes vẫn còn",
+  ],
+  [
+    "hàm OTP được dựng lại",
+    `CREATE FUNCTION app.consume_login_code(text, text) RETURNS uuid
+       LANGUAGE sql SECURITY DEFINER AS 'SELECT NULL::uuid'`,
+    "hàm OTP vẫn còn",
+  ],
+  [
+    "chronoshelf_auth được GRANT UPDATE trên users",
+    "GRANT UPDATE ON public.users TO chronoshelf_auth",
+    "tự gỡ khóa hoặc tự đổi mật khẩu người khác",
+  ],
+  [
+    "ket_thuc_dang_nhap hạ xuống SECURITY INVOKER",
+    `ALTER FUNCTION app.ket_thuc_dang_nhap(text, text) SECURITY INVOKER`,
+    "không còn là SECURITY DEFINER",
+  ],
+  [
+    "chronoshelf_auth được cấp EXECUTE hàm đăng nhập",
+    "GRANT EXECUTE ON FUNCTION app.bat_dau_dang_nhap(text) TO chronoshelf_auth",
+    "bề mặt thừa",
+  ],
+  [
+    "chronoshelf_anon MẤT quyền gọi hàm đăng nhập",
+    "REVOKE EXECUTE ON FUNCTION app.ket_thuc_dang_nhap(text, text) FROM chronoshelf_anon",
+    "không ai đăng nhập được",
+  ],
+  [
+    "allowlist câu hỏi bảo mật mọc thêm một mã",
+    `ALTER TABLE public.users DROP CONSTRAINT users_security_question_ck;
+     ALTER TABLE public.users ADD CONSTRAINT users_security_question_ck
+       CHECK (security_question IN ('truong-tieu-hoc','ban-than-lop-mot','ten-thu-cung',
+                                    'giao-vien-lop-mot','mon-an-ghet','bai-hat-thuoc-dau','them-mot'))`,
+    "allowlist câu hỏi bảo mật",
+  ],
+  [
+    "users mất ràng buộc bắt-buộc-có-mật-khẩu",
+    "ALTER TABLE public.users DROP CONSTRAINT users_credentials_ck",
+    "users_credentials_ck thiếu",
   ],
 
   // --- mục D: kho ảnh. Trước đây không đột biến nào chạm tới, nên cả mục chưa bao giờ

@@ -20,27 +20,26 @@ BEGIN
   END IF;
 
   -- Role kết nối phải trống rỗng: mọi quyền chỉ đến sau khi SET LOCAL ROLE.
-  FOREACH t IN ARRAY ARRAY['users','login_codes','user_roles','shelves','items','books','pages',
+  FOREACH t IN ARRAY ARRAY['users','user_roles','shelves','items','books','pages',
                            'user_book_progress','user_items','user_activity',
-                           'community_posts','community_comments'] LOOP
+                           'community_posts','community_comments','documents','lessons'] LOOP
     IF has_table_privilege('chronoshelf_app', 'public.' || t, 'SELECT') THEN
       RAISE EXCEPTION 'chronoshelf_app đọc thẳng được % mà không cần SET ROLE', t;
     END IF;
   END LOOP;
 
   IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE schemaname='public' AND tablename='users' AND rowsecurity)
-  OR NOT EXISTS (SELECT 1 FROM pg_tables WHERE schemaname='public' AND tablename='login_codes' AND rowsecurity)
   OR NOT EXISTS (SELECT 1 FROM pg_tables WHERE schemaname='public' AND tablename='user_roles' AND rowsecurity) THEN
-    RAISE EXCEPTION 'users / login_codes / user_roles chưa bật RLS';
+    RAISE EXCEPTION 'users / user_roles chưa bật RLS';
   END IF;
 
-  -- login_codes: RLS bật và KHÔNG có policy nào = không ai vào được bằng đường thường.
-  -- Thêm một policy vào đây là mở một cửa mà thiết kế không có.
-  IF EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='login_codes') THEN
-    RAISE EXCEPTION 'login_codes có policy — nó phải chỉ vào được qua hàm SECURITY DEFINER';
+  -- Bảng `login_codes` của luồng OTP phải BIẾN MẤT, không phải "còn đó nhưng không dùng".
+  -- Một bảng chứa bí mật đăng nhập mà không ai đọc nữa là thứ sẽ bị ai đó bật lại.
+  IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname='public' AND tablename='login_codes') THEN
+    RAISE EXCEPTION 'login_codes vẫn còn — luồng OTP lẽ ra đã bị gỡ hẳn';
   END IF;
 
-  FOREACH t IN ARRAY ARRAY['users','login_codes','user_roles'] LOOP
+  FOREACH t IN ARRAY ARRAY['users','user_roles'] LOOP
     IF has_table_privilege('chronoshelf_anon', 'public.' || t, 'SELECT') THEN
       RAISE EXCEPTION 'người chưa đăng nhập đọc được %', t;
     END IF;
@@ -76,8 +75,58 @@ BEGIN
     RAISE EXCEPTION 'is_admin() thiếu EXECUTE — policy SELECT của bảng nội dung sẽ vỡ cho role đó';
   END IF;
 
-  IF has_function_privilege('chronoshelf_auth', 'app.issue_login_code(text, text, timestamptz)', 'EXECUTE') THEN
-    RAISE EXCEPTION 'người đã đăng nhập gọi được issue_login_code — bề mặt thừa';
+  IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+              WHERE n.nspname = 'app' AND p.proname IN ('issue_login_code','consume_login_code')) THEN
+    RAISE EXCEPTION 'hàm OTP vẫn còn — luồng đăng nhập bằng mã email lẽ ra đã bị gỡ hẳn';
+  END IF;
+
+  -- Sáu hàm đăng nhập/khôi phục: chỉ người CHƯA đăng nhập cần chúng. Cấp cho
+  -- chronoshelf_auth là bề mặt thừa; thiếu cấp cho chronoshelf_anon là không ai vào được.
+  FOREACH t IN ARRAY ARRAY['app.dang_ky(text, text, text, text, text, text)',
+                           'app.bat_dau_dang_nhap(text)',
+                           'app.ket_thuc_dang_nhap(text, text)',
+                           'app.cau_hoi_khoi_phuc(text)',
+                           'app.bat_dau_khoi_phuc(text)',
+                           'app.ket_thuc_khoi_phuc(text, text, text, text)'] LOOP
+    IF NOT has_function_privilege('chronoshelf_anon', t, 'EXECUTE') THEN
+      RAISE EXCEPTION 'người chưa đăng nhập không gọi được % — không ai đăng nhập được', t;
+    END IF;
+    IF has_function_privilege('chronoshelf_auth', t, 'EXECUTE') THEN
+      RAISE EXCEPTION 'người đã đăng nhập gọi được % — bề mặt thừa', t;
+    END IF;
+  END LOOP;
+
+  -- Cả sáu PHẢI là SECURITY DEFINER: chúng đọc/ghi `users`, mà không role nào của ứng
+  -- dụng có quyền ghi bảng đó. Hạ xuống INVOKER là cả luồng đăng nhập chết.
+  IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+              WHERE n.nspname = 'app'
+                AND p.proname IN ('dang_ky','bat_dau_dang_nhap','ket_thuc_dang_nhap',
+                                  'cau_hoi_khoi_phuc','bat_dau_khoi_phuc','ket_thuc_khoi_phuc')
+                AND NOT p.prosecdef) THEN
+    RAISE EXCEPTION 'một hàm đăng nhập không còn là SECURITY DEFINER';
+  END IF;
+
+  -- Không role nào được GHI thẳng vào `users`: đó là thứ giữ cho bộ đếm lần thử sai và
+  -- `password_hash` chỉ đổi được qua sáu hàm trên. Có GRANT UPDATE ở đây thì người dùng
+  -- tự xóa lệnh khóa của mình được.
+  IF has_table_privilege('chronoshelf_auth', 'public.users', 'INSERT')
+  OR has_table_privilege('chronoshelf_auth', 'public.users', 'UPDATE')
+  OR has_table_privilege('chronoshelf_auth', 'public.users', 'DELETE') THEN
+    RAISE EXCEPTION 'chronoshelf_auth ghi được users — tự gỡ khóa hoặc tự đổi mật khẩu người khác được';
+  END IF;
+
+  -- Hai ràng buộc của `15-mat-khau.sql`, so khớp CHÍNH XÁC chứ không đi tìm chuỗi con.
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint
+                  WHERE conrelid = 'public.users'::regclass
+                    AND conname = 'users_credentials_ck') THEN
+    RAISE EXCEPTION 'users_credentials_ck thiếu — tài khoản không mật khẩu chèn vào được';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint
+                  WHERE conrelid = 'public.users'::regclass
+                    AND conname = 'users_security_question_ck'
+                    AND pg_get_constraintdef(oid) =
+                        'CHECK ((security_question = ANY (ARRAY[''truong-tieu-hoc''::text, ''ban-than-lop-mot''::text, ''ten-thu-cung''::text, ''giao-vien-lop-mot''::text, ''mon-an-ghet''::text, ''bai-hat-thuoc-dau''::text])))') THEN
+    RAISE EXCEPTION 'allowlist câu hỏi bảo mật không còn đúng sáu mã của lib/auth/cau-hoi-bao-mat.ts';
   END IF;
 
   RAISE NOTICE 'A. role + tài khoản OK';

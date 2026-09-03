@@ -78,10 +78,23 @@ export function tinhStreakDaiNhat(cacNgay: Ngay[]): number {
   return daiNhat;
 }
 
-export type DanhHieuStreak = "Sử gia tập sự" | "Nhà thông thái" | null;
+export type DanhHieuStreak = "Sử gia tập sự" | "Nhà thông thái" | "Học giả uyên bác" | null;
 
-/** Danh hiệu vĩnh viễn theo mốc chuỗi dài nhất đã đạt. */
+/**
+ * Danh hiệu vĩnh viễn theo mốc chuỗi dài nhất đã đạt.
+ *
+ * `content.md` §6 kể ba danh hiệu nhưng chỉ cho hai mốc — "7 ngày, 30 ngày…". Mốc thứ ba
+ * là **100 ngày**, chọn từ hai con số đo được chứ không bốc:
+ *
+ *  - Tỉ lệ 7 → 30 là ×4,29; giữ đúng tỉ lệ đó thì mốc kế là 129 ngày.
+ *  - Năm học phổ thông (5/9 → 31/5) dài 268 ngày. 100 ngày là 37% năm học — đạt được
+ *    thật, còn 365 ngày thì dài hơn cả năm học nên không học sinh nào với tới.
+ *
+ * 100 lệch 23% so với mốc hình học lý tưởng, đổi lại là một con số tròn mà học sinh nhớ
+ * được. Đó là đánh đổi có ý thức, không phải nhầm lẫn.
+ */
 export function danhHieuTuStreakDaiNhat(streakDaiNhat: number): DanhHieuStreak {
+  if (streakDaiNhat >= 100) return "Học giả uyên bác";
   if (streakDaiNhat >= 30) return "Nhà thông thái";
   if (streakDaiNhat >= 7) return "Sử gia tập sự";
   return null;

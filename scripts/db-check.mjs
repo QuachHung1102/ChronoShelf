@@ -15,7 +15,7 @@
  */
 
 import pg from "pg";
-import crypto from "node:crypto";
+import { bamMoi, bamTheoThamSo, chuanHoaDapAn } from "../lib/auth/mat-khau.ts";
 
 const c = new pg.Client({ connectionString: process.env.DATABASE_URL });
 await c.connect();
@@ -91,7 +91,6 @@ console.log(`  current_user = ${(await c.query("SELECT current_user")).rows[0].c
 // bị chặn bằng 42501.
 for (const obj of [
   "public.users",
-  "public.login_codes",
   "public.user_roles",
   "public.community_posts",
   "public.community_comments",
@@ -130,7 +129,6 @@ for (const [name, sql] of [
 
 console.log("\n-- Người chưa đăng nhập (chronoshelf_anon) --");
 await denied("không đọc được users",       "chronoshelf_anon", "SELECT 1 FROM public.users",       "permission denied for table users");
-await denied("không đọc được login_codes", "chronoshelf_anon", "SELECT 1 FROM public.login_codes", "permission denied for table login_codes");
 await denied("không đọc được user_roles",  "chronoshelf_anon", "SELECT 1 FROM public.user_roles",  "permission denied for table user_roles");
 await denied("không tự phong admin",       "chronoshelf_anon",
   "INSERT INTO public.user_roles (user_id, role) VALUES (gen_random_uuid(),'admin')",
@@ -139,56 +137,168 @@ await denied("không tự phong admin",       "chronoshelf_anon",
 const anonUid = (await asRole("chronoshelf_anon", null, ["SELECT app.current_user_id() AS id"])).rows[0].id;
 check(anonUid === null, "app.current_user_id() là NULL khi chưa đặt app.user_id", `nhận ${anonUid}`);
 
-console.log("\n-- Luồng OTP (chỉ đi qua hàm SECURITY DEFINER) --");
-const mk = (e, cd) => crypto.createHash("sha256").update(`${e}:${cd}`).digest("hex");
-const emailA = `a-${Date.now()}@example.invalid`;
-const hashA = mk(emailA, "111111");
-const userA = (await asRole("chronoshelf_anon", null, [
-  ["SELECT app.issue_login_code($1,$2,now() + interval '10 minutes')", [emailA, hashA]],
-  ["SELECT app.consume_login_code($1,$2) AS id", [emailA, hashA]],
-])).rows[0].id;
-check(Boolean(userA), `anon phát + đổi mã, tạo tài khoản ${String(userA).slice(0, 8)}…`);
+console.log("\n-- Đăng nhập bằng mật khẩu (chỉ đi qua hàm SECURITY DEFINER) --");
 
-// Hợp đồng của `consume_login_code`: uuid khi mã đúng, NULL cho MỌI nhánh hỏng — nó
-// KHÔNG ném exception, và đó là điều kiện sống còn của giới hạn 5 lần thử chứ không phải
-// sở thích về kiểu trả về. Một RAISE không ai bắt sẽ hủy cả transaction của request, kéo
-// theo luôn câu `UPDATE attempts` bên trong chính hàm đó (db/schema/02-users.sql).
-for (const [name, code] of [["mã sai bị từ chối", "999999"], ["mã đã dùng không tái sử dụng được", "111111"]]) {
+/** Tạo một tài khoản thật qua đúng `app.dang_ky`, trả về id. */
+async function taoTaiKhoan(email, matKhau, cauHoi = "ten-thu-cung", dapAn = "mun") {
+  const mk = await bamMoi(matKhau);
+  const da = await bamMoi(chuanHoaDapAn(dapAn));
   const r = await asRole("chronoshelf_anon", null, [
-    ["SELECT app.consume_login_code($1,$2) AS id", [emailA, mk(emailA, code)]],
+    [
+      "SELECT app.dang_ky($1,$2,$3,$4,$5,$6) AS id",
+      [email, mk.thamSo, mk.bam, cauHoi, da.thamSo, da.bam],
+    ],
   ]);
-  check(r.rows[0].id === null, name, `được chấp nhận: ${r.rows[0].id}`);
+  return r.rows[0].id;
+}
+
+/** Một lượt đăng nhập ĐẦY ĐỦ, đúng hình dạng hai request thật: hai transaction riêng. */
+async function thuDangNhap(email, matKhau) {
+  const ts = (
+    await asRole("chronoshelf_anon", null, [["SELECT app.bat_dau_dang_nhap($1) AS ts", [email]]])
+  ).rows[0].ts;
+  if (!ts) return { khoa: true, id: null };
+  const bam = await bamTheoThamSo(matKhau, ts);
+  const r = await asRole("chronoshelf_anon", null, [
+    ["SELECT app.ket_thuc_dang_nhap($1,$2) AS id", [email, bam]],
+  ]);
+  return { khoa: false, id: r.rows[0].id };
+}
+
+const emailA = `a-${Date.now()}@example.invalid`;
+const MK_A = "mat-khau-cua-A-123";
+const userA = await taoTaiKhoan(emailA, MK_A);
+check(Boolean(userA), `anon đăng ký được, tạo tài khoản ${String(userA).slice(0, 8)}…`);
+
+{
+  const lai = await taoTaiKhoan(emailA, "mat-khau-khac-123");
+  check(lai === null, "đăng ký lại cùng email trả NULL, không tạo tài khoản thứ hai",
+    `nhận ${lai} — email không còn là duy nhất`);
+}
+
+{
+  const r = await thuDangNhap(emailA, MK_A);
+  check(r.id === userA, "đăng nhập đúng mật khẩu trả về đúng tài khoản", `nhận ${r.id}`);
+}
+
+{
+  const r = await thuDangNhap(emailA, "sai-hoan-toan-123");
+  check(r.id === null, "sai mật khẩu bị từ chối", `được chấp nhận: ${r.id}`);
+}
+
+{
+  // Email KHÔNG TỒN TẠI vẫn phải trả về một chuỗi tham số. Trả NULL ở đây là biến trang
+  // đăng nhập thành máy dò: gõ email vào, phản hồi nhanh nghĩa là chưa ai đăng ký.
+  const ts = (
+    await asRole("chronoshelf_anon", null, [
+      ["SELECT app.bat_dau_dang_nhap($1) AS ts", ["khong-ai-dung-bao-gio@example.invalid"]],
+    ])
+  ).rows[0].ts;
+  check(typeof ts === "string" && ts.startsWith("scrypt$"),
+    "email không tồn tại vẫn nhận được tham số băm (không dò được ai đã đăng ký)",
+    `nhận ${JSON.stringify(ts)}`);
+
+  const r = await thuDangNhap("khong-ai-dung-bao-gio@example.invalid", "bat-ky-123");
+  check(r.id === null, "…nhưng vẫn không đăng nhập được", `nhận ${r.id}`);
 }
 
 {
   // Phép DUY NHẤT chứng minh bộ đếm sống sót QUA từng transaction — và cũng là phép duy
-  // nhất bắt được nếu ai đó "dọn dẹp" mấy nhánh `RETURN NULL` ngược lại thành RAISE.
-  // Mỗi asRole() là một transaction riêng, đúng hình dạng một request POST
-  // /api/auth/verify thật; hàm nào ném lỗi thì bộ đếm bị roll back về 0 và vòng lặp dưới
-  // đây không bao giờ đốt được mã.
+  // nhất bắt được nếu ai đó "dọn dẹp" mấy nhánh `RETURN NULL` trong
+  // `app.ket_thuc_dang_nhap` ngược lại thành RAISE. Mỗi `thuDangNhap` là hai transaction
+  // riêng, đúng hình dạng một request thật; hàm nào ném lỗi thì bộ đếm bị roll back về 0
+  // và vòng lặp dưới đây không bao giờ khóa được tài khoản.
   const emailC = `c-${Date.now()}@example.invalid`;
-  await asRole("chronoshelf_anon", null, [
-    ["SELECT app.issue_login_code($1,$2,now() + interval '10 minutes')", [emailC, mk(emailC, "333333")]],
-  ]);
-  for (let i = 0; i < 5; i++) {
+  const MK_C = "mat-khau-cua-C-123";
+  await taoTaiKhoan(emailC, MK_C);
+
+  for (let k = 0; k < 5; k++) await thuDangNhap(emailC, "sai-be-bet-123");
+
+  const dung = await thuDangNhap(emailC, MK_C);
+  check(dung.id === null,
+    "sau 5 lần sai, mật khẩu ĐÚNG cũng bị từ chối (bộ đếm tăng thật qua từng transaction)",
+    `vẫn chấp nhận: ${dung.id} — giới hạn số lần thử đang vô hiệu`);
+  check(dung.khoa === true,
+    "…và bước 1 trả NULL luôn, không tốn scrypt cho kẻ đang dò",
+    "bat_dau_dang_nhap vẫn trả tham số dù tài khoản đang bị khóa");
+}
+
+console.log("\n-- Khôi phục bằng câu hỏi bảo mật --");
+
+{
+  // Câu hỏi phải trả về cho MỌI email, kể cả email chưa ai đăng ký.
+  const coThat = (
+    await asRole("chronoshelf_anon", null, [["SELECT app.cau_hoi_khoi_phuc($1) AS q", [emailA]]])
+  ).rows[0].q;
+  check(coThat === "ten-thu-cung", "email có thật trả đúng câu hỏi đã chọn", `nhận ${coThat}`);
+
+  const khongCo = (
     await asRole("chronoshelf_anon", null, [
-      ["SELECT app.consume_login_code($1,$2)", [emailC, mk(emailC, "000000")]],
-    ]);
-  }
-  const burned = await asRole("chronoshelf_anon", null, [
-    ["SELECT app.consume_login_code($1,$2) AS id", [emailC, mk(emailC, "333333")]],
+      ["SELECT app.cau_hoi_khoi_phuc($1) AS q", ["chua-ai-dang-ky@example.invalid"]],
+    ])
+  ).rows[0].q;
+  check(typeof khongCo === "string" && khongCo.length > 0,
+    "email KHÔNG có tài khoản cũng nhận được một câu hỏi (không dò được ai đã đăng ký)",
+    `nhận ${JSON.stringify(khongCo)}`);
+
+  const lanHai = (
+    await asRole("chronoshelf_anon", null, [
+      ["SELECT app.cau_hoi_khoi_phuc($1) AS q", ["chua-ai-dang-ky@example.invalid"]],
+    ])
+  ).rows[0].q;
+  check(lanHai === khongCo,
+    "…và câu hỏi mồi đó ỔN ĐỊNH qua các lần hỏi (đổi mỗi lần là tự khai nó giả)",
+    `lần 1 ${khongCo}, lần 2 ${lanHai}`);
+}
+
+/** Một lượt khôi phục đầy đủ, hai transaction riêng như request thật. */
+async function thuKhoiPhuc(email, dapAn, matKhauMoi) {
+  const ts = (
+    await asRole("chronoshelf_anon", null, [["SELECT app.bat_dau_khoi_phuc($1) AS ts", [email]]])
+  ).rows[0].ts;
+  if (!ts) return { khoa: true, id: null };
+  const bamDA = await bamTheoThamSo(chuanHoaDapAn(dapAn), ts);
+  const mk = await bamMoi(matKhauMoi);
+  const r = await asRole("chronoshelf_anon", null, [
+    ["SELECT app.ket_thuc_khoi_phuc($1,$2,$3,$4) AS id", [email, bamDA, mk.thamSo, mk.bam]],
   ]);
-  check(burned.rows[0].id === null,
-    "sau 5 lần thử sai, mã ĐÚNG cũng bị từ chối (attempts tăng thật qua từng transaction)",
-    `vẫn chấp nhận: ${burned.rows[0].id} — giới hạn số lần thử đang vô hiệu`);
+  return { khoa: false, id: r.rows[0].id };
+}
+
+{
+  const emailD = `d-${Date.now()}@example.invalid`;
+  const userD = await taoTaiKhoan(emailD, "mat-khau-cu-123", "truong-tieu-hoc", "Trường Kim Đồng");
+
+  const sai = await thuKhoiPhuc(emailD, "Trường Nào Đó", "mat-khau-moi-123");
+  check(sai.id === null, "đáp án sai không đặt lại được mật khẩu", `nhận ${sai.id}`);
+
+  // Đáp án đúng nhưng gõ khác kiểu: thường, không dấu, thừa khoảng trắng.
+  const dung = await thuKhoiPhuc(emailD, "  truong kim dong ", "mat-khau-moi-123");
+  check(dung.id === userD,
+    "đáp án đúng (khác hoa thường + không dấu) đặt lại được mật khẩu",
+    `nhận ${dung.id}`);
+
+  const cu = await thuDangNhap(emailD, "mat-khau-cu-123");
+  check(cu.id === null, "mật khẩu CŨ hết tác dụng sau khi đặt lại", `vẫn vào được: ${cu.id}`);
+
+  const moi = await thuDangNhap(emailD, "mat-khau-moi-123");
+  check(moi.id === userD, "mật khẩu MỚI đăng nhập được", `nhận ${moi.id}`);
+}
+
+{
+  const emailE = `e-${Date.now()}@example.invalid`;
+  await taoTaiKhoan(emailE, "mat-khau-cua-E-123", "mon-an-ghet", "mắm tôm");
+
+  for (let k = 0; k < 5; k++) await thuKhoiPhuc(emailE, "sai roi", "khong-quan-trong-123");
+
+  const dung = await thuKhoiPhuc(emailE, "mắm tôm", "mat-khau-moi-123");
+  check(dung.id === null,
+    "sau 5 lần sai, đáp án ĐÚNG cũng bị từ chối (bộ đếm khôi phục tăng thật)",
+    `vẫn chấp nhận: ${dung.id} — câu hỏi bảo mật thành cửa dò tự do`);
 }
 
 const emailB = `b-${Date.now()}@example.invalid`;
-const hashB = mk(emailB, "222222");
-const userB = (await asRole("chronoshelf_anon", null, [
-  ["SELECT app.issue_login_code($1,$2,now() + interval '10 minutes')", [emailB, hashB]],
-  ["SELECT app.consume_login_code($1,$2) AS id", [emailB, hashB]],
-])).rows[0].id;
+const userB = await taoTaiKhoan(emailB, "mat-khau-cua-B-123");
 
 console.log("\n-- RLS: người đã đăng nhập chỉ thấy dòng của mình --");
 const seen = await asRole("chronoshelf_auth", userA, ["SELECT id FROM public.users"]);

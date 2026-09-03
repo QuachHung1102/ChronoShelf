@@ -11,13 +11,13 @@ export interface SignedInUser {
 }
 
 /**
- * Cookie không phát sự kiện, nên ta tự phát: đăng nhập và đăng xuất đều đi qua đúng
- * hai hàm trong file này, và chúng gọi `notify()`. Nhờ vậy header với trang kệ vẫn
- * đồng bộ lại được mà không phải tải lại trang — đúng hành vi cũ.
+ * Cookie không phát sự kiện, nên ta tự phát: mọi chỗ đổi trạng thái đăng nhập đều đi qua
+ * các hàm trong file này, và chúng gọi `notify()`. Nhờ vậy header với trang kệ vẫn đồng
+ * bộ lại được mà không phải tải lại trang.
  *
- * Cố ý KHÔNG dùng `BroadcastChannel` để đồng bộ giữa nhiều tab: nó thêm một bề mặt
- * nữa để hỏng, còn hậu quả của việc không có nó chỉ là một tab khác hiện trạng thái
- * cũ cho tới lần điều hướng kế tiếp.
+ * Cố ý KHÔNG dùng `BroadcastChannel` để đồng bộ giữa nhiều tab: nó thêm một bề mặt nữa
+ * để hỏng, còn hậu quả của việc không có nó chỉ là một tab khác hiện trạng thái cũ cho
+ * tới lần điều hướng kế tiếp.
  */
 const listeners = new Set<() => void>();
 const notify = (): void => listeners.forEach((fn) => fn());
@@ -41,20 +41,42 @@ async function post(path: string, body?: unknown): Promise<Record<string, unknow
   return obj;
 }
 
-/**
- * Gửi mã đăng nhập 6 số tới email.
- *
- * Đây cũng là bước đăng ký: máy chủ trả lời y hệt nhau dù email đã có tài khoản hay
- * chưa (để không ai dò được danh sách người dùng), và email mới sẽ thành tài khoản
- * **đã xác minh** ngay khi nhập đúng mã.
- */
-export async function sendLoginCode(email: string): Promise<void> {
-  await post("/api/auth/code", { email });
+/** Tạo tài khoản rồi đăng nhập luôn. */
+export async function dangKy(
+  email: string,
+  matKhau: string,
+  cauHoi: string,
+  dapAn: string,
+): Promise<void> {
+  await post("/api/auth/dang-ky", { email, matKhau, cauHoi, dapAn });
+  notify();
 }
 
-/** Đổi mã lấy phiên đăng nhập. Email chưa có tài khoản thì tài khoản được tạo tại đây. */
-export async function verifyLoginCode(email: string, otp: string): Promise<void> {
-  await post("/api/auth/verify", { email, code: otp });
+/** Đăng nhập bằng email + mật khẩu. */
+export async function dangNhap(email: string, matKhau: string): Promise<void> {
+  await post("/api/auth/dang-nhap", { email, matKhau });
+  notify();
+}
+
+/**
+ * Bước 1 của khôi phục: lấy mã câu hỏi bảo mật.
+ *
+ * LUÔN trả về một câu hỏi, kể cả khi email chưa có tài khoản — nên đừng dùng kết quả của
+ * hàm này để suy ra tài khoản có tồn tại hay không. Đó chính là điều nó được thiết kế
+ * để không nói ra.
+ */
+export async function layCauHoi(email: string): Promise<string> {
+  const res = await post("/api/auth/khoi-phuc", { email });
+  return typeof res.cauHoi === "string" ? res.cauHoi : "";
+}
+
+/** Bước 2 của khôi phục: trả lời câu hỏi và đặt mật khẩu mới, rồi đăng nhập luôn. */
+export async function khoiPhuc(
+  email: string,
+  dapAn: string,
+  matKhauMoi: string,
+): Promise<void> {
+  await post("/api/auth/khoi-phuc", { email, dapAn, matKhauMoi });
   notify();
 }
 

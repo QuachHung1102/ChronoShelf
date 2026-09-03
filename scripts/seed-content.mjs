@@ -14,9 +14,11 @@
  *
  * Idempotent: chạy lại nhiều lần cho cùng một kết quả.
  */
+import { randomBytes } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { bamMoi } from "../lib/auth/mat-khau.ts";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const dir = join(root, "db", "seed");
@@ -101,13 +103,26 @@ for (const shelf of shelves) {
 // dòng, và user_roles không còn dòng "của người khác" nào nên phép "không đọc trộm được
 // vai trò người khác" cũng luôn thấy 0 dòng, kể cả khi RLS hỏng hoàn toàn.
 const BAIT_USER = "22222222-2222-2222-2222-222222222222";
+const baitPass = await bamMoi(randomBytes(32).toString("hex"));
+const baitAns = await bamMoi(randomBytes(32).toString("hex"));
 out.push(
   "INSERT INTO public.books (slug, shelf_slug, position, title, era, published) VALUES\n" +
     "  ('__nhap-khong-bao-gio-xuat-ban', 'lich-su-viet-nam', 900,\n" +
     "   'Mồi nhử cho db:check — đừng xuất bản', '—', false)\n" +
     "ON CONFLICT (slug) DO UPDATE SET published = false;",
-  "INSERT INTO public.users (id, email, email_verified) VALUES\n" +
-    "  ('" + BAIT_USER + "', '__moi-nhu-vai-tro@example.invalid', false)\n" +
+  // Mồi nhử phải có mật khẩu: `15-mat-khau.sql` XÓA mọi tài khoản không có
+  // `password_hash` (người dùng đã chọn "xóa làm lại"), nên thiếu mấy cột này thì mồi
+  // nhử biến mất ngay lần `db:migrate` kế tiếp và hai phép kiểm phụ thuộc nó hết nghĩa.
+  //
+  // Bản băm sinh từ 32 byte ngẫu nhiên KHÔNG ĐƯỢC GHI LẠI Ở ĐÂU: không ai — kể cả script
+  // này — biết mật khẩu tương ứng, nên tài khoản mồi nhử không đăng nhập được. Nó tồn tại
+  // để `db:check` có một dòng "của người khác" mà soi, không phải để dùng.
+  "INSERT INTO public.users\n" +
+    "  (id, email, email_verified, password_params, password_hash,\n" +
+    "   security_question, answer_params, answer_hash) VALUES\n" +
+    "  ('" + BAIT_USER + "', '__moi-nhu-vai-tro@example.invalid', false,\n" +
+    "   " + q(baitPass.thamSo) + ", " + q(baitPass.bam) + ",\n" +
+    "   'ten-thu-cung', " + q(baitAns.thamSo) + ", " + q(baitAns.bam) + ")\n" +
     "ON CONFLICT (id) DO NOTHING;",
   "INSERT INTO public.user_roles (user_id, role) VALUES ('" + BAIT_USER + "', 'admin')\n" +
     "ON CONFLICT (user_id) DO UPDATE SET role = 'admin';",

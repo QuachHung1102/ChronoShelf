@@ -159,21 +159,42 @@ mở một transaction rồi `SET LOCAL ROLE` sang `chronoshelf_anon` hoặc `ch
    `90-verify.sql` biết kêu).
 
 Logic đặc quyền vẫn đi qua hàm Postgres `SECURITY DEFINER` — `complete_book`, `is_admin`,
-`app.issue_login_code`, `app.consume_login_code`. Nguồn danh tính là `SET LOCAL app.user_id`,
+`app.dang_ky`, `app.bat_dau_dang_nhap`, `app.ket_thuc_dang_nhap`, `app.cau_hoi_khoi_phuc`,
+`app.bat_dau_khoi_phuc`, `app.ket_thuc_khoi_phuc`. Nguồn danh tính là `SET LOCAL app.user_id`,
 do middleware đặt sau khi xác thực ở tầng Node.
 
 ### Đăng nhập
 
-OTP 6 số qua email, tự xây. Mã sinh bằng `crypto.randomInt`, database **chỉ nhận bản băm**; hạn
-10 phút, tối đa 5 lần thử và 5 mã / 15 phút / email — tất cả nằm trong hai hàm SECURITY DEFINER,
-không route nào lách được.
+**Email + mật khẩu, khôi phục bằng câu hỏi bảo mật. KHÔNG có email nào được gửi đi** — dự án
+không có nhà cung cấp mail và sẽ không gắn. Luồng OTP cũ đã bị gỡ HẲN (bảng `login_codes` và hai
+hàm của nó bị DROP ở `db/schema/15-mat-khau.sql`, và `90-verify.sql` khối A nổ nếu chúng quay lại).
+
+Băm bằng `crypto.scrypt` của stdlib — **không phải pgcrypto, không phải bcrypt**. Tham số
+N=32768, r=8, p=1 chọn từ số đo thật trên máy này (~59 ms, ~32 MB mỗi lượt); bcrypt bị loại vì nó
+cắt cụt mật khẩu ở 72 byte trong im lặng, mà tiếng Việt có dấu thì 72 byte chỉ là 24 ký tự. Tham số
+lưu THEO TỪNG DÒNG nên nâng N sau này không làm hỏng mật khẩu cũ. Xem `lib/auth/mat-khau.ts`.
+
+**Bản băm không bao giờ rời khỏi database.** Node xin `*_params` (thuật toán + salt), tự băm, gửi
+bản băm xuống để SQL so. Hai lượt gọi đó là HAI transaction riêng — gói chung là giữ một connection
+mở suốt 59 ms băm mà chẳng làm gì, và tách ra không mất an toàn vì bộ đếm nằm ở lượt thứ hai.
+
+Ba hàng rào, tất cả ở tầng database nên không route nào lách được:
+- 5 lần sai mật khẩu → khóa 15 phút. 5 lần sai đáp án → khóa riêng 15 phút.
+- Email KHÔNG tồn tại vẫn nhận được tham số băm và vẫn nhận được một câu hỏi bảo mật (chọn theo
+  chính email đó, ổn định qua các lần hỏi). Không có hai nhánh này thì trang đăng nhập và trang
+  quên-mật-khẩu thành máy dò danh sách người dùng.
+- Đáp án chỉ lưu dạng băm, và được chuẩn hóa (bỏ dấu, hạ chữ thường, gộp khoảng trắng) trước khi
+  băm — "Hà Nội" và "ha noi" phải khớp, nếu không thì câu hỏi bảo mật khóa luôn chính chủ ra ngoài.
+
+**Câu hỏi bảo mật là hàng rào YẾU và ta biết.** NIST SP 800-63B khuyến nghị bỏ hẳn xác thực dựa
+trên kiến thức. Nó ở đây vì người dùng đã chọn, sau khi được nói rõ điều đó; thứ giữ cho nó không
+thành cửa mở toang là giới hạn số lần thử ở trên.
+
+Danh sách câu hỏi CỐ ĐỊNH, tồn tại ở hai nơi — `lib/auth/cau-hoi-bao-mat.ts` và ràng buộc
+`users_security_question_ck`. Có test đọc thẳng file SQL để bắt lệch; đừng sửa một nơi rồi thôi.
 
 Phiên là cookie `httpOnly` chứa payload JSON ký HMAC-SHA256 (`lib/auth/token.ts`). **Cố ý không
 phải JWT**: định dạng này không có trường `alg`, nên không có gì để kẻ tấn công thương lượng.
-
-**Gửi mail chưa cấu hình.** Ở dev, mã in ra console server. Ở production, `deliver()` NỔ — mã
-đăng nhập nằm trong log máy chủ là lỗ hổng thật, và "quên gắn nhà cung cấp mail" phải là lỗi ồn
-ào lúc deploy. Gắn Nodemailer/Resend vào `lib/auth/otp.ts`.
 
 ## Bẫy đã gặp
 
@@ -250,8 +271,9 @@ phải JWT**: định dạng này không có trường `alg`, nên không có g�
   `UPDATE login_codes SET attempts = attempts + 1` bị roll back cùng exception, nên bộ đếm vĩnh viễn
   bằng 0 và nhánh `attempts + 1 > 5` không bao giờ với tới — tức là chiếm tài khoản từ xa chỉ bằng
   cách thử hết 10^6 mã. Hàm nào cần GHI LẠI dấu vết của một lần gọi thất bại thì phải `RETURN NULL`
-  rồi để tầng Node ném lỗi SAU khi transaction đã commit — xem `app.consume_login_code` và
-  `lib/auth/otp.ts`.
+  rồi để tầng Node ném lỗi SAU khi transaction đã commit. Luồng OTP đó nay đã bị gỡ, nhưng LUẬT thì
+  còn nguyên và đang áp cho `app.ket_thuc_dang_nhap` / `app.ket_thuc_khoi_phuc` — xem
+  `lib/auth/dang-nhap.ts`, chỗ `throw` bắt buộc nằm NGOÀI `withRole()`.
 - **Phép kiểm khóa ngoại của Postgres BỎ QUA row-level security** (tài liệu PG, mục Row Security
   Policies). Một INSERT tham chiếu tới dòng mà RLS đang giấu vẫn thành công, nên route nào phân biệt
   "khóa ngoại hỏng" với "ok" thì thành máy dò slug sách nháp. Cho câu lệnh tự đi qua RLS
@@ -361,8 +383,8 @@ Cần cả ba vì mỗi cái mù ở chỗ cái kia nhìn thấy. SQL chạy b�
 làm được. Ngược lại, `db:check` không thấy được `condeferred` hay biểu thức policy.
 
 `scripts/db-check.mjs` liệt kê số phép ở cuối output — đọc output, đừng nhớ con số. Script tự
-tạo tài khoản test qua chính luồng OTP nên **không cần biến môi trường nào ngoài
-`DATABASE_URL`**. Một bản trước đây đòi tài khoản test qua biến môi trường và âm thầm BỎ QUA
+tạo tài khoản test qua chính luồng đăng ký thật (và nạp đúng `lib/auth/mat-khau.ts` chứ không chép
+lại tham số scrypt sang đây), nên **không cần biến môi trường nào ngoài `DATABASE_URL`**. Một bản trước đây đòi tài khoản test qua biến môi trường và âm thầm BỎ QUA
 6 phép khi thiếu — "bỏ qua" thì không phải "đạt", đừng làm lại kiểu đó.
 
 ### Ba bài học phải giữ

@@ -12,7 +12,7 @@ EXISTS` trước khi tạo).
 |---|---|---|
 | `00-roles.sql` | Ba role và quan hệ thành viên giữa chúng | ✅ |
 | `01-app-context.sql` | Schema `app`, hàm `app.current_user_id()` | |
-| `02-users.sql` | `users`, `login_codes` — tài khoản và mã đăng nhập | |
+| `02-users.sql` | `users` — tài khoản. (Cũng từng tạo `login_codes` cho luồng OTP; `15-mat-khau.sql` DROP bảng đó, nên file này giữ nguyên chỉ để chạy được trên database trắng.) | |
 | `03-user-roles.sql` | `user_roles`, `is_admin()` | |
 | `04-content-tables.sql` | `shelves`, `items`, `books`, `pages` | |
 | `05-content-rls.sql` | RLS + policy + grant cho bốn bảng nội dung | |
@@ -25,6 +25,7 @@ EXISTS` trước khi tạo).
 | `12-shelf-cover-credit.sql` | Nguồn + tác giả cho ảnh bìa kệ, cùng ràng buộc credit như ảnh sách/trang/vật phẩm | |
 | `13-community.sql` | `community_posts` + `community_comments` — đọc công khai, người đăng nhập chỉ INSERT dưới đúng danh tính | |
 | `14-learning-hub.sql` | `documents` (byte của bộ slide `.pptx`, khóa chính là sha256, chỉ-ghi-thêm như `media`) + `lessons` (bài giảng theo lớp 10/11/12) | |
+| `15-mat-khau.sql` | Đăng nhập bằng email + mật khẩu (scrypt băm ở Node) + khôi phục bằng câu hỏi bảo mật; XÓA tài khoản không mật khẩu và gỡ hẳn luồng OTP | |
 | `90-verify.sql` | Khẳng định cấu trúc — nổ nếu hàng rào bị nới | |
 
 ## Ba role, không phải một

@@ -2,28 +2,43 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, MailCheck, Send } from "lucide-react";
-import { sendLoginCode, verifyLoginCode } from "@/lib/api/auth";
+import { ArrowLeft, KeyRound, LogIn, UserPlus } from "lucide-react";
+import { dangKy, dangNhap, khoiPhuc, layCauHoi } from "@/lib/api/auth";
+import { CAU_HOI_BAO_MAT, timCauHoi } from "@/lib/auth/cau-hoi-bao-mat";
+import { MAT_KHAU_TOI_THIEU } from "@/lib/auth/mat-khau";
 import { FIELD, LABEL, PRIMARY_BUTTON, QUIET_BUTTON } from "@/components/ui/controls";
 
 /**
- * Đăng nhập không mật khẩu: nhập email → nhận mã 6 số → xong.
- * Không tách đăng ký với đăng nhập vì backend không phân biệt hai việc đó ở luồng OTP.
+ * Đăng nhập bằng email + mật khẩu, khôi phục bằng câu hỏi bảo mật.
+ *
+ * Ba chế độ trên cùng một thẻ, không phải ba trang: người dùng nhầm giữa "đăng nhập" và
+ * "đăng ký" là chuyện thường, và bắt họ điều hướng qua lại giữa các URL chỉ để sửa cái
+ * nhầm đó là thêm việc cho không.
+ *
+ * Khôi phục có hai bước vì phải HỎI MÁY CHỦ câu hỏi bảo mật của email đó. Máy chủ luôn
+ * trả về một câu hỏi, kể cả email chưa có tài khoản — nên bước này không nói cho ai biết
+ * tài khoản có tồn tại hay không.
  */
+
+type CheDo = "dang-nhap" | "dang-ky" | "khoi-phuc";
+
 export function LoginForm({ next }: { next: string }) {
   const router = useRouter();
+  const [cheDo, setCheDo] = useState<CheDo>("dang-nhap");
   const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState("");
-  const [codeSent, setCodeSent] = useState(false);
+  const [matKhau, setMatKhau] = useState("");
+  const [cauHoi, setCauHoi] = useState(CAU_HOI_BAO_MAT[0].ma);
+  const [dapAn, setDapAn] = useState("");
+  /** Mã câu hỏi máy chủ trả về ở bước 1 của khôi phục; null nghĩa là chưa hỏi. */
+  const [cauHoiCuaToi, setCauHoiCuaToi] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
 
-  async function run(step: () => Promise<void>) {
+  async function chay(buoc: () => Promise<void>) {
     setBusy(true);
     setError(null);
     try {
-      await step();
+      await buoc();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Có lỗi xảy ra, thử lại giúp mình.");
     } finally {
@@ -31,120 +46,254 @@ export function LoginForm({ next }: { next: string }) {
     }
   }
 
-  const send = () =>
-    run(async () => {
-      await sendLoginCode(email);
-      setCodeSent(true);
-      setNotice(`Đã gửi mã tới ${email}. Mã có 6 chữ số và hết hạn sau ít phút.`);
-    });
+  const vaoTrong = () => {
+    router.replace(next);
+    router.refresh();
+  };
+
+  function doiCheDo(moi: CheDo) {
+    setCheDo(moi);
+    setError(null);
+    setMatKhau("");
+    setDapAn("");
+    setCauHoiCuaToi(null);
+  }
+
+  const tieuDe = {
+    "dang-nhap": "Đăng nhập để giữ tiến độ",
+    "dang-ky": "Tạo tài khoản mới",
+    "khoi-phuc": "Quên mật khẩu",
+  }[cheDo];
+
+  const moTa = {
+    "dang-nhap": "Nhập email và mật khẩu của bạn.",
+    "dang-ky": `Mật khẩu tối thiểu ${MAT_KHAU_TOI_THIEU} ký tự. Câu hỏi bảo mật là cách DUY NHẤT lấy lại tài khoản nếu quên mật khẩu — hãy chọn câu bạn chắc chắn nhớ.`,
+    "khoi-phuc": cauHoiCuaToi
+      ? "Trả lời câu hỏi bảo mật rồi đặt mật khẩu mới."
+      : "Nhập email để bọn mình hỏi lại câu hỏi bảo mật của bạn.",
+  }[cheDo];
+
+  const oEmail = (
+    <>
+      <label className={LABEL} htmlFor="auth-email">
+        Email
+      </label>
+      <input
+        id="auth-email"
+        type="email"
+        required
+        autoComplete="email"
+        autoFocus
+        placeholder="ban@example.com"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        // Ở bước 2 của khôi phục thì email đã chốt: đổi nó mà giữ nguyên câu hỏi đang
+        // hiện là hỏi một đằng trả lời một nẻo.
+        readOnly={cheDo === "khoi-phuc" && cauHoiCuaToi !== null}
+        className={FIELD}
+      />
+    </>
+  );
 
   return (
     <div className="w-full max-w-md rounded-lg bg-neutral p-xl">
       <p className="font-body text-label-caps uppercase text-tertiary-deep">Cửa sổ lịch sử</p>
-      <h1 className="mt-sm font-heading text-headline-md text-primary-dark">
-        {codeSent ? "Nhập mã trong email" : "Đăng nhập để giữ tiến độ"}
-      </h1>
-      <p className="mt-sm font-body text-body-sm text-secondary">
-        {codeSent
-          ? "Chưa có tài khoản cũng không sao — nhập đúng mã là tài khoản được tạo luôn."
-          : "Không cần mật khẩu. Bọn mình gửi một mã 6 số tới email của bạn."}
-      </p>
+      <h1 className="mt-sm font-heading text-headline-md text-primary-dark">{tieuDe}</h1>
+      <p className="mt-sm font-body text-body-sm text-secondary">{moTa}</p>
 
-      {!codeSent ? (
+      {cheDo === "dang-nhap" && (
         <form
           className="mt-lg flex flex-col gap-md"
-          onSubmit={(event) => {
-            event.preventDefault();
-            void send();
-          }}
-        >
-          <label className={LABEL} htmlFor="login-email">
-            Email
-          </label>
-          <input
-            id="login-email"
-            type="email"
-            required
-            autoComplete="email"
-            autoFocus
-            placeholder="ban@example.com"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            className={FIELD}
-          />
-          <button type="submit" disabled={busy} className={`${PRIMARY_BUTTON} mt-sm`}>
-            <Send aria-hidden className="h-4 w-4" />
-            {busy ? "Đang gửi…" : "Gửi mã đăng nhập"}
-          </button>
-        </form>
-      ) : (
-        <form
-          className="mt-lg flex flex-col gap-md"
-          onSubmit={(event) => {
-            event.preventDefault();
-            void run(async () => {
-              await verifyLoginCode(email, otp);
-              router.replace(next);
-              router.refresh();
+          onSubmit={(e) => {
+            e.preventDefault();
+            void chay(async () => {
+              await dangNhap(email, matKhau);
+              vaoTrong();
             });
           }}
         >
-          <label className={LABEL} htmlFor="login-otp">
-            Mã xác minh
+          {oEmail}
+          <label className={LABEL} htmlFor="auth-mat-khau">
+            Mật khẩu
           </label>
           <input
-            id="login-otp"
-            type="text"
+            id="auth-mat-khau"
+            type="password"
             required
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            autoFocus
-            maxLength={6}
-            pattern="[0-9]{6}"
-            placeholder="123456"
-            value={otp}
-            onChange={(event) => setOtp(event.target.value.replace(/\D/g, ""))}
-            className={`${FIELD} tracking-[0.4em]`}
+            autoComplete="current-password"
+            value={matKhau}
+            onChange={(e) => setMatKhau(e.target.value)}
+            className={FIELD}
           />
           <button type="submit" disabled={busy} className={`${PRIMARY_BUTTON} mt-sm`}>
-            <MailCheck aria-hidden className="h-4 w-4" />
-            {busy ? "Đang kiểm tra…" : "Xác nhận"}
+            <LogIn aria-hidden className="h-4 w-4" />
+            {busy ? "Đang kiểm tra…" : "Đăng nhập"}
           </button>
 
-          <div className="flex items-center justify-between gap-md">
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => {
-                setCodeSent(false);
-                setOtp("");
-                setError(null);
-                setNotice(null);
-              }}
-              className={QUIET_BUTTON}
-            >
-              <ArrowLeft aria-hidden className="h-4 w-4" />
-              Đổi email
+          <div className="flex flex-wrap items-center justify-between gap-md">
+            <button type="button" onClick={() => doiCheDo("dang-ky")} className={QUIET_BUTTON}>
+              <UserPlus aria-hidden className="h-4 w-4" />
+              Chưa có tài khoản?
             </button>
-            <button type="button" disabled={busy} onClick={() => void send()} className={QUIET_BUTTON}>
-              Gửi lại mã
+            <button type="button" onClick={() => doiCheDo("khoi-phuc")} className={QUIET_BUTTON}>
+              Quên mật khẩu?
             </button>
           </div>
         </form>
       )}
 
-      <p aria-live="polite" className="mt-md font-body text-body-sm text-secondary">
-        {notice}
-      </p>
-
-      {error && (
-        <p
-          role="alert"
-          className="mt-md rounded-md bg-destructive p-md font-body text-body-sm text-on-destructive"
+      {cheDo === "dang-ky" && (
+        <form
+          className="mt-lg flex flex-col gap-md"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void chay(async () => {
+              await dangKy(email, matKhau, cauHoi, dapAn);
+              vaoTrong();
+            });
+          }}
         >
-          {error}
-        </p>
+          {oEmail}
+          <label className={LABEL} htmlFor="auth-mat-khau-moi">
+            Mật khẩu
+          </label>
+          <input
+            id="auth-mat-khau-moi"
+            type="password"
+            required
+            minLength={MAT_KHAU_TOI_THIEU}
+            autoComplete="new-password"
+            value={matKhau}
+            onChange={(e) => setMatKhau(e.target.value)}
+            className={FIELD}
+          />
+
+          <label className={LABEL} htmlFor="auth-cau-hoi">
+            Câu hỏi bảo mật
+          </label>
+          <select
+            id="auth-cau-hoi"
+            value={cauHoi}
+            onChange={(e) => setCauHoi(e.target.value)}
+            className={FIELD}
+          >
+            {CAU_HOI_BAO_MAT.map((c) => (
+              <option key={c.ma} value={c.ma}>
+                {c.hoi}
+              </option>
+            ))}
+          </select>
+
+          <label className={LABEL} htmlFor="auth-dap-an">
+            Đáp án
+          </label>
+          <input
+            id="auth-dap-an"
+            type="text"
+            required
+            autoComplete="off"
+            value={dapAn}
+            onChange={(e) => setDapAn(e.target.value)}
+            className={FIELD}
+          />
+          <p className="font-body text-caption text-secondary">
+            Không phân biệt hoa thường và dấu tiếng Việt — “Hà Nội” và “ha noi” đều được.
+          </p>
+
+          <button type="submit" disabled={busy} className={`${PRIMARY_BUTTON} mt-sm`}>
+            <UserPlus aria-hidden className="h-4 w-4" />
+            {busy ? "Đang tạo…" : "Tạo tài khoản"}
+          </button>
+
+          <button type="button" onClick={() => doiCheDo("dang-nhap")} className={QUIET_BUTTON}>
+            <ArrowLeft aria-hidden className="h-4 w-4" />
+            Đã có tài khoản? Đăng nhập
+          </button>
+        </form>
       )}
+
+      {cheDo === "khoi-phuc" && (
+        <form
+          className="mt-lg flex flex-col gap-md"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void chay(async () => {
+              if (cauHoiCuaToi === null) {
+                setCauHoiCuaToi(await layCauHoi(email));
+                return;
+              }
+              await khoiPhuc(email, dapAn, matKhau);
+              vaoTrong();
+            });
+          }}
+        >
+          {oEmail}
+
+          {cauHoiCuaToi !== null && (
+            <>
+              <p className="rounded-md bg-surface p-md font-body text-body-md text-primary-dark">
+                {timCauHoi(cauHoiCuaToi)?.hoi ?? "Câu hỏi bảo mật của bạn"}
+              </p>
+
+              <label className={LABEL} htmlFor="auth-dap-an-kp">
+                Đáp án
+              </label>
+              <input
+                id="auth-dap-an-kp"
+                type="text"
+                required
+                autoComplete="off"
+                autoFocus
+                value={dapAn}
+                onChange={(e) => setDapAn(e.target.value)}
+                className={FIELD}
+              />
+
+              <label className={LABEL} htmlFor="auth-mat-khau-dat-lai">
+                Mật khẩu mới
+              </label>
+              <input
+                id="auth-mat-khau-dat-lai"
+                type="password"
+                required
+                minLength={MAT_KHAU_TOI_THIEU}
+                autoComplete="new-password"
+                value={matKhau}
+                onChange={(e) => setMatKhau(e.target.value)}
+                className={FIELD}
+              />
+            </>
+          )}
+
+          <button type="submit" disabled={busy} className={`${PRIMARY_BUTTON} mt-sm`}>
+            <KeyRound aria-hidden className="h-4 w-4" />
+            {busy
+              ? "Đang xử lý…"
+              : cauHoiCuaToi === null
+                ? "Xem câu hỏi bảo mật"
+                : "Đặt mật khẩu mới"}
+          </button>
+
+          <button type="button" onClick={() => doiCheDo("dang-nhap")} className={QUIET_BUTTON}>
+            <ArrowLeft aria-hidden className="h-4 w-4" />
+            Quay lại đăng nhập
+          </button>
+        </form>
+      )}
+
+      {/* Vùng lỗi có mặt SẴN, rỗng nhưng vẫn hiện: `display:none` lúc rỗng sẽ gỡ nó khỏi
+          cây trợ năng, và khi lỗi xuất hiện thì trình đọc màn hình coi đó là một vùng
+          vừa được THÊM chứ không phải một thay đổi — thường là im lặng. */}
+      <p
+        role="alert"
+        className={
+          error
+            ? "mt-md rounded-md bg-destructive p-md font-body text-body-sm text-on-destructive"
+            : "mt-md font-body text-body-sm"
+        }
+      >
+        {error}
+      </p>
     </div>
   );
 }
