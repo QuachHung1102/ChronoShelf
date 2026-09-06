@@ -29,6 +29,18 @@ export interface ContentPage {
   summary?: string[];
 }
 
+/**
+ * Một câu hỏi trắc nghiệm cuối sách, ĐÚNG PHẦN được phép tới trình duyệt.
+ *
+ * Không có trường đáp án, và đó là toàn bộ điểm của kiểu này: `correct_index` không có
+ * GRANT SELECT cho role nào của ứng dụng (`db/schema/05-content-rls.sql`), nên chấm bài
+ * chỉ xảy ra được bên trong `complete_book`.
+ */
+export interface ContentQuestion {
+  prompt: string;
+  choices: string[];
+}
+
 export interface ContentBook {
   slug: string;
   title: string;
@@ -56,6 +68,15 @@ export interface ContentBook {
    */
   published: boolean;
   pages: ContentPage[];
+  /**
+   * Bài kiểm tra cuối sách, theo thứ tự `position` (content.md §4.3). Mảng RỖNG nghĩa là
+   * quyển này không có bài kiểm tra và đọc hết trang là nhận vật phẩm — đúng hành vi cũ,
+   * và là trạng thái của mọi quyển chưa được admin soạn câu hỏi.
+   *
+   * Thứ tự ở đây là hợp đồng: client gửi lại một mảng đáp án SONG SONG với mảng này, và
+   * `complete_book` chấm theo đúng thứ tự đó chứ không theo giá trị `position`.
+   */
+  cauHoi: ContentQuestion[];
 }
 
 export interface ContentShelf {

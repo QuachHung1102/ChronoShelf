@@ -61,3 +61,69 @@ GRANT SELECT ON public.shelves, public.items, public.books, public.pages
   TO chronoshelf_anon, chronoshelf_auth;
 GRANT INSERT, UPDATE, DELETE ON public.shelves, public.items, public.books, public.pages
   TO chronoshelf_auth;
+
+-- ---------------------------------------------------------------------------
+-- book_questions — bảng nội dung thứ NĂM, và bảng duy nhất có một cột phải giấu
+-- ---------------------------------------------------------------------------
+--
+-- Bốn bảng trên không giấu gì cả: nội dung bài học vốn công khai, kể cả của quyển
+-- "đang khóa" (CLAUDE.md nói thẳng điều đó). `book_questions.correct_index` là ngoại lệ
+-- DUY NHẤT — đáp án tới được trình duyệt thì bài kiểm tra chỉ còn là trang trí.
+--
+-- Hàng rào ở đây là GRANT THEO CỘT, không phải policy, vì RLS lọc DÒNG và không có
+-- khái niệm cột. Nó bắt đúng cái lỗi dễ mắc nhất: một `SELECT *` vô ý trong `readShelf()`
+-- rồi đẩy nguyên dòng xuống client component. Với GRANT theo cột, câu lệnh đó NỔ ngay
+-- (fail đóng) thay vì âm thầm in đáp án ra HTML.
+ALTER TABLE public.book_questions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "read published" ON public.book_questions;
+DROP POLICY IF EXISTS "admin write"    ON public.book_questions;
+
+-- Cùng khuôn với `pages`: RLS của `books` (đã gồm vế kệ cha) áp lại cho chính subquery
+-- này theo vai trò người gọi, nên không cần soi `shelves` thêm lần nữa ở đây.
+CREATE POLICY "read published" ON public.book_questions FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.books b
+           WHERE b.slug = book_questions.book_slug AND (b.published OR public.is_admin()))
+);
+CREATE POLICY "admin write" ON public.book_questions FOR ALL
+  USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+REVOKE ALL ON public.book_questions FROM PUBLIC, chronoshelf_anon, chronoshelf_auth;
+
+-- `correct_index` KHÔNG có trong danh sách. Đây là dòng làm nên toàn bộ giá trị của bài
+-- kiểm tra — đừng thêm cột đó vào cho tiện.
+GRANT SELECT (id, book_slug, position, prompt, choices) ON public.book_questions
+  TO chronoshelf_anon, chronoshelf_auth;
+
+-- GHI thì cấp cả bảng: ghi không làm lộ gì, và policy "admin write" đã lọc dòng. Admin
+-- phải đặt được đáp án, nên INSERT/UPDATE buộc phải chạm `correct_index`.
+GRANT INSERT, UPDATE, DELETE ON public.book_questions TO chronoshelf_auth;
+
+-- Mặt sau của GRANT theo cột: admin cũng không SELECT được `correct_index`, mà màn soạn
+-- câu hỏi thì phải hiện đáp án đang chọn. Cửa cho việc đó là hàm SECURITY DEFINER này —
+-- một cửa, tự kiểm `is_admin()`, thay vì nới GRANT ra cho mọi người đã đăng nhập.
+CREATE OR REPLACE FUNCTION public.admin_book_questions(p_book_slug text)
+-- `"position"` phải đặt trong nháy kép: POSITION là từ khóa của SQL (hàm
+-- `position(x in y)`), nên khai báo trần ở đây là lỗi cú pháp.
+RETURNS TABLE (id uuid, "position" integer, prompt text, choices text[], correct_index smallint)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, app
+AS $fn$
+BEGIN
+  -- SECURITY DEFINER nên hàm KHÔNG chịu RLS: thiếu dòng này thì bất kỳ ai đã đăng nhập
+  -- cũng đọc được đáp án của mọi quyển, kể cả quyển còn nháp.
+  IF NOT public.is_admin() THEN
+    RAISE EXCEPTION 'admin_book_questions: chỉ admin đọc được đáp án';
+  END IF;
+
+  RETURN QUERY
+    SELECT q.id, q.position, q.prompt, q.choices, q.correct_index
+      FROM public.book_questions q
+     WHERE q.book_slug = p_book_slug
+     ORDER BY q.position;
+END;
+$fn$;
+
+REVOKE ALL ON FUNCTION public.admin_book_questions(text) FROM PUBLIC, chronoshelf_anon, chronoshelf_app;
+GRANT EXECUTE ON FUNCTION public.admin_book_questions(text) TO chronoshelf_auth;

@@ -91,13 +91,24 @@ export async function setCurrentPage(bookSlug: string, page: number): Promise<bo
 
 /**
  * Chốt hoàn thành quyển sách. Máy chủ quyết định vật phẩm và việc mở khóa —
- * client chỉ báo "đã đọc xong quyển này".
+ * client chỉ báo "đã đọc xong quyển này" và nộp bài kiểm tra.
  * An toàn để gọi lại: hàm idempotent, gọi hai lần không nhân đôi vật phẩm.
+ *
+ * `answers` là chỉ số lựa chọn đã chọn (0-based), SONG SONG với `book.cauHoi` — phần tử
+ * thứ i là đáp án cho câu hỏi thứ i. Câu chưa chọn thì để `-1`: máy chủ coi mọi thứ
+ * khác đáp án đúng là sai, nên chỗ trống không được lặng lẽ thành "miễn bài". Quyển
+ * không có câu hỏi nào thì truyền mảng rỗng.
+ *
+ * Chấm bài KHÔNG xảy ra ở đây và không thể xảy ra ở đây: đáp án không có `GRANT SELECT`
+ * cho role nào của ứng dụng, nên nó chưa từng rời khỏi database.
  */
-export async function completeBook(bookSlug: string): Promise<CompleteBookResult> {
+export async function completeBook(
+  bookSlug: string,
+  answers: number[],
+): Promise<CompleteBookResult> {
   return req<CompleteBookResult>("/api/me/complete", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ bookSlug }),
+    body: JSON.stringify({ bookSlug, answers }),
   });
 }

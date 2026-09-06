@@ -136,6 +136,10 @@ export function ShelfPageClient({
           shelf={shelf}
           bookSlug={openBook.book.slug}
           startPage={openBook.currentPage}
+          // Đọc LẠI một quyển đã xong thì không phải làm lại bài kiểm tra: `complete_book`
+          // cũng bỏ qua phần chấm bài trong trường hợp đó (nhánh `alreadyCompleted`), nên
+          // hiện bài kiểm tra ở đây chỉ là bắt học sinh gõ lại một thứ máy chủ không hỏi.
+          daHoanThanh={openBook.state === "completed"}
           onClose={() => {
             setOpenBookSlug(null);
             // Đọc xong có thể vừa nhận vật phẩm — lấy lại trạng thái để kệ mở khóa quyển sau.

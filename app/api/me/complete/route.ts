@@ -8,28 +8,57 @@ import type { CompleteBookResult } from "@/lib/api/types";
 export const dynamic = "force-dynamic";
 
 /**
- * POST /api/me/complete — chốt đã đọc xong một quyển.
+ * Số câu tối đa một bài kiểm tra có thể có, chốt ngay tại biên.
+ *
+ * Ràng buộc thật nằm ở database (`book_questions` chỉ có ngần này dòng cho một quyển
+ * nếu admin soạn ngần ấy), nhưng mảng đáp án đến từ trình duyệt nên nó có thể dài tùy
+ * ý — và nó đi thẳng vào một bind của Postgres. 50 là rộng rãi gấp nhiều lần con số
+ * 2–3 mà content.md §4.3 mô tả.
+ */
+const MAX_ANSWERS = 50;
+
+/**
+ * Đọc mảng đáp án: chỉ số 0-based, song song với `book.cauHoi`.
+ *
+ * Mọi phần tử không phải số nguyên trong khoảng hợp lệ đều thành `-1` — một chỉ số
+ * KHÔNG BAO GIỜ khớp `correct_index` (ràng buộc `book_questions_correct_range_ck` bắt
+ * nó phải >= 0). Nhờ vậy rác gửi lên chỉ có thể làm bài kiểm tra TRƯỢT, không thể làm
+ * nó đạt và cũng không làm truy vấn nổ.
+ */
+function readAnswers(body: Record<string, unknown> | null): number[] {
+  const v = body?.answers;
+  if (!Array.isArray(v)) return [];
+  return v
+    .slice(0, MAX_ANSWERS)
+    .map((x) => (typeof x === "number" && Number.isInteger(x) && x >= 0 && x < 4 ? x : -1));
+}
+
+/**
+ * POST /api/me/complete — chốt đã đọc xong một quyển và nộp bài kiểm tra cuối sách.
  *
  * Route này CỐ Ý mỏng: nó không quyết định gì cả. Toàn bộ luật — đã đọc hết trang
- * chưa, sách đã xuất bản chưa, kệ cha đã xuất bản chưa, trao vật phẩm nào, quyển kế
- * tiếp đã mở chưa — nằm trong `public.complete_book`, một hàm SECURITY DEFINER.
+ * chưa, sách đã xuất bản chưa, kệ cha đã xuất bản chưa, trả lời đúng chưa, trao vật
+ * phẩm nào, quyển kế tiếp đã mở chưa — nằm trong `public.complete_book`, một hàm
+ * SECURITY DEFINER.
  *
  * Lý do không chuyển luật đó lên đây: role `chronoshelf_auth` KHÔNG có quyền ghi
  * `user_items`, nên kể cả khi ai đó viết logic trao vật phẩm ở tầng Node thì nó cũng
- * không chạy được. Cửa duy nhất là hàm kia, và cửa đó tự kiểm tra lại mọi điều kiện.
+ * không chạy được. Riêng việc CHẤM BÀI thì còn chặt hơn một bậc — đáp án không có
+ * `GRANT SELECT` cho role nào của ứng dụng, nên tầng Node không đọc nổi nó để mà chấm.
  */
 export async function POST(req: Request): Promise<Response> {
   const userId = await getSessionUserId();
   if (!userId) return fail("Cần đăng nhập để ghi nhận kết quả đọc.", 401);
 
-  const bookSlug = str(await readJson(req), "bookSlug", 200);
+  const body = await readJson(req);
+  const bookSlug = str(body, "bookSlug", 200);
   if (!bookSlug) return fail("Thiếu bookSlug.");
 
   try {
     const rows = await withRole(userId, (t) =>
       sequelize.query<{ complete_book: CompleteBookResult }>(
-        "SELECT public.complete_book($1) AS complete_book",
-        { bind: [bookSlug], transaction: t, type: QueryTypes.SELECT },
+        "SELECT public.complete_book($1, $2::smallint[]) AS complete_book",
+        { bind: [bookSlug, readAnswers(body)], transaction: t, type: QueryTypes.SELECT },
       ),
     );
     return ok(rows[0].complete_book);

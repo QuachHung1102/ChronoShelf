@@ -1,4 +1,5 @@
--- Chốt hoàn thành một quyển sách: trao vật phẩm và cho biết quyển kế tiếp đã mở chưa.
+-- Chốt hoàn thành một quyển sách: chấm bài trắc nghiệm, trao vật phẩm và cho biết quyển
+-- kế tiếp đã mở chưa.
 --
 -- Tách làm hai hàm: `_complete_book_for` nhận user_id tường minh nên kiểm được bằng
 -- fixture mà không cần dựng phiên đăng nhập giả, còn `complete_book` là cửa duy nhất
@@ -7,7 +8,18 @@
 -- BẢO MẬT: `_complete_book_for` KHÔNG ĐƯỢC cấp EXECUTE cho role nào cả — ai gọi được
 -- nó với user_id tùy ý là tự phát vật phẩm cho mình.
 
-CREATE OR REPLACE FUNCTION public._complete_book_for(p_user_id uuid, p_book_slug text)
+-- Chữ ký ĐỔI ngày 2026-09-07 (thêm `p_answers`). Phải DROP chứ không `CREATE OR REPLACE`
+-- được: thêm tham số là tạo ra một hàm NẠP CHỒNG, và bản hai-tham-số cũ sẽ ở lại như một
+-- cửa thứ hai trao vật phẩm mà KHÔNG chấm bài. Hai file này chạy lặp được nên DROP …
+-- IF EXISTS là an toàn.
+DROP FUNCTION IF EXISTS public.complete_book(text);
+DROP FUNCTION IF EXISTS public._complete_book_for(uuid, text);
+
+CREATE OR REPLACE FUNCTION public._complete_book_for(
+  p_user_id  uuid,
+  p_book_slug text,
+  p_answers  smallint[]
+)
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -18,15 +30,17 @@ DECLARE
   v_page_count        integer;
   v_progress          RECORD;
   v_already_completed boolean := false;
+  v_wrong             bigint[];
   v_next              RECORD;
   v_has_next          boolean := false;
   v_next_unlocked     boolean := false;
 BEGIN
-  -- PHẠM VI: bốn phép kiểm dưới đây là TOÀN BỘ những gì hàm này bảo đảm — đã đăng nhập,
-  -- sách và kệ đều published, sách có trang, và đã đọc đủ số trang. KHÔNG có phép kiểm nào
-  -- ép thứ tự đọc: gọi thẳng quyển cuối kệ khi `user_items` còn rỗng vẫn được trao thưởng
-  -- (đo ngày 2026-08-29). Chuỗi khóa/mở chỉ là chuyện hiển thị, do `resolveState` ở
-  -- `lib/api/unlock.ts` lo, và nội dung quyển "bị khóa" vốn đã công khai.
+  -- PHẠM VI: năm phép kiểm dưới đây là TOÀN BỘ những gì hàm này bảo đảm — đã đăng nhập,
+  -- sách và kệ đều published, sách có trang, đã đọc đủ số trang, và trả lời đúng hết bài
+  -- trắc nghiệm nếu quyển đó có. KHÔNG có phép kiểm nào ép thứ tự đọc: gọi thẳng quyển
+  -- cuối kệ khi `user_items` còn rỗng vẫn được trao thưởng (đo ngày 2026-08-29). Chuỗi
+  -- khóa/mở chỉ là chuyện hiển thị, do `resolveState` ở `lib/api/unlock.ts` lo, và nội
+  -- dung quyển "bị khóa" vốn đã công khai.
   --
   -- ĐỪNG "vá" bằng cách đòi vật phẩm thưởng của quyển liền trước. Nó vừa không chặn được —
   -- kẻ gian chỉ cần duyệt kệ theo thứ tự, mỗi bước tự trao chìa khóa cho bước sau — vừa đẻ
@@ -74,6 +88,47 @@ BEGIN
       RAISE EXCEPTION 'Book not finished yet (page % of %)', v_progress.current_page, v_page_count;
     END IF;
 
+    -- Chấm bài trắc nghiệm (content.md §4.3). Đây là chỗ DUY NHẤT trong sản phẩm đọc
+    -- `correct_index`; không role nào SELECT được cột đó (GRANT theo cột ở
+    -- `05-content-rls.sql`), nên không có đường nào chấm bài ở tầng Node kể cả khi ai đó
+    -- muốn.
+    --
+    -- Đối chiếu theo THỨ TỰ (`row_number`), không theo giá trị `position`: xóa một câu
+    -- để lại lỗ thủng trong `position` (y như `pages`), mà client thì gửi về một mảng
+    -- song song với danh sách câu hỏi nó nhận được. Neo vào `position` là lệch chỉ số
+    -- ngay lần admin xóa câu hỏi đầu tiên.
+    --
+    -- Quyển KHÔNG có câu hỏi nào: `array_agg` trên không dòng trả NULL, `coalesce` biến
+    -- thành mảng rỗng, và nhánh dưới không chạy — 13 quyển đang xuất bản giữ nguyên
+    -- hành vi cũ, không cần trường hợp đặc biệt.
+    --
+    -- `p_answers` NULL hoặc ngắn hơn số câu: phần tử thiếu là NULL, `IS DISTINCT FROM`
+    -- cho ra "sai". Bỏ trống là sai, không phải là được bỏ qua.
+    SELECT coalesce(array_agg(q.n ORDER BY q.n), '{}')
+      INTO v_wrong
+      FROM (SELECT correct_index, row_number() OVER (ORDER BY position) AS n
+              FROM public.book_questions
+             WHERE book_slug = p_book_slug) q
+     WHERE q.correct_index IS DISTINCT FROM p_answers[q.n::int];
+
+    IF array_length(v_wrong, 1) IS NOT NULL THEN
+      -- RETURN, KHÔNG `RAISE EXCEPTION`: exception hủy cả transaction của request, và
+      -- luật đó đã được ghi bằng máu ở CLAUDE.md (bộ đếm OTP vĩnh viễn bằng 0). Ở đây
+      -- chưa ghi gì nên chưa mất gì — nhưng nếu ngày nào thêm việc đếm số lần làm bài
+      -- thì lần ghi đó cũng sẽ bị cuốn theo. Trả về là hình dạng đúng ngay từ đầu.
+      --
+      -- CỐ Ý không giới hạn số lần thử: đây là hàng rào SƯ PHẠM, không phải hàng rào
+      -- bảo mật — nội dung sách vốn công khai và đáp án đoán được bằng cách thử. Nó tồn
+      -- tại để học sinh phải quay lại đọc, không phải để chống kẻ gian.
+      RETURN jsonb_build_object(
+        'quizPassed',      false,
+        'wrongPositions',  to_jsonb(v_wrong),
+        'alreadyCompleted', false,
+        'grantedItemSlug', null,
+        'nextBook',        null
+      );
+    END IF;
+
     UPDATE public.user_book_progress
        SET completed = true, completed_at = now()
      WHERE user_id = p_user_id AND book_slug = p_book_slug;
@@ -100,6 +155,8 @@ BEGIN
   END IF;
 
   RETURN jsonb_build_object(
+    'quizPassed',       true,
+    'wrongPositions',   '[]'::jsonb,
     'alreadyCompleted', v_already_completed,
     'grantedItemSlug',  v_book.reward_item_slug,
     'nextBook',
@@ -110,15 +167,15 @@ BEGIN
 END;
 $fn$;
 
-CREATE OR REPLACE FUNCTION public.complete_book(p_book_slug text)
+CREATE OR REPLACE FUNCTION public.complete_book(p_book_slug text, p_answers smallint[])
 RETURNS jsonb
 LANGUAGE sql
 SECURITY DEFINER
 SET search_path = public, app
-AS $w$ SELECT public._complete_book_for(app.current_user_id(), p_book_slug) $w$;
+AS $w$ SELECT public._complete_book_for(app.current_user_id(), p_book_slug, p_answers) $w$;
 
-REVOKE ALL ON FUNCTION public._complete_book_for(uuid, text)
+REVOKE ALL ON FUNCTION public._complete_book_for(uuid, text, smallint[])
   FROM PUBLIC, chronoshelf_anon, chronoshelf_auth, chronoshelf_app;
-REVOKE ALL ON FUNCTION public.complete_book(text)
+REVOKE ALL ON FUNCTION public.complete_book(text, smallint[])
   FROM PUBLIC, chronoshelf_anon, chronoshelf_app;
-GRANT EXECUTE ON FUNCTION public.complete_book(text) TO chronoshelf_auth;
+GRANT EXECUTE ON FUNCTION public.complete_book(text, smallint[]) TO chronoshelf_auth;

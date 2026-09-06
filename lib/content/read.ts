@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { Op } from "sequelize";
-import { Book, Item, Lesson, Page, Shelf, UserItem } from "@/lib/db/models";
+import { Book, BookQuestion, Item, Lesson, Page, Shelf, UserItem } from "@/lib/db/models";
 import { withRole } from "@/lib/db/tx";
 import { getSessionUserId } from "@/lib/auth/session";
 import type { ContentBook, ContentItem, ContentPage, ContentShelf } from "./types";
@@ -41,8 +41,13 @@ function toPage(row: Page): ContentPage {
   };
 }
 
-function toBook(row: Book, baiGiangTheoSach: Map<string, ContentBook["baiGiang"]>): ContentBook {
+function toBook(
+  row: Book,
+  baiGiangTheoSach: Map<string, ContentBook["baiGiang"]>,
+  cauHoiTheoSach: Map<string, ContentBook["cauHoi"]>,
+): ContentBook {
   return {
+    cauHoi: cauHoiTheoSach.get(row.slug) ?? [],
     baiGiang: baiGiangTheoSach.get(row.slug) ?? [],
     published: row.published,
     slug: row.slug,
@@ -115,6 +120,27 @@ export const readShelf = cache(async function readShelf(slug: string): Promise<C
       baiGiangTheoSach.set(l.bookSlug, ds);
     }
 
+    // Câu hỏi trắc nghiệm: truy vấn RIÊNG chứ không `include` vào truy vấn kệ ở trên.
+    // Hai `hasMany` trên cùng một truy vấn (pages + câu hỏi) cho ra tích Descartes, tức
+    // thân mỗi trang sách — vài nghìn chữ — bị nhân lên theo số câu hỏi của quyển đó.
+    // Vẫn tuần tự trong cùng transaction, cùng lý do như hai truy vấn trên.
+    //
+    // Model `BookQuestion` KHÔNG khai cột `correct_index`, nên câu SELECT Sequelize sinh
+    // ra không bao giờ chạm tới nó. Nếu ai đó thêm cột đó vào model, truy vấn này sẽ NỔ
+    // với `permission denied for table book_questions` thay vì âm thầm rò đáp án.
+    const questions = await BookQuestion.findAll({
+      where: { bookSlug: { [Op.in]: (shelf.books ?? []).map((b) => b.slug) } },
+      order: [["position", "ASC"]],
+      transaction: t,
+    });
+
+    const cauHoiTheoSach = new Map<string, ContentBook["cauHoi"]>();
+    for (const q of questions) {
+      const ds = cauHoiTheoSach.get(q.bookSlug) ?? [];
+      ds.push({ prompt: q.prompt, choices: q.choices });
+      cauHoiTheoSach.set(q.bookSlug, ds);
+    }
+
     return {
       slug: shelf.slug,
       name: shelf.name,
@@ -125,7 +151,7 @@ export const readShelf = cache(async function readShelf(slug: string): Promise<C
       coverSource: shelf.coverSource,
       coverCredit: shelf.coverCredit,
       items: items.map(toItem),
-      books: byPosition(shelf.books ?? []).map((b) => toBook(b, baiGiangTheoSach)),
+      books: byPosition(shelf.books ?? []).map((b) => toBook(b, baiGiangTheoSach, cauHoiTheoSach)),
     };
   });
 });

@@ -10,6 +10,7 @@ import type { ContentPage, ContentShelf } from "@/lib/content/types";
 import type { CompleteBookResult } from "@/lib/api/types";
 import { BookPage } from "./BookPage";
 import { ItemDropOverlay } from "./ItemDropOverlay";
+import { QuizPanel } from "./QuizPanel";
 import s from "./reader.module.scss";
 
 const ROUND_BUTTON =
@@ -123,12 +124,15 @@ export function BookReaderModal({
   shelf,
   bookSlug,
   startPage,
+  daHoanThanh,
   onClose,
 }: {
   shelf: ContentShelf;
   bookSlug: string;
   /** Trang nội dung đang đọc dở lấy từ tiến độ đã lưu (đánh số từ 1). */
   startPage: number;
+  /** Quyển này đã hoàn thành trước đó — bỏ qua bài kiểm tra, xem chú thích ở nơi truyền vào. */
+  daHoanThanh: boolean;
   onClose: () => void;
 }) {
   const book = findBook(shelf, bookSlug);
@@ -150,6 +154,12 @@ export function BookReaderModal({
   const [error, setError] = useState<string | null>(null);
   // Chưa đăng nhập thì "Thử lại" chẳng sửa được gì — chỗ đó phải là lối sang trang đăng nhập.
   const [needsLogin, setNeedsLogin] = useState(false);
+  // Bài kiểm tra cuối sách (content.md §4.3). Quyển không có câu hỏi, hoặc quyển đã hoàn
+  // thành từ trước, thì không bao giờ mở màn này — `complete_book` cũng bỏ qua phần chấm
+  // bài trong cả hai trường hợp đó, nên giao diện và máy chủ nói cùng một chuyện.
+  const coBaiKiemTra = book.cauHoi.length > 0 && !daHoanThanh;
+  const [quizOpen, setQuizOpen] = useState(false);
+  const [wrongPositions, setWrongPositions] = useState<number[]>([]);
 
   const reduced = useReducedMotion();
   const currentPage = pagesSeen(faces, flipped);
@@ -209,16 +219,22 @@ export function BookReaderModal({
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (result) return;
+      // `quizOpen` cũng phải chặn: hai phím mũi tên là cách di chuyển giữa các lựa chọn
+      // trong một nhóm radio, nên để nguyên thì mỗi lần học sinh đổi đáp án bằng bàn phím
+      // là quyển sách phía sau lật thêm một trang.
+      if (result || quizOpen) return;
       if (event.key === "ArrowRight") flip("next");
       if (event.key === "ArrowLeft") flip("previous");
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [flip, result]);
+  }, [flip, result, quizOpen]);
 
   // Không bọc useCallback: chỉ dùng trong onClick, và React Compiler tự lo phần ghi nhớ.
-  async function finish() {
+  //
+  // `answers` song song với `book.cauHoi`; mảng rỗng khi quyển không có bài kiểm tra.
+  // Máy chủ chấm, không phải chỗ này — đáp án chưa từng rời khỏi database.
+  async function finish(answers: number[]) {
     setBusy(true);
     setError(null);
     setNeedsLogin(false);
@@ -228,9 +244,19 @@ export function BookReaderModal({
       if (!(await setCurrentPage(bookSlug, pageCount))) {
         setNeedsLogin(true);
         setError("Bạn cần đăng nhập để lưu tiến độ và nhận vật phẩm.");
+        // Đóng bài kiểm tra lại: lối sang trang đăng nhập nằm ở khối lỗi của màn đọc,
+        // và làm xong bài cũng vô ích khi chưa có tài khoản để ghi kết quả vào.
+        setQuizOpen(false);
         return;
       }
-      setResult(await completeBook(bookSlug));
+      const res = await completeBook(bookSlug, answers);
+      if (!res.quizPassed) {
+        // Ở lại màn bài kiểm tra: `QuizPanel` đánh dấu đúng những câu sai và giữ nguyên
+        // các câu đã trả lời đúng. Không đặt `result` — chưa có vật phẩm nào rơi ra.
+        setWrongPositions(res.wrongPositions);
+        return;
+      }
+      setResult(res);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Không ghi nhận được kết quả đọc.");
     } finally {
@@ -288,6 +314,18 @@ export function BookReaderModal({
           <div className="flex flex-1 items-center justify-center">
             <ItemDropOverlay result={result} shelf={shelf} book={book} onClose={close} />
           </div>
+        ) : quizOpen ? (
+          // Bài kiểm tra THAY CHỖ quyển sách chứ không phủ lên trên: nó là trang cuối
+          // cùng của quyển, và một lớp phủ nữa bên trong một `<dialog>` đã modal sẵn chỉ
+          // đẻ thêm một tầng bẫy focus không ai cần.
+          <QuizPanel
+            cauHoi={book.cauHoi}
+            wrongPositions={wrongPositions}
+            busy={busy}
+            error={error}
+            onSubmit={(answers) => void finish(answers)}
+            onBack={() => setQuizOpen(false)}
+          />
         ) : (
           // Sách và ruy băng tiến độ là MỘT khối căn giữa. Trước đây ruy băng bị ghim đáy
           // màn hình, cách quyển sách cả trăm pixel, nên nó đọc ra như thanh trạng thái
@@ -412,14 +450,20 @@ export function BookReaderModal({
                     Mở sách
                   </button>
                 ) : atLastPage ? (
+                  // Nhãn nói ĐÚNG chuyện sắp xảy ra: hứa "nhận vật phẩm" rồi mở ra một bài
+                  // kiểm tra là đúng loại bất ngờ làm người dùng mất tin vào nút bấm.
                   <button
                     key="doc-xong"
                     type="button"
-                    onClick={finish}
+                    onClick={coBaiKiemTra ? () => setQuizOpen(true) : () => void finish([])}
                     disabled={busy}
                     className={PILL_BUTTON}
                   >
-                    {busy ? "Đang ghi nhận…" : "Đọc xong — nhận vật phẩm"}
+                    {busy
+                      ? "Đang ghi nhận…"
+                      : coBaiKiemTra
+                        ? "Đọc xong — làm bài kiểm tra"
+                        : "Đọc xong — nhận vật phẩm"}
                   </button>
                 ) : null}
               </div>
@@ -453,7 +497,12 @@ export function BookReaderModal({
                     type="button"
                     onClick={() => {
                       setError(null);
-                      void finish();
+                      // Khối lỗi này chỉ hiện ở màn ĐỌC, tức bài kiểm tra đang đóng. Với
+                      // quyển CÓ bài kiểm tra, "thử lại" phải là mở lại bài — nộp thẳng
+                      // mảng rỗng thì máy chủ chấm trượt và học sinh không thấy màn nào
+                      // giải thích vì sao.
+                      if (coBaiKiemTra) setQuizOpen(true);
+                      else void finish([]);
                     }}
                     disabled={busy}
                     className="rounded-sm underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-on-destructive"

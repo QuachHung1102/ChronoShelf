@@ -93,6 +93,22 @@ for (const shelf of shelves) {
           `${q(page.image)}, ${q(page.caption)}, ${qArray(page.summary)});`,
       );
     });
+
+    // Bài trắc nghiệm cuối sách (content.md §4.3). Cùng cách giữ idempotent như `pages`:
+    // xóa sạch rồi chèn lại, vì (book_slug, position) là khóa tự nhiên duy nhất.
+    //
+    // `correct` trong JSON là CHỈ SỐ 0-based trong mảng `choices`, không phải bản sao
+    // chuỗi đáp án — đúng thứ database lưu, nên không có bước dịch nào để mà dịch sai.
+    out.push(`DELETE FROM public.book_questions WHERE book_slug = ${q(book.slug)};`);
+
+    (book.questions ?? []).forEach((cauHoi, k) => {
+      out.push(
+        `INSERT INTO public.book_questions\n` +
+          `  (book_slug, position, prompt, choices, correct_index) VALUES\n` +
+          `  (${q(book.slug)}, ${k + 1}, ${q(cauHoi.prompt)}, ` +
+          `${qArray(cauHoi.choices)}, ${Number(cauHoi.correct)});`,
+      );
+    });
   });
 }
 
@@ -148,12 +164,14 @@ try {
     "SELECT (SELECT count(*) FROM public.shelves) AS shelves," +
       " (SELECT count(*) FROM public.items) AS items," +
       " (SELECT count(*) FROM public.books) AS books," +
-      " (SELECT count(*) FROM public.pages) AS pages",
+      " (SELECT count(*) FROM public.pages) AS pages," +
+      " (SELECT count(*) FROM public.book_questions) AS questions",
   );
   const c = rows[0];
   console.log(
     "Seed xong: " + c.shelves + " kệ, " + c.items + " vật phẩm, " +
-      c.books + " sách (kể cả 1 mồi nhử chưa xuất bản), " + c.pages + " trang.",
+      c.books + " sách (kể cả 1 mồi nhử chưa xuất bản), " + c.pages + " trang, " +
+      c.questions + " câu hỏi.",
   );
 } catch (e) {
   await client.query("ROLLBACK").catch(() => {});

@@ -579,8 +579,9 @@ console.log("\n-- complete_book khi CHƯA đăng nhập --");
 // một trạng thái được coi là "quyền còn nguyên" — đúng 42501 VÀ đúng thông điệp
 // "permission denied for function" — mọi thứ khác là rò rỉ.
 for (const [name, fn] of [
-  ["complete_book", "SELECT public.complete_book('khoi-nguon-bo-coi')"],
-  ["_complete_book_for", `SELECT public._complete_book_for('${userA}', 'khoi-nguon-bo-coi')`],
+  ["complete_book", "SELECT public.complete_book('khoi-nguon-bo-coi', '{}'::smallint[])"],
+  ["_complete_book_for",
+   `SELECT public._complete_book_for('${userA}', 'khoi-nguon-bo-coi', '{}'::smallint[])`],
 ]) {
   try {
     await asRole("chronoshelf_anon", null, [fn]);
@@ -590,6 +591,155 @@ for (const [name, fn] of [
     const intact = e.code === "42501" && e.message.startsWith("permission denied for function");
     check(intact, `người chưa đăng nhập không gọi được ${name}`,
       `chờ 42501 "permission denied for function…", nhận ${e.code} "${e.message}"`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Bai trac nghiem cuoi sach (content.md §4.3)
+// ---------------------------------------------------------------------------
+console.log("\n-- Bài trắc nghiệm cuối sách --");
+
+// Hàng rào ở đây là GRANT THEO CỘT, nên thông điệp đúng là "permission denied for
+// table" — giống `user_items`, khác bốn bảng nội dung (ở đó policy mới là hàng rào).
+// Chuỗi này ĐÃ ĐO trên PostgreSQL 18 ngày 2026-09-07: kể cả khi chỉ hỏi đúng một cột
+// bị cấm, PG vẫn báo theo BẢNG chứ không theo cột. Đổi thành "for column" nghĩa là
+// hình dạng thông điệp đã đổi, không phải hàng rào hỏng — đo lại rồi sửa hằng số này.
+for (const [name, sql] of [
+  ["đọc thẳng correct_index", "SELECT correct_index FROM public.book_questions"],
+  ["SELECT * (đường vô ý hay gặp nhất)", "SELECT * FROM public.book_questions"],
+]) {
+  await denied(`người đã đăng nhập KHÔNG ${name}`, "chronoshelf_auth", sql,
+    "permission denied for table book_questions");
+}
+
+// Đối chứng bắt buộc: REVOKE quá tay cũng làm hai phép trên xanh, trong khi trình đọc
+// không hiện được câu hỏi nào và bài kiểm tra biến mất khỏi sản phẩm.
+try {
+  await asRoleUndo("chronoshelf_auth", userA, [
+    "SELECT id, book_slug, position, prompt, choices FROM public.book_questions",
+  ]);
+  ok("đối chứng: đọc ĐƯỢC câu hỏi và các lựa chọn (GRANT theo cột còn nguyên)");
+} catch (e) {
+  bad("đối chứng: đọc ĐƯỢC câu hỏi và các lựa chọn (GRANT theo cột còn nguyên)",
+    `${e.code} "${e.message}"`);
+}
+
+// `admin_book_questions` là cửa DUY NHẤT đọc được đáp án. Nó SECURITY DEFINER nên tự bỏ
+// qua RLS — thứ chặn người thường là dòng `is_admin()` bên trong, và đây là phép đo nó.
+{
+  const name = "người thường gọi admin_book_questions KHÔNG đọc được đáp án";
+  try {
+    await asRoleUndo("chronoshelf_auth", userA, [
+      "SELECT * FROM public.admin_book_questions('khoi-nguon-bo-coi')",
+    ]);
+    bad(name, "ĐỌC ĐƯỢC — đáp án của mọi quyển lộ cho bất kỳ ai đã đăng nhập");
+  } catch (e) {
+    check(e.code === "P0001" && e.message.includes("chỉ admin"), name,
+      `chờ P0001 "…chỉ admin…", nhận ${e.code} "${e.message}"`);
+  }
+}
+
+// Phép quan trọng nhất của cả mục: trả lời SAI thì KHÔNG có vật phẩm nào rơi ra.
+//
+// Cả khối nằm trong MỘT transaction rồi ROLLBACK, nên câu hỏi thử và vật phẩm vừa trao
+// đều biến mất. `complete_book` là SECURITY DEFINER nhưng vẫn chạy trong transaction
+// của người gọi, nên ROLLBACK dọn được cả phần nó ghi.
+{
+  const SLUG = "khoi-nguon-bo-coi";
+  const name0 = "chuẩn bị: dựng bài trắc nghiệm hai câu cho một quyển thật";
+  await c.query("BEGIN");
+  try {
+    await c.query("SET LOCAL ROLE chronoshelf_auth");
+
+    // Dọn sạch câu hỏi CÓ SẴN của quyển này trước khi chèn hai câu thử. Không có bước
+    // này thì `row_number()` đếm cả câu do seed tạo ra và mảng đáp án bên dưới lệch chỉ
+    // số — phép kiểm sẽ hỏng theo nội dung, chứ không theo hàng rào.
+    await c.query("SELECT set_config('app.user_id', $1, true)", [ADMIN_DECOY]);
+    await c.query("DELETE FROM public.book_questions WHERE book_slug = $1", [SLUG]);
+    await c.query(
+      `INSERT INTO public.book_questions (book_slug, position, prompt, choices, correct_index)
+       VALUES ($1, 1, 'Câu thử 1?', ARRAY['sai','ĐÚNG'], 1),
+              ($1, 2, 'Câu thử 2?', ARRAY['ĐÚNG','sai','sai'], 0)`,
+      [SLUG],
+    );
+    ok(name0);
+
+    // Người học: đã lật tới trang cuối, chưa hoàn thành.
+    await c.query("SELECT set_config('app.user_id', $1, true)", [userA]);
+    await c.query(
+      `INSERT INTO public.user_book_progress (user_id, book_slug, current_page)
+            SELECT $1, $2, (SELECT count(*) FROM public.pages WHERE book_slug = $2)
+       ON CONFLICT (user_id, book_slug) DO UPDATE SET current_page = EXCLUDED.current_page`,
+      [userA, SLUG],
+    );
+
+    const goi = async (answers) =>
+      (await c.query("SELECT public.complete_book($1, $2::smallint[]) AS r", [SLUG, answers]))
+        .rows[0].r;
+    const soVatPham = async () =>
+      Number(
+        (await c.query("SELECT count(*) AS n FROM public.user_items WHERE user_id = $1", [userA]))
+          .rows[0].n,
+      );
+
+    const truoc = await soVatPham();
+
+    // 1) Sai cả hai câu.
+    const sai = await goi([0, 1]);
+    check(sai.quizPassed === false && sai.grantedItemSlug === null,
+      "trả lời SAI: không trao vật phẩm",
+      `nhận ${JSON.stringify(sai)}`);
+    check(JSON.stringify(sai.wrongPositions) === "[1,2]",
+      "trả lời SAI: chỉ đúng hai câu sai để học sinh biết đọc lại chỗ nào",
+      `wrongPositions=${JSON.stringify(sai.wrongPositions)}, chờ [1,2]`);
+
+    // 2) Đúng một câu, sai một câu — "gần đúng" vẫn là chưa đạt.
+    const nua = await goi([1, 1]);
+    check(nua.quizPassed === false && JSON.stringify(nua.wrongPositions) === "[2]",
+      "đúng một nửa vẫn KHÔNG được trao vật phẩm",
+      `nhận ${JSON.stringify(nua)}`);
+
+    // 3) Bỏ trống (mảng rỗng) là SAI, không phải là được bỏ qua. Đây là đường đi tự
+    //    nhiên nhất của một client cũ chưa biết gì về bài kiểm tra.
+    const trong = await goi([]);
+    check(trong.quizPassed === false && JSON.stringify(trong.wrongPositions) === "[1,2]",
+      "không trả lời gì: tính là sai, không phải là miễn bài",
+      `nhận ${JSON.stringify(trong)}`);
+
+    check((await soVatPham()) === truoc,
+      "sau ba lần trượt: túi vật phẩm KHÔNG hề nhúc nhích",
+      "một lần trượt vẫn kịp trao vật phẩm — hàng rào vô nghĩa");
+
+    // 4) Đúng hết mới trao.
+    const dung = await goi([1, 0]);
+    check(dung.quizPassed === true && dung.grantedItemSlug !== null,
+      "trả lời ĐÚNG HẾT: mới trao vật phẩm",
+      `nhận ${JSON.stringify(dung)}`);
+    check((await soVatPham()) === truoc + 1,
+      "trả lời ĐÚNG HẾT: túi vật phẩm tăng đúng một",
+      `${truoc} → ${await soVatPham()}`);
+
+    // 5) Quyển KHÔNG có câu hỏi nào vẫn hoàn thành được như trước — 13 quyển đang xuất
+    //    bản đều đang ở trạng thái này, nên đây không phải trường hợp hiếm.
+    await c.query("SELECT set_config('app.user_id', $1, true)", [ADMIN_DECOY]);
+    await c.query("DELETE FROM public.book_questions WHERE book_slug = $1", [SLUG]);
+    await c.query("SELECT set_config('app.user_id', $1, true)", [userB]);
+    await c.query(
+      `INSERT INTO public.user_book_progress (user_id, book_slug, current_page)
+            SELECT $1, $2, (SELECT count(*) FROM public.pages WHERE book_slug = $2)
+       ON CONFLICT (user_id, book_slug) DO UPDATE SET current_page = EXCLUDED.current_page`,
+      [userB, SLUG],
+    );
+    const khongCauHoi = (
+      await c.query("SELECT public.complete_book($1, '{}'::smallint[]) AS r", [SLUG])
+    ).rows[0].r;
+    check(khongCauHoi.quizPassed === true && khongCauHoi.grantedItemSlug !== null,
+      "quyển KHÔNG có câu hỏi: vẫn trao vật phẩm như trước",
+      `nhận ${JSON.stringify(khongCauHoi)}`);
+  } catch (e) {
+    bad("bài trắc nghiệm chặn được việc trao vật phẩm", `${e.code} "${e.message}"`);
+  } finally {
+    await c.query("ROLLBACK").catch(() => {});
   }
 }
 

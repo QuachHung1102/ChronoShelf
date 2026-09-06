@@ -165,6 +165,40 @@ Page.init(
   { ...base, tableName: "pages" },
 );
 
+/**
+ * Câu hỏi trắc nghiệm cuối sách (content.md §4.3).
+ *
+ * **`correctIndex` CỐ Ý KHÔNG CÓ MẶT ở đây, và đừng thêm vào.** `chronoshelf_anon` /
+ * `chronoshelf_auth` chỉ có `GRANT SELECT` trên năm cột dưới đây; khai thêm cột đáp án
+ * là mọi `findAll` của model này liệt kê nó trong câu SELECT và Postgres trả
+ * `permission denied for table book_questions` — hỏng TO và hỏng NGAY, đúng kiểu fail
+ * đóng mà `withRole` dựa vào.
+ *
+ * Đáp án chỉ có hai đường ra khỏi database: `complete_book` (chấm bài, SECURITY
+ * DEFINER) và `admin_book_questions` (màn soạn thảo, tự kiểm `is_admin()`). Cả hai đều
+ * không đi qua model này.
+ */
+export class BookQuestion extends Model<
+  InferAttributes<BookQuestion>,
+  InferCreationAttributes<BookQuestion>
+> {
+  declare id: CreationOptional<string>;
+  declare bookSlug: string;
+  declare position: number;
+  declare prompt: string;
+  declare choices: string[];
+}
+BookQuestion.init(
+  {
+    id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
+    bookSlug: { type: DataTypes.TEXT, allowNull: false },
+    position: { type: DataTypes.INTEGER, allowNull: false },
+    prompt: { type: DataTypes.TEXT, allowNull: false },
+    choices: { type: DataTypes.ARRAY(DataTypes.TEXT), allowNull: false },
+  },
+  { ...base, tableName: "book_questions" },
+);
+
 export class UserBookProgress extends Model<
   InferAttributes<UserBookProgress>,
   InferCreationAttributes<UserBookProgress>
@@ -321,6 +355,11 @@ Shelf.hasMany(Book, { foreignKey: "shelfSlug", sourceKey: "slug", as: "books" })
 Book.belongsTo(Shelf, { foreignKey: "shelfSlug", targetKey: "slug", as: "shelf" });
 Book.hasMany(Page, { foreignKey: "bookSlug", sourceKey: "slug", as: "pages" });
 Page.belongsTo(Book, { foreignKey: "bookSlug", targetKey: "slug", as: "book" });
+// Chỉ khai chiều `belongsTo`, giống `Lesson`: câu hỏi được đọc bằng MỘT truy vấn riêng
+// chứ không `include` vào truy vấn kệ. Hai `hasMany` cùng lúc trên `Book` (pages +
+// câu hỏi) làm Sequelize sinh một phép nhân Descartes — thân mỗi trang sách dài vài
+// nghìn chữ sẽ bị nhân lên theo số câu hỏi.
+BookQuestion.belongsTo(Book, { foreignKey: "bookSlug", targetKey: "slug", as: "book" });
 Book.belongsTo(Item, { foreignKey: "rewardItemSlug", targetKey: "slug", as: "rewardItem" });
 
 Lesson.belongsTo(Book, { foreignKey: "bookSlug", targetKey: "slug", as: "book" });

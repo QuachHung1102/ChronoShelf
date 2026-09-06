@@ -78,6 +78,38 @@
             "Tiền chỉ có giá trị chừng nào mọi người còn cùng tin vào nó."
           ]
         }
+      ],
+      "questions": [
+        {
+          "prompt": "Vì sao cách đổi hàng lấy hàng khó dùng?",
+          "choices": [
+            "Vì hàng hóa quá nặng để mang đi xa",
+            "Vì nhà nước thời đó cấm trao đổi",
+            "Vì nó chỉ chạy được khi hai bên tình cờ cần đúng thứ của nhau",
+            "Vì chưa ai biết cách đếm số lượng"
+          ],
+          "correct": 2
+        },
+        {
+          "prompt": "Đồng tiền đầu tiên của nước ta tên là gì, đúc dưới thời nào?",
+          "choices": [
+            "Thông bảo hội sao, thời Hồ Quý Ly",
+            "Giao tử, thời Tống",
+            "Quang Trung thông bảo, thời Tây Sơn",
+            "Thái Bình hưng bảo, thời Đinh Tiên Hoàng"
+          ],
+          "correct": 3
+        },
+        {
+          "prompt": "Vì sao cải cách tiền giấy năm 1396 của Hồ Quý Ly thất bại?",
+          "choices": [
+            "Dân không tin tờ giấy bằng tin đồng kim loại",
+            "Nhà nước không đủ giấy để in",
+            "Tiền giấy gặp mưa là hỏng hết",
+            "Quân Minh chiếm mất kho tiền"
+          ],
+          "correct": 0
+        }
       ]
     },
     {
@@ -120,6 +152,38 @@
             "FIFA lập năm 1904; World Cup đầu tiên năm 1930 tại Uruguay.",
             "Môn này lan rộng nhất vì rẻ nhất: một khoảng đất và một quả bóng."
           ]
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "Bộ luật bóng đá thống nhất đầu tiên ra đời năm nào, ở đâu?",
+          "choices": [
+            "Năm 1904 tại Paris",
+            "Năm 1863 tại London",
+            "Năm 1930 tại Uruguay",
+            "Năm 1863 tại Roma"
+          ],
+          "correct": 1
+        },
+        {
+          "prompt": "Điều khoản nào trong bộ luật ấy tách bóng đá khỏi môn bóng bầu dục?",
+          "choices": [
+            "Quy định số cầu thủ mỗi đội",
+            "Đặt ra luật việt vị",
+            "Cấm dùng tay",
+            "Quy định kích thước sân"
+          ],
+          "correct": 2
+        },
+        {
+          "prompt": "Kỳ World Cup đầu tiên tổ chức năm nào và đội nào vô địch?",
+          "choices": [
+            "Năm 1930, đội chủ nhà Uruguay",
+            "Năm 1904, đội Anh",
+            "Năm 1930, đội Brazil",
+            "Năm 1950, đội chủ nhà Brazil"
+          ],
+          "correct": 0
         }
       ]
     },
@@ -164,6 +228,38 @@
             "Vải rẻ đi làm quần áo thành lựa chọn cá nhân, kèm theo cái giá về môi trường."
           ]
         }
+      ],
+      "questions": [
+        {
+          "prompt": "Vì sao ngày xưa nhìn trang phục từ xa là đoán được thân phận một người?",
+          "choices": [
+            "Vì mỗi làng có một kiểu áo riêng",
+            "Vì màu sắc và chất liệu bị quy định chặt theo tầng lớp",
+            "Vì chỉ người giàu mới biết dệt vải",
+            "Vì quần áo phải đăng ký với quan sở tại"
+          ],
+          "correct": 1
+        },
+        {
+          "prompt": "Chiếc áo ngũ thân thành lối mặc chung ở Đàng Trong sau lệnh y phục của ai?",
+          "choices": [
+            "Vua Gia Long, đầu thế kỷ XIX",
+            "Vua Minh Mạng, giữa thế kỷ XIX",
+            "Chúa Nguyễn Phúc Khoát, giữa thế kỷ XVIII",
+            "Họa sĩ Nguyễn Cát Tường, thập niên 1930"
+          ],
+          "correct": 2
+        },
+        {
+          "prompt": "Kiểu áo dài “Lemur” — hình dáng gần nhất với áo dài ngày nay — do ai đưa ra?",
+          "choices": [
+            "Họa sĩ Nguyễn Cát Tường, thập niên 1930",
+            "Chúa Nguyễn Phúc Khoát, thế kỷ XVIII",
+            "Một nhà may người Pháp, thập niên 1900",
+            "Vua Bảo Đại, thập niên 1940"
+          ],
+          "correct": 0
+        }
       ]
     },
     {
@@ -206,6 +302,38 @@
             "Edison dựng cả hệ thống điện, không chỉ cái bóng đèn.",
             "LED tốn khoảng một phần mười điện; LED xanh lam được trao Nobel Vật lý 2014."
           ]
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "Edison và Swan giải quyết chuyện sợi đốt cháy đứt bằng cách nào?",
+          "choices": [
+            "Dùng sợi đốt bằng vàng nguyên chất",
+            "Nhúng sợi đốt trong dầu",
+            "Hạ điện áp xuống thật thấp",
+            "Đặt sợi đốt trong bầu thủy tinh đã hút hết không khí"
+          ],
+          "correct": 3
+        },
+        {
+          "prompt": "Bóng đèn sợi đốt phí khoảng bao nhiêu phần điện năng thành nhiệt?",
+          "choices": [
+            "Khoảng 5%",
+            "Khoảng 50%",
+            "Khoảng 95%",
+            "Khoảng 10%"
+          ],
+          "correct": 2
+        },
+        {
+          "prompt": "Đèn LED màu nào mãi tới những năm 1990 mới làm được, mở đường cho ánh sáng trắng?",
+          "choices": [
+            "Xanh lam",
+            "Đỏ",
+            "Vàng",
+            "Lục"
+          ],
+          "correct": 0
         }
       ]
     }

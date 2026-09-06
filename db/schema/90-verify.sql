@@ -179,19 +179,89 @@ BEGIN
   RAISE NOTICE 'B. bảng nội dung OK';
 END $$;
 
+-- === B2. book_questions — bảng nội dung thứ năm, hàng rào là GRANT THEO CỘT ===
+--
+-- Tách khỏi vòng lặp ở B một cách CÓ CHỦ Ý: bốn bảng kia có GRANT SELECT cả bảng, bảng
+-- này thì không và không được có. `has_table_privilege(…, 'SELECT')` trả FALSE khi chỉ
+-- có quyền theo cột, nên gộp vào vòng lặp trên là khẳng định sai câu hỏi.
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_tables
+                  WHERE schemaname='public' AND tablename='book_questions' AND rowsecurity) THEN
+    RAISE EXCEPTION 'book_questions chưa tồn tại hoặc chưa bật RLS';
+  END IF;
+
+  -- Đây là khẳng định QUAN TRỌNG NHẤT của cả bài trắc nghiệm: đáp án không được rời khỏi
+  -- database. Cấp SELECT cả bảng (hoặc cấp riêng cột này) là một `SELECT *` vô ý trong
+  -- readShelf() đủ để in đáp án ra HTML.
+  IF has_column_privilege('chronoshelf_anon', 'public.book_questions', 'correct_index', 'SELECT')
+  OR has_column_privilege('chronoshelf_auth', 'public.book_questions', 'correct_index', 'SELECT') THEN
+    RAISE EXCEPTION 'correct_index ĐỌC ĐƯỢC từ role ứng dụng — bài trắc nghiệm chỉ còn là trang trí';
+  END IF;
+
+  -- Đối chứng bắt buộc: một lần REVOKE quá tay cũng làm phép trên xanh, trong khi trình
+  -- đọc không hiện được câu hỏi nào.
+  IF NOT has_column_privilege('chronoshelf_anon', 'public.book_questions', 'prompt', 'SELECT')
+  OR NOT has_column_privilege('chronoshelf_anon', 'public.book_questions', 'choices', 'SELECT')
+  OR NOT has_column_privilege('chronoshelf_auth', 'public.book_questions', 'prompt', 'SELECT') THEN
+    RAISE EXCEPTION 'không đọc được câu hỏi — trình đọc sẽ không hiện được bài trắc nghiệm nào';
+  END IF;
+
+  IF has_table_privilege('chronoshelf_anon', 'public.book_questions', 'INSERT') THEN
+    RAISE EXCEPTION 'người chưa đăng nhập ghi được book_questions';
+  END IF;
+  IF NOT has_table_privilege('chronoshelf_auth', 'public.book_questions', 'INSERT') THEN
+    RAISE EXCEPTION 'thiếu GRANT INSERT trên book_questions — admin thật cũng soạn câu hỏi hỏng';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies
+                  WHERE schemaname='public' AND tablename='book_questions' AND policyname='admin write'
+                    AND qual='is_admin()' AND with_check='is_admin()' AND cmd='ALL') THEN
+    RAISE EXCEPTION 'policy "admin write" trên book_questions thiếu, hoặc không còn là is_admin() ở CẢ USING lẫn WITH CHECK';
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint
+                  WHERE conname='book_questions_book_position_key' AND condeferrable AND condeferred) THEN
+    RAISE EXCEPTION 'book_questions_book_position_key không phải DEFERRABLE INITIALLY DEFERRED';
+  END IF;
+
+  -- Cửa duy nhất cho admin đọc đáp án. Nó SECURITY DEFINER nên tự bỏ qua RLS — mất
+  -- `is_admin()` bên trong là ai đăng nhập cũng đọc được đáp án của mọi quyển.
+  IF NOT EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+                  WHERE n.nspname='public' AND p.proname='admin_book_questions' AND p.prosecdef) THEN
+    RAISE EXCEPTION 'admin_book_questions thiếu, hoặc không còn là SECURITY DEFINER';
+  END IF;
+  IF pg_get_functiondef('public.admin_book_questions(text)'::regprocedure) NOT LIKE '%is_admin()%' THEN
+    RAISE EXCEPTION 'admin_book_questions không còn tự kiểm is_admin() — ai đăng nhập cũng đọc được đáp án';
+  END IF;
+  IF has_function_privilege('chronoshelf_anon', 'public.admin_book_questions(text)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'người chưa đăng nhập gọi được admin_book_questions';
+  END IF;
+
+  RAISE NOTICE 'B2. book_questions: đáp án không rời database OK';
+END $$;
+
 -- === C. complete_book và reorder ===
 DO $$
 BEGIN
-  IF has_function_privilege('chronoshelf_anon', 'public._complete_book_for(uuid, text)', 'EXECUTE')
-  OR has_function_privilege('chronoshelf_auth', 'public._complete_book_for(uuid, text)', 'EXECUTE')
-  OR has_function_privilege('chronoshelf_app',  'public._complete_book_for(uuid, text)', 'EXECUTE') THEN
+  IF has_function_privilege('chronoshelf_anon', 'public._complete_book_for(uuid, text, smallint[])', 'EXECUTE')
+  OR has_function_privilege('chronoshelf_auth', 'public._complete_book_for(uuid, text, smallint[])', 'EXECUTE')
+  OR has_function_privilege('chronoshelf_app',  'public._complete_book_for(uuid, text, smallint[])', 'EXECUTE') THEN
     RAISE EXCEPTION '_complete_book_for lộ EXECUTE — tự trao vật phẩm cho user bất kỳ được';
   END IF;
-  IF has_function_privilege('chronoshelf_anon', 'public.complete_book(text)', 'EXECUTE') THEN
+  IF has_function_privilege('chronoshelf_anon', 'public.complete_book(text, smallint[])', 'EXECUTE') THEN
     RAISE EXCEPTION 'người chưa đăng nhập gọi được complete_book';
   END IF;
-  IF NOT has_function_privilege('chronoshelf_auth', 'public.complete_book(text)', 'EXECUTE') THEN
+  IF NOT has_function_privilege('chronoshelf_auth', 'public.complete_book(text, smallint[])', 'EXECUTE') THEN
     RAISE EXCEPTION 'người đã đăng nhập không gọi được complete_book';
+  END IF;
+
+  -- Chữ ký MỘT-THAM-SỐ không được sống lại. Nó là một cửa thứ hai trao vật phẩm mà bỏ
+  -- qua bài trắc nghiệm — và vì `CREATE OR REPLACE` với chữ ký mới chỉ NẠP CHỒNG chứ
+  -- không thay thế, một lần quên `DROP FUNCTION` là đủ để nó quay lại trong im lặng.
+  IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+              WHERE n.nspname='public' AND p.proname IN ('complete_book','_complete_book_for')
+                AND p.pronargs < CASE p.proname WHEN 'complete_book' THEN 2 ELSE 3 END) THEN
+    RAISE EXCEPTION 'còn bản nạp chồng cũ của complete_book — trao vật phẩm mà KHÔNG chấm bài';
   END IF;
 
   -- reorder_* phải là SECURITY INVOKER: chạy bằng quyền người gọi thì policy

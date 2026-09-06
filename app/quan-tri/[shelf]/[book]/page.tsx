@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import { AdminGate } from "@/components/admin/AdminGate";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { PageAdmin } from "@/components/admin/PageAdmin";
+import { QuestionAdmin } from "@/components/admin/QuestionAdmin";
 import { listPages, readBookHeader } from "@/lib/admin/pages";
+import { listQuestions } from "@/lib/admin/questions";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +27,11 @@ export default async function AdminBookPagesPage({
   const book = await readBookHeader(shelfSlug, bookSlug);
   if (!book) notFound();
 
+  // Tuần tự chứ không `Promise.all`: cả hai đi qua `withRole`, mỗi cái một transaction
+  // Sequelize, và hai truy vấn song song trên cùng một connection sẽ chồng lên nhau —
+  // bẫy đã ghi ở CLAUDE.md.
   const pages = await listPages(bookSlug);
+  const questions = await listQuestions(bookSlug);
 
   return (
     <AdminGate>
@@ -43,6 +49,12 @@ export default async function AdminBookPagesPage({
         ]}
       >
         <PageAdmin book={book} pages={pages} />
+        {/* Bài kiểm tra nằm SAU danh sách trang, đúng thứ tự học sinh gặp: lật hết trang
+            rồi mới tới câu hỏi. Đường kẻ tách hai phần vì chúng là hai loại nội dung
+            khác nhau, không phải phần tiếp theo của cùng một danh sách. */}
+        <div className="mt-xl border-t border-secondary pt-xl">
+          <QuestionAdmin book={book} questions={questions} />
+        </div>
       </AdminShell>
     </AdminGate>
   );

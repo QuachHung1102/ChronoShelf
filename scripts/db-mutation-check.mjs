@@ -78,8 +78,34 @@ const MUTATIONS = [
   ],
   [
     "_complete_book_for lộ EXECUTE",
-    "GRANT EXECUTE ON FUNCTION public._complete_book_for(uuid, text) TO chronoshelf_auth",
+    "GRANT EXECUTE ON FUNCTION public._complete_book_for(uuid, text, smallint[]) TO chronoshelf_auth",
     "lộ EXECUTE",
+  ],
+
+  // --- mục B2: bài trắc nghiệm cuối sách. Đáp án là thứ duy nhất trong nội dung phải
+  // giấu, nên cả ba đường làm lộ nó đều phải có một đột biến riêng.
+  [
+    "đáp án được cấp SELECT cho role ứng dụng",
+    "GRANT SELECT (correct_index) ON public.book_questions TO chronoshelf_auth",
+    "bài trắc nghiệm chỉ còn là trang trí",
+  ],
+  [
+    // Đúng cái bẫy mà `CREATE OR REPLACE` giăng sẵn: chữ ký mới chỉ NẠP CHỒNG, bản cũ
+    // ở lại và vẫn trao vật phẩm mà không chấm bài. Không có khẳng định đếm tham số
+    // thì không cổng nào thấy được cửa thứ hai này.
+    "chữ ký complete_book một-tham-số sống lại",
+    `CREATE FUNCTION public.complete_book(text) RETURNS jsonb
+       LANGUAGE sql SECURITY DEFINER AS 'SELECT ''{}''::jsonb'`,
+    "bản nạp chồng cũ",
+  ],
+  [
+    "admin_book_questions mất dòng kiểm is_admin()",
+    `CREATE OR REPLACE FUNCTION public.admin_book_questions(p_book_slug text)
+       RETURNS TABLE (id uuid, "position" integer, prompt text, choices text[], correct_index smallint)
+       LANGUAGE sql SECURITY DEFINER AS
+       $m$ SELECT q.id, q.position, q.prompt, q.choices, q.correct_index
+             FROM public.book_questions q WHERE q.book_slug = p_book_slug $m$`,
+    "ai đăng nhập cũng đọc được đáp án",
   ],
   [
     "reorder_books đổi thành SECURITY DEFINER",

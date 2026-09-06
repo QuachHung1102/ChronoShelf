@@ -82,6 +82,38 @@
             "Năm 179 TCN Âu Lạc rơi vào tay Triệu Đà, mở đầu hơn một nghìn năm Bắc thuộc."
           ]
         }
+      ],
+      "questions": [
+        {
+          "prompt": "Nhà nước Văn Lang đóng đô ở đâu?",
+          "choices": [
+            "Cổ Loa",
+            "Phong Châu",
+            "Hoa Lư",
+            "Thăng Long"
+          ],
+          "correct": 1
+        },
+        {
+          "prompt": "Ai lập ra nước Âu Lạc và cho xây thành Cổ Loa ba vòng xoáy ốc?",
+          "choices": [
+            "Hùng Vương",
+            "Triệu Đà",
+            "An Dương Vương (Thục Phán)",
+            "Ngô Quyền"
+          ],
+          "correct": 2
+        },
+        {
+          "prompt": "Hiện vật nào tiêu biểu cho đỉnh cao nghề đúc đồng của văn hóa Đông Sơn?",
+          "choices": [
+            "Trống đồng",
+            "Nỏ thần",
+            "Tiền Thái Bình hưng bảo",
+            "Gạch nung Cổ Loa"
+          ],
+          "correct": 0
+        }
       ]
     },
     {
@@ -120,6 +152,38 @@
             "Quân ta nhử địch qua bãi cọc lúc triều lên rồi phản công khi nước rút; Lưu Hoằng Tháo tử trận.",
             "Chiến thắng năm 938 chấm dứt hơn một nghìn năm Bắc thuộc, mở ra thời kỳ độc lập tự chủ."
           ]
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "Vì sao quân Nam Hán tiến vào nước ta năm 938?",
+          "choices": [
+            "Ngô Quyền đem quân đánh sang Nam Hán trước",
+            "Kiều Công Tiễn giết Dương Đình Nghệ rồi cho người sang cầu cứu",
+            "Nhà Nam Hán đòi lại phần đất đã mất từ thời Hùng Vương",
+            "Lê Chiêu Thống chạy sang cầu viện"
+          ],
+          "correct": 1
+        },
+        {
+          "prompt": "Ngô Quyền dùng cách nào để phá đoàn thuyền chiến Nam Hán?",
+          "choices": [
+            "Dùng hỏa công đốt thuyền giữa cửa biển",
+            "Đắp đập chặn dòng cho thuyền mắc cạn",
+            "Vây hãm thành cho giặc hết lương",
+            "Đóng cọc gỗ bịt sắt ngầm dưới lòng sông rồi đánh theo con nước"
+          ],
+          "correct": 3
+        },
+        {
+          "prompt": "Ý nghĩa lớn nhất của chiến thắng Bạch Đằng năm 938 là gì?",
+          "choices": [
+            "Chấm dứt hơn một nghìn năm Bắc thuộc, mở ra thời kỳ độc lập lâu dài",
+            "Kết thúc ba lần kháng chiến chống quân Mông – Nguyên",
+            "Buộc nhà Thanh từ bỏ ý định can thiệp vào nước ta",
+            "Giành lại thành Cổ Loa từ tay Triệu Đà"
+          ],
+          "correct": 0
         }
       ]
     },
@@ -160,6 +224,38 @@
             "Trận Bạch Đằng năm 1288 dùng lại kế cọc ngầm, bắt sống Ô Mã Nhi, kết thúc ba lần kháng Nguyên."
           ]
         }
+      ],
+      "questions": [
+        {
+          "prompt": "Hội nghị Diên Hồng năm 1284 mời những ai về bàn việc nước?",
+          "choices": [
+            "Các vương hầu tôn thất",
+            "Các tướng lĩnh đang cầm quân",
+            "Các bô lão trong cả nước",
+            "Các nhà sư và học trò"
+          ],
+          "correct": 2
+        },
+        {
+          "prompt": "Binh sĩ nhà Trần thể hiện quyết tâm đánh giặc bằng hai chữ “Sát Thát” như thế nào?",
+          "choices": [
+            "Thích lên cánh tay",
+            "Khắc lên mũi tên",
+            "Viết lên cờ hiệu",
+            "Đúc vào chuôi gươm"
+          ],
+          "correct": 0
+        },
+        {
+          "prompt": "Trận Bạch Đằng năm 1288 của Trần Quốc Tuấn dùng lại kế đánh giặc của ai?",
+          "choices": [
+            "Lý Thường Kiệt",
+            "An Dương Vương",
+            "Quang Trung",
+            "Ngô Quyền"
+          ],
+          "correct": 3
+        }
       ]
     },
     {
@@ -199,6 +295,38 @@
             "Chiến thắng giữ vững nền độc lập và chấm dứt mưu đồ can thiệp của nhà Thanh."
           ]
         }
+      ],
+      "questions": [
+        {
+          "prompt": "Tôn Sĩ Nghị dẫn bao nhiêu quân Thanh sang xâm lược cuối năm 1788?",
+          "choices": [
+            "Năm vạn",
+            "Hai mươi chín vạn",
+            "Mười sáu nghìn",
+            "Một trăm vạn"
+          ],
+          "correct": 1
+        },
+        {
+          "prompt": "Quang Trung đánh tan quân Thanh ở Thăng Long vào dịp nào?",
+          "choices": [
+            "Rằm tháng Giêng năm 1789",
+            "Tết Trung thu năm 1788",
+            "Mùng 5 Tết Kỷ Dậu, tức 30 tháng 1 năm 1789",
+            "Tết Nguyên đán năm 1790"
+          ],
+          "correct": 2
+        },
+        {
+          "prompt": "Hai đồn nào bị quân Tây Sơn đánh cùng lúc trong trận quyết định?",
+          "choices": [
+            "Hà Hồi và Vân Đồn",
+            "Tam Điệp và Biện Sơn",
+            "Him Lam và Độc Lập",
+            "Ngọc Hồi và Đống Đa"
+          ],
+          "correct": 3
+        }
       ]
     },
     {
@@ -237,6 +365,38 @@
             "Chiến dịch diễn ra 56 ngày đêm qua ba đợt tiến công, ác liệt nhất là đồi A1.",
             "Chiều 7/5/1954 lá cờ Quyết chiến quyết thắng cắm trên nóc hầm Đờ Cát; Hiệp định Genève ký ngày 21/7/1954."
           ]
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "Sau khi pháo đã vào trận địa, Đại tướng Võ Nguyên Giáp đổi phương châm tác chiến thành gì?",
+          "choices": [
+            "Đánh nhanh thắng nhanh",
+            "Đánh chắc tiến chắc",
+            "Vây thành diệt viện",
+            "Lấy ít địch nhiều"
+          ],
+          "correct": 1
+        },
+        {
+          "prompt": "Chiến dịch Điện Biên Phủ diễn ra trong bao lâu?",
+          "choices": [
+            "30 ngày đêm",
+            "Năm ngày Tết",
+            "56 ngày đêm",
+            "Chín năm"
+          ],
+          "correct": 2
+        },
+        {
+          "prompt": "Lá cờ “Quyết chiến quyết thắng” tung bay trên nóc hầm tướng Đờ Cát ngày nào?",
+          "choices": [
+            "Chiều 7 tháng 5 năm 1954",
+            "Ngày 13 tháng 3 năm 1954",
+            "Ngày 21 tháng 7 năm 1954",
+            "Ngày 2 tháng 9 năm 1945"
+          ],
+          "correct": 0
         }
       ]
     }

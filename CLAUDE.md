@@ -18,7 +18,7 @@ quyển thì nhận được một vật phẩm, và chính vật phẩm đó m�
 | `DESIGN.md` | Hệ thiết kế (format `design.md` của Google Labs): toàn bộ color/typography/spacing token + lý do. Nguồn sự thật về *trông như thế nào*. |
 | `db/schema/README.md` | Thứ tự chạy schema, ba role và lý do. **Đọc trước khi đụng SQL.** |
 | `docs/superpowers/specs/` | Spec đã được duyệt, mỗi subsystem một file. |
-| `docs/superpowers/plans/2026-09-06-ban-giao-phien-sau.md` | **Đọc đầu tiên khi mở phiên mới**: đã làm gì, cổng đang ở đâu, việc kế tiếp là gì và thứ đang chặn nó. Ảnh chụp một thời điểm — xóa khi các mục "còn lại" xong hết. |
+| `docs/superpowers/plans/2026-09-07-ban-giao-phien-sau.md` | **Đọc đầu tiên khi mở phiên mới**: đã làm gì, cổng đang ở đâu, việc kế tiếp là gì và thứ đang chặn nó. Ảnh chụp một thời điểm — xóa khi các mục "còn lại" xong hết. |
 | `docs/superpowers/plans/` | Kế hoạch triển khai từng bước. Chặng C đã hoàn tất; các plan cũ bị xóa ngày 2026-08-28 vì hướng dẫn theo backend cũ — git history vẫn giữ. |
 | `pen.dev/design.pen` | File thiết kế Pencil — mockup UI đã duyệt. |
 | `db/schema/` | SQL schema, nguồn sự thật cho cấu trúc DB. |
@@ -60,6 +60,17 @@ spec → plan → code riêng: **kệ sách + đọc sách** (cơ chế lõi), t
   với người) thì theo đường nâng cấp ghi sẵn ở `lib/api/unlock.ts`; **đừng suy thứ tự từ
   `position`** — `08-reorder.sql` cho đổi position nên nó không cố định, và một lần admin chèn
   sách vào giữa là làm đứt chuỗi của người đang đọc.
+- **Đáp án bài trắc nghiệm không được rời khỏi database.** `book_questions.correct_index` KHÔNG
+  có `GRANT SELECT` cho `chronoshelf_anon` lẫn `chronoshelf_auth` — hàng rào là **GRANT theo
+  cột**, không phải policy, vì RLS lọc DÒNG và không biết gì về cột. Đừng cấp `SELECT` cả bảng
+  cho tiện, và đừng khai `correctIndex` vào model `BookQuestion`: cả hai đều biến một `SELECT *`
+  vô ý trong `readShelf()` thành một lần in đáp án ra HTML. Hai cửa đọc được đáp án là
+  `complete_book` (chấm bài) và `admin_book_questions` (tự kiểm `is_admin()`), cả hai
+  `SECURITY DEFINER`. **Đổi chữ ký `complete_book` thì phải `DROP FUNCTION` trước** —
+  `CREATE OR REPLACE` với chữ ký mới chỉ NẠP CHỒNG, để lại bản cũ như một cửa thứ hai trao vật
+  phẩm mà không chấm bài. **Và đừng hứa quá phạm vi**: đây là hàng rào SƯ PHẠM, không phải hàng
+  rào bảo mật — sách vốn công khai, mỗi bài 2–3 câu, đáp án đoán được bằng cách thử. Chi tiết ở
+  `docs/superpowers/specs/2026-09-07-bai-trac-nghiem-cuoi-sach-design.md`.
 - **Bí mật không vào git.** `.env.local` giữ `DATABASE_URL` và `SESSION_SECRET`; nó đã bị dòng
   `.env*` trong `.gitignore` chặn. Đừng chép giá trị thật sang `.env.example` hay bất kỳ file
   được commit nào. Mật khẩu superuser của Postgres **không nằm trong dự án** — truyền qua
@@ -89,7 +100,9 @@ npm run design:build    # DESIGN.md -> tailwind.theme.json
 ## Nội dung nằm trong database
 
 Nội dung bài học (kệ, sách, trang, vật phẩm) nằm ở 4 bảng `shelves`, `items`, `books`,
-`pages`; bài giảng & slide nằm ở `lessons` + `documents`. Sửa nội dung đang chạy bằng
+`pages`, cộng bảng thứ năm `book_questions` cho bài trắc nghiệm cuối sách — bảng đó khác bốn
+bảng kia ở đúng một chỗ, xem quy tắc về `correct_index` phía trên; bài giảng & slide nằm ở
+`lessons` + `documents`. Sửa nội dung đang chạy bằng
 **màn quản trị `/quan-tri`** (`/quan-tri`, `/quan-tri/[shelf]`, `/quan-tri/[shelf]/[book]`,
 `/quan-tri/vat-pham`, `/quan-tri/bai-giang`; server action ở `lib/admin/actions.ts`, upload
 ảnh qua `/api/quan-tri/anh` vào bảng `media`, upload `.pptx` qua `/api/quan-tri/tai-lieu` vào
@@ -364,6 +377,8 @@ những cổng đó bắt lỗi tốt hơn một bộ test JSX:
 |---|---|
 | Chuỗi mở khóa đứt gãy | Không xảy ra được — không có cột nào lưu nó |
 | Người dùng thường sửa được nội dung | `npm run db:check` — ghi thử cả 4 bảng `shelves`/`items`/`books`/`pages` |
+| Đáp án trắc nghiệm lọt xuống trình duyệt | `npm run db:check` (đọc thử `correct_index` và `SELECT *`) + `90-verify.sql` mục B2 |
+| Trao vật phẩm mà không chấm bài | `npm run db:check` — gọi `complete_book` thật với đáp án sai rồi đếm `user_items` |
 | Người dùng tự phong admin | `npm run db:check` — thử lúc chưa đăng nhập lẫn khi đã đăng nhập |
 | Token màu/chữ sai, tương phản dưới AA | `design:lint` |
 | Sai kiểu, route không tồn tại | `build` (typegen + tsc) |

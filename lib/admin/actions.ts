@@ -916,6 +916,159 @@ export async function movePage(_prev: ActionState, fd: FormData): Promise<Action
 }
 
 // ---------------------------------------------------------------------------
+// Bài trắc nghiệm cuối sách (content.md §4.3)
+//
+// KHÔNG có đổi thứ tự. Một bài kiểm tra chỉ 2–3 câu và thứ tự giữa chúng không mang
+// nghĩa gì — thêm một RPC `reorder_book_questions` cùng hai nút mũi tên là công sức thật
+// cho một thứ không ai cần. Ràng buộc UNIQUE vẫn DEFERRABLE giống `pages` để đường nâng
+// cấp còn mở, và `90-verify.sql` giữ cho nó ở nguyên như vậy.
+// ---------------------------------------------------------------------------
+
+/** Số ô lựa chọn trên biểu mẫu. PHẢI khớp trần trong `book_questions_choices_ck`. */
+const MAX_CHOICES = 4;
+
+/**
+ * Đọc bốn ô lựa chọn + ô đánh dấu đáp án, đổi thành `{ choices, correctIndex }`.
+ *
+ * Chỗ dễ sai và là lý do hàm này tồn tại: ô radio trên biểu mẫu trỏ tới Ô THỨ MẤY, còn
+ * `correct_index` lưu trong database là CHỈ SỐ TRONG MẢNG ĐÃ NÉN. Admin bỏ trống ô 2 rồi
+ * điền ô 3 là hai con số đó lệch nhau. Nén và dịch chỉ số trong cùng một vòng lặp thì
+ * chúng không thể lệch.
+ */
+function readChoices(
+  fd: FormData,
+): { choices: string[]; correctIndex: number } | { error: string } {
+  const chosenSlot = Number(field(fd, "correct"));
+  const choices: string[] = [];
+  let correctIndex = -1;
+
+  for (let slot = 0; slot < MAX_CHOICES; slot++) {
+    const text = field(fd, `choice${slot}`);
+    if (!text) continue;
+    if (slot === chosenSlot) correctIndex = choices.length;
+    choices.push(text);
+  }
+
+  if (choices.length < 2) return { error: "Câu hỏi cần ít nhất hai lựa chọn." };
+  // Ràng buộc `book_questions_correct_range_ck` chỉ bắt được chỉ số ngoài mảng; nó không
+  // biết gì về việc admin đánh dấu vào một ô để trống.
+  if (correctIndex < 0) {
+    return { error: "Chọn đáp án đúng, và ô được chọn phải có nội dung." };
+  }
+  // Database không cấm hai lựa chọn trùng nhau (một CHECK cho việc đó cần subquery).
+  // Nhưng một câu có hai đáp án giống hệt mà chỉ một cái "đúng" thì học sinh không có
+  // cách nào trả lời đúng bằng lý lẽ — chặn ở đây.
+  if (new Set(choices).size !== choices.length) {
+    return { error: "Hai lựa chọn trùng nhau — học sinh không có cách nào chọn đúng." };
+  }
+  return { choices, correctIndex };
+}
+
+export async function createQuestion(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  return guard(async () => {
+    const userId = await requireAdmin();
+    const bookSlug = field(fd, "bookSlug");
+    const shelfSlug = field(fd, "shelfSlug");
+    const prompt = field(fd, "prompt");
+    if (!bookSlug) return { error: "Thiếu quyển sách." };
+    if (!prompt) return { error: "Câu hỏi không được để trống." };
+
+    const c = readChoices(fd);
+    if ("error" in c) return { error: c.error };
+
+    await withRole(userId, (t) =>
+      sequelize.query(
+        `INSERT INTO public.book_questions (book_slug, position, prompt, choices, correct_index)
+         VALUES ($1,
+                 coalesce((SELECT max(position) FROM public.book_questions WHERE book_slug = $1), 0) + 1,
+                 $2, $3::text[], $4)`,
+        {
+          bind: [bookSlug, prompt, c.choices, c.correctIndex],
+          transaction: t,
+          type: QueryTypes.INSERT,
+        },
+      ),
+    );
+
+    revalidatePath(`/quan-tri/${shelfSlug}/${bookSlug}`);
+    revalidatePath(`/${shelfSlug}`);
+    return { ok: "Đã thêm câu hỏi." };
+  });
+}
+
+export async function updateQuestion(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  return guard(async () => {
+    const userId = await requireAdmin();
+    const id = field(fd, "id");
+    const bookSlug = field(fd, "bookSlug");
+    const shelfSlug = field(fd, "shelfSlug");
+    const prompt = field(fd, "prompt");
+    if (!id) return { error: "Thiếu câu hỏi cần sửa." };
+    if (!bookSlug) return { error: "Thiếu quyển sách." };
+    if (!prompt) return { error: "Câu hỏi không được để trống." };
+
+    const c = readChoices(fd);
+    if ("error" in c) return { error: c.error };
+
+    // `AND book_slug = $5` cùng lý do như `updatePage`: mỗi export ở file này là một
+    // endpoint POST công khai, nên một uuid hợp lệ bất kỳ không được sửa được câu hỏi của
+    // quyển khác.
+    const affected = rowsAffected(
+      await withRole(userId, (t) =>
+        sequelize.query(
+          `UPDATE public.book_questions
+              SET prompt = $2, choices = $3::text[], correct_index = $4
+            WHERE id = $1::uuid AND book_slug = $5`,
+          {
+            bind: [id, prompt, c.choices, c.correctIndex, bookSlug],
+            transaction: t,
+          },
+        ),
+      ),
+    );
+
+    if (affected === 0) {
+      return {
+        error: "Không sửa được câu hỏi này (không tồn tại, không thuộc quyển này, hoặc thiếu quyền).",
+      };
+    }
+
+    revalidatePath(`/quan-tri/${shelfSlug}/${bookSlug}`);
+    revalidatePath(`/${shelfSlug}`);
+    return { ok: "Đã lưu câu hỏi." };
+  });
+}
+
+export async function deleteQuestion(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  return guard(async () => {
+    const userId = await requireAdmin();
+    const id = field(fd, "id");
+    const bookSlug = field(fd, "bookSlug");
+    const shelfSlug = field(fd, "shelfSlug");
+    if (!id || !bookSlug) return { error: "Yêu cầu không hợp lệ." };
+
+    // Không có hàng rào "câu cuối cùng" như `deletePage`: xóa hết câu hỏi đưa quyển về
+    // đúng trạng thái mặc định — đọc hết trang là nhận vật phẩm — chứ không tạo ra ngõ
+    // cụt nào. Đó là trạng thái của mọi quyển chưa được soạn câu hỏi.
+    const affected = rowsAffected(
+      await withRole(userId, (t) =>
+        sequelize.query(
+          "DELETE FROM public.book_questions WHERE id = $1::uuid AND book_slug = $2",
+          { bind: [id, bookSlug], transaction: t },
+        ),
+      ),
+    );
+    if (affected === 0) {
+      return { error: "Không xóa được câu hỏi này (không tồn tại, hoặc không thuộc quyển này)." };
+    }
+
+    revalidatePath(`/quan-tri/${shelfSlug}/${bookSlug}`);
+    revalidatePath(`/${shelfSlug}`);
+    return { ok: "Đã xóa câu hỏi." };
+  }, true);
+}
+
+// ---------------------------------------------------------------------------
 // Bài giảng & slide (content.md §7)
 //
 // KHÔNG có đổi thứ tự: `lessons` cố ý không có cột `position` — thứ tự hiển thị là

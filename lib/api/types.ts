@@ -26,6 +26,25 @@ export interface ShelfView {
 }
 
 export interface CompleteBookResult {
+  /**
+   * `false` nghĩa là bài kiểm tra cuối sách còn câu sai — KHÔNG có vật phẩm nào được
+   * trao và `user_book_progress.completed` vẫn nguyên. Quyển không có câu hỏi nào thì
+   * trường này luôn `true`.
+   *
+   * Cố ý để phẳng thay vì dựng union theo `quizPassed`: ba trường dưới đây có giá trị
+   * "không có gì" hợp lệ sẵn (false / null / null), nên một union chỉ đổi lấy sự an
+   * toàn kiểu bằng một đống thu hẹp kiểu ở mọi chỗ dùng.
+   */
+  quizPassed: boolean;
+  /**
+   * Vị trí (đánh số từ 1) của những câu trả lời sai, theo đúng thứ tự `ContentBook.cauHoi`
+   * mà client đã nhận. Rỗng khi `quizPassed`.
+   *
+   * Máy chủ nói RÕ câu nào sai, không chỉ "sai rồi": bài kiểm tra này là hàng rào sư phạm
+   * chứ không phải hàng rào bảo mật — nội dung sách vốn công khai và đáp án đoán được
+   * bằng cách thử — nên giấu đi chỉ làm học sinh bế tắc chứ không chặn được ai.
+   */
+  wrongPositions: number[];
   alreadyCompleted: boolean;
   grantedItemSlug: string | null;
   nextBook: { slug: string; unlocked: boolean } | null;

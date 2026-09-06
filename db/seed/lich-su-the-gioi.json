@@ -61,6 +61,28 @@
             "Người xây là thợ được trả công, không phải nô lệ."
           ]
         }
+      ],
+      "questions": [
+        {
+          "prompt": "Kim tự tháp Kheops cao bao nhiêu mét?",
+          "choices": [
+            "46 mét",
+            "146 mét",
+            "246 mét",
+            "1.460 mét"
+          ],
+          "correct": 1
+        },
+        {
+          "prompt": "Các ngôi làng thợ tìm thấy gần Giza cho biết điều gì về người xây kim tự tháp?",
+          "choices": [
+            "Họ là tù binh chiến tranh",
+            "Họ là nô lệ bị bắt từ các nước láng giềng",
+            "Đó là những đội thợ được trả công, có khẩu phần bánh mì và bia",
+            "Họ là dân bị bắt đi lao dịch không công"
+          ],
+          "correct": 2
+        }
       ]
     },
     {
@@ -102,6 +124,38 @@
             "Năm 27 TCN Augustus lên ngôi, cộng hòa chuyển thành đế chế.",
             "Năm 395 đế chế tách đôi; nửa phía Tây sụp đổ năm 476."
           ]
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "Người La Mã lật đổ vua và lập nền cộng hòa vào năm nào?",
+          "choices": [
+            "Năm 753 TCN",
+            "Năm 509 TCN",
+            "Năm 27 TCN",
+            "Năm 476"
+          ],
+          "correct": 1
+        },
+        {
+          "prompt": "Ai trở thành hoàng đế đầu tiên của La Mã năm 27 TCN?",
+          "choices": [
+            "Julius Caesar",
+            "Romulus",
+            "Constantinus",
+            "Octavianus, với danh hiệu Augustus"
+          ],
+          "correct": 3
+        },
+        {
+          "prompt": "Sau khi nửa phía Tây sụp đổ năm 476, nửa phía Đông của đế chế ra sao?",
+          "choices": [
+            "Tồn tại thêm gần một nghìn năm nữa dưới tên Byzantine",
+            "Sụp đổ ngay trong cùng năm đó",
+            "Bị các bộ tộc phương bắc chiếm trong vòng mười năm",
+            "Sáp nhập vào Ai Cập"
+          ],
+          "correct": 0
         }
       ]
     },
@@ -145,6 +199,38 @@
             "Cái giá là dịch bệnh tàn phá cư dân bản địa và ba thế kỷ buôn bán nô lệ."
           ]
         }
+      ],
+      "questions": [
+        {
+          "prompt": "Trước châu Âu, ai đã bảy lần dẫn hạm đội tới Ấn Độ Dương và bờ Đông Phi?",
+          "choices": [
+            "Vasco da Gama",
+            "Marco Polo",
+            "Đô đốc Trịnh Hòa của nhà Minh",
+            "Bartolomeu Dias"
+          ],
+          "correct": 2
+        },
+        {
+          "prompt": "Chuyến đi vòng quanh thế giới đầu tiên của đoàn tàu Magellan kết thúc thế nào?",
+          "choices": [
+            "Magellan về tới nơi an toàn cùng cả hạm đội",
+            "Magellan tử trận giữa đường, năm 1522 chỉ một con tàu về tới nơi",
+            "Cả đoàn mất tích, không con tàu nào trở về",
+            "Đoàn tàu quay đầu ngay sau khi vòng qua mũi Hảo Vọng"
+          ],
+          "correct": 1
+        },
+        {
+          "prompt": "Cùng với cây trồng mới, những con tàu còn mang tới châu Mỹ thứ gì khiến nhiều cộng đồng bản địa mất phần lớn dân số?",
+          "choices": [
+            "Nạn đói do mất mùa lúa mì",
+            "Chiến tranh giữa các bộ tộc bản địa",
+            "Bệnh đậu mùa, sởi và thương hàn",
+            "Hạn hán kéo dài nhiều năm"
+          ],
+          "correct": 2
+        }
       ]
     },
     {
@@ -186,6 +272,38 @@
             "Đường sắt công cộng đầu tiên năm 1825; đầu máy Rocket năm 1829.",
             "Cái giá là ô nhiễm và lao động trẻ em — cũng chính là nguồn gốc của luật lao động."
           ]
+        }
+      ],
+      "questions": [
+        {
+          "prompt": "Cách mạng công nghiệp bắt đầu ở đâu, vào khoảng thời gian nào?",
+          "choices": [
+            "Nước Anh, khoảng năm 1760",
+            "Nước Pháp, khoảng năm 1789",
+            "Nước Mỹ, khoảng năm 1860",
+            "Nước Đức, khoảng năm 1870"
+          ],
+          "correct": 0
+        },
+        {
+          "prompt": "Năm 1769, James Watt được cấp bằng sáng chế cho việc gì?",
+          "choices": [
+            "Máy kéo sợi Jenny",
+            "Đầu máy Rocket",
+            "Bóng đèn sợi đốt",
+            "Cải tiến máy hơi nước"
+          ],
+          "correct": 3
+        },
+        {
+          "prompt": "Vì sao các thành phố xa nhau bắt đầu phải dùng chung một giờ?",
+          "choices": [
+            "Vì nhà máy cần đồng bộ ca làm việc",
+            "Vì đường sắt — “giờ đường sắt” là khởi đầu của múi giờ thống nhất",
+            "Vì điện tín vừa được phát minh",
+            "Vì luật lao động quy định như vậy"
+          ],
+          "correct": 1
         }
       ]
     }
