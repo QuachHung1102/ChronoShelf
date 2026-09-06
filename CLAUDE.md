@@ -23,6 +23,7 @@ quyển thì nhận được một vật phẩm, và chính vật phẩm đó m�
 | `docs/superpowers/specs/` | Spec đã được duyệt, mỗi subsystem một file. Spec thì Ở LẠI kể cả khi việc đã xong — nó giữ *vì sao*, không phải *làm thế nào*. |
 | `docs/superpowers/plans/2026-09-07-ban-giao-phien-sau.md` | **Đọc đầu tiên khi mở phiên mới**: đã làm gì, cổng đang ở đâu, việc kế tiếp là gì và thứ đang chặn nó. Ảnh chụp một thời điểm — xóa khi các mục "còn lại" xong hết. |
 | `docs/agents/bay-da-gap.md` | 27 bẫy đã vấp thật, mỗi cái kèm phép đo. Bốn cái đắt nhất còn nằm trong file này. |
+| `docs/nhat-ky/` | Nhật ký từng phiên làm việc — xem mục **Nhật ký phiên** ở cuối file. |
 | `docs/superpowers/plans/` | Chỉ còn đúng bản bàn giao. Plan xong việc thì **XÓA** — nó là danh sách bước, không giữ quyết định nào; git history vẫn còn. Đã xóa: các plan backend cũ (2026-08-28), chặng C và bảng tin (2026-09-07). |
 | `pen.dev/design.pen` | File thiết kế Pencil — mockup UI đã duyệt. |
 | `db/schema/` | SQL schema, nguồn sự thật cho cấu trúc DB. |
@@ -423,6 +424,26 @@ Spec dài theo subsystem vẫn ở `docs/superpowers/`. Xem `docs/agents/issue-t
 
 Single-context: `CONTEXT.md` + `docs/adr/` ở gốc repo — cả hai chưa tồn tại, tạm thời
 `content.md`, `DESIGN.md` và file này giữ vai trò đó. Xem `docs/agents/domain.md`.
+
+## Nhật ký phiên
+
+`docs/nhat-ky/YYYY-MM-DD.html` — mỗi phiên làm việc đáng kể một file, kể lại phiên đó đã
+làm gì và vì sao. **Nhật ký của dự án nào thì nằm trong dự án đó**, không nằm ở thư mục tạm
+của máy: file trong repo là NGUỒN, và nó được xuất bản thành một trang đọc được. Sửa file rồi
+xuất bản lại vào ĐÚNG URL cũ (truyền `url`) thì link không đổi; xuất bản từ đường dẫn khác sẽ
+đẻ ra một artifact thứ hai.
+
+Ba luật giữ cho thư mục này khỏi thành nơi trùng lặp:
+
+1. **Nhật ký nhìn LẠI, không nhìn tới.** Trạng thái hiện tại và việc kế tiếp thuộc về bản bàn
+   giao trong `docs/superpowers/plans/`. Nhật ký kể một phiên đã xảy ra và **không bao giờ cần
+   sửa lại** — nếu bạn thấy mình đang sửa một file trong đây, thứ bạn định viết thuộc chỗ khác.
+2. **Không chép kiến thức lâu dài vào đây.** Bẫy → `docs/agents/bay-da-gap.md`; thiết kế
+   subsystem → `docs/superpowers/specs/`; quy tắc → chính file này. Nhật ký chỉ trỏ tới chúng.
+3. **`docs/nhat-ky/**` NẰM NGOÀI phạm vi `DESIGN.md`.** Đó là trang HTML độc lập, không đi qua
+   Tailwind và không dùng `tailwind.theme.json` — nó chỉ *mượn* palette và cặp chữ của dự án cho
+   nhất quán. Hook thiết kế sẽ kêu về font/cỡ chữ ngoài thang; đó là lệch phạm vi, không phải
+   lỗi. Đừng sửa trang cho vừa thang chữ của sản phẩm, và đừng nới `DESIGN.md` vì nó.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
