@@ -18,7 +18,7 @@ quyển thì nhận được một vật phẩm, và chính vật phẩm đó m�
 | `DESIGN.md` | Hệ thiết kế (format `design.md` của Google Labs): toàn bộ color/typography/spacing token + lý do. Nguồn sự thật về *trông như thế nào*. |
 | `db/schema/README.md` | Thứ tự chạy schema, ba role và lý do. **Đọc trước khi đụng SQL.** |
 | `docs/superpowers/specs/` | Spec đã được duyệt, mỗi subsystem một file. |
-| `docs/superpowers/plans/2026-09-04-ban-giao-phien-sau.md` | **Đọc đầu tiên khi mở phiên mới**: đã làm gì, cổng đang ở đâu, việc kế tiếp là gì và thứ đang chặn nó. Ảnh chụp một thời điểm — xóa khi các mục "còn lại" xong hết. |
+| `docs/superpowers/plans/2026-09-06-ban-giao-phien-sau.md` | **Đọc đầu tiên khi mở phiên mới**: đã làm gì, cổng đang ở đâu, việc kế tiếp là gì và thứ đang chặn nó. Ảnh chụp một thời điểm — xóa khi các mục "còn lại" xong hết. |
 | `docs/superpowers/plans/` | Kế hoạch triển khai từng bước. Chặng C đã hoàn tất; các plan cũ bị xóa ngày 2026-08-28 vì hướng dẫn theo backend cũ — git history vẫn giữ. |
 | `pen.dev/design.pen` | File thiết kế Pencil — mockup UI đã duyệt. |
 | `db/schema/` | SQL schema, nguồn sự thật cho cấu trúc DB. |
