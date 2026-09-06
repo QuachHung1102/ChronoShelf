@@ -83,7 +83,7 @@ policy SELECT thứ hai bên cạnh policy cũ.
 
 ### Một đợt review đối kháng đã tìm ra 6 lỗi — đã sửa hết
 
-Bản đầu của đợt này commit ở `6aad311`; `1d7a48b` sửa những gì một agent review đối kháng tìm
+Bản đầu của đợt này commit ở `6aad311`; `e4e180a` sửa những gì một agent review đối kháng tìm
 được. Hai cái đáng ghi lại vì chúng là loại lỗi dễ lặp lại:
 
 - **Cổng canh policy `read published` HOÀN TOÀN KHÔNG CÓ, và không có dữ liệu để mà canh.**
