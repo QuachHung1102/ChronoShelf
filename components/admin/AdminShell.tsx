@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Settings } from "lucide-react";
 import { Header } from "@/components/Header";
 import { FOCUS_RING } from "@/components/ui/controls";
 import { readShelfList } from "@/lib/content/read";
@@ -52,33 +52,52 @@ export async function AdminShell({
     <>
       <Header activeHref="/quan-tri" shelves={shelves} />
       <main id="noi-dung" className="mx-auto w-full max-w-[64rem] flex-1 px-page-margin py-lg">
-        <nav aria-label="Đường dẫn" className="mb-sm">
-          <ol className="flex flex-wrap items-center gap-xs font-body text-body-sm text-secondary">
-            {trail.map((c, i) => (
-              <li key={`${c.label}-${i}`} className="flex items-center gap-xs">
-                {i > 0 && <ChevronRight aria-hidden className="h-4 w-4 text-secondary-light" />}
-                {c.href && i < trail.length - 1 ? (
-                  <Link
-                    href={c.href}
-                    className={`rounded-sm underline underline-offset-2 hover:text-tertiary-deep ${FOCUS_RING}`}
-                  >
-                    {c.label}
-                  </Link>
-                ) : (
-                  // Mục cuối là trang hiện tại: không phải liên kết, và aria-current nói
-                  // rõ điều đó cho trình đọc màn hình.
-                  <span aria-current="page" className="text-primary-dark">
-                    {c.label}
-                  </span>
-                )}
-              </li>
-            ))}
-          </ol>
-        </nav>
+        {/* Breadcrumb chỉ dựng khi có ít nhất một chặng CON. Ở `/quan-tri` thì `trail` chỉ
+            có đúng mục "Quản trị", mà mục cuối không phải liên kết — tức một hàng không dẫn
+            đi đâu, đứng ngay trên một tiêu đề nói cùng chuyện. */}
+        {crumbs.length > 0 && (
+          <nav aria-label="Đường dẫn" className="mb-sm">
+            <ol className="flex flex-wrap items-center gap-xs font-body text-body-sm text-secondary">
+              {trail.map((c, i) => (
+                <li key={`${c.label}-${i}`} className="flex items-center gap-xs">
+                  {i > 0 && <ChevronRight aria-hidden className="h-4 w-4 text-secondary-light" />}
+                  {c.href && i < trail.length - 1 ? (
+                    <Link
+                      href={c.href}
+                      className={`rounded-sm underline underline-offset-2 hover:text-tertiary-deep ${FOCUS_RING}`}
+                    >
+                      {c.label}
+                    </Link>
+                  ) : (
+                    // Mục cuối là trang hiện tại: không phải liên kết, và aria-current nói
+                    // rõ điều đó cho trình đọc màn hình.
+                    <span aria-current="page" className="text-primary-dark">
+                      {c.label}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )}
 
-        <div className="mb-md flex flex-wrap items-start justify-between gap-md">
+        <div className="mb-lg flex flex-wrap items-start justify-between gap-md">
           <div>
-            <h1 className="font-heading text-headline-md text-primary-dark">{title}</h1>
+            {/* Dấu nhận biết DUY NHẤT của khu quản trị trên vỏ chung. `Header` ở đây cố ý
+                là đúng thanh của phần học sinh (xem chú thích trên), nên nếu không có
+                dòng này thì `/quan-tri` trông y hệt một trang học sinh — không có gì nói
+                cho người soạn nội dung biết mọi thứ họ gõ ở đây là nội dung đang chạy.
+                Dùng đúng khuôn eyebrow của `/bai-giang`, `/cong-dong`, `/tui-hanh-trang`:
+                `label-caps` + `uppercase` + `tertiary-deep`, thành phần `eyebrow` trong
+                DESIGN.md. */}
+            <p className="flex items-center gap-xs font-body text-label-caps uppercase text-tertiary-deep">
+              <Settings aria-hidden className="h-4 w-4" />
+              Khu quản trị
+            </p>
+            {/* `headline-lg` chứ không `headline-md`: tiêu đề màn chỉ hơn tiêu đề thẻ
+                (`headline-sm` 20px) đúng 4px thì không đọc ra cấp nào chứa cấp nào. Cùng
+                bậc với h1 của mọi màn khác trong ứng dụng. */}
+            <h1 className="mt-xs font-heading text-headline-lg text-primary-dark">{title}</h1>
             {description && (
               <p className="mt-xs max-w-[48rem] font-body text-body-md text-secondary">
                 {description}

@@ -22,12 +22,32 @@ export function ActionForm({
   className,
   /** Thông điệp `confirm()` trước khi gửi. Chỉ dùng cho thao tác không hoàn tác được. */
   confirmText,
+  quietStatus = false,
   resetOnSuccess = false,
 }: {
   action: (prev: ActionState, fd: FormData) => Promise<ActionState>;
   children: React.ReactNode;
   className?: string;
   confirmText?: string;
+  /**
+   * Câu xác nhận thành công chỉ dành cho trình đọc màn hình, không vẽ ra.
+   *
+   * Bật cho những form mà kết quả TỰ HIỆN RA bằng mắt: nút đổi thứ tự (thẻ nhảy chỗ)
+   * và nút xuất bản (chip trạng thái đổi màu). Ở đó vẽ thêm câu chữ vừa thừa vừa phá:
+   * hai `<ActionForm>` của mũi tên lên/xuống là hai flex-item trong một cột rộng đúng
+   * 72px ở mép phải header, nên một câu như *Đã đưa kệ "Lịch sử Việt Nam" về vị trí
+   * 2/3.* làm `<form>` phình ra bằng `max-content` và đẩy cả header xuống dòng — hệ
+   * thống vừa báo kết quả vừa phá luôn cái đích người dùng đang nhắm để bấm tiếp.
+   *
+   * `sr-only` chứ KHÔNG phải `hidden`/`empty:hidden`: `display:none` gỡ phần tử khỏi cây
+   * trợ năng, còn `sr-only` chỉ thu nó về 1×1px và clip — vùng live vẫn có mặt sẵn, nên
+   * trình đọc màn hình thấy một THAY ĐỔI chứ không phải một vùng live vừa được thêm.
+   * Xem đoạn chú thích ngay dưới, và mục "Bẫy đã gặp" trong CLAUDE.md.
+   *
+   * KHÔNG truyền cho form xóa: xóa xong thì cả `<article>` biến mất theo
+   * `revalidatePath`, `ActionForm` unmount, `<p>` chưa kịp render gì.
+   */
+  quietStatus?: boolean;
   resetOnSuccess?: boolean;
 }) {
   const [state, formAction] = useActionState(action, {});
@@ -59,8 +79,19 @@ export function ActionForm({
           chỗ. */}
       <p aria-live="polite">
         {state.ok && (
-          <span className="mt-xs flex items-start gap-xs font-body text-body-sm text-secondary">
-            <CheckCircle2 aria-hidden className="mt-[0.15em] h-4 w-4 shrink-0 text-tertiary-deep" />
+          <span
+            className={
+              quietStatus
+                ? "sr-only"
+                : "mt-xs flex items-start gap-xs font-body text-body-sm text-secondary"
+            }
+          >
+            {!quietStatus && (
+              <CheckCircle2
+                aria-hidden
+                className="mt-[0.15em] h-4 w-4 shrink-0 text-tertiary-deep"
+              />
+            )}
             {state.ok}
           </span>
         )}

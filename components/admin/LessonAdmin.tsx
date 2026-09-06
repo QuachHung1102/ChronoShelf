@@ -1,5 +1,6 @@
 import { Eye, EyeOff, Plus, Trash2 } from "lucide-react";
 import { ActionForm, SubmitButton } from "./ActionForm";
+import { ADMIN_CARD, CARD_DIVIDER, CardDisclosure, PublishBadge } from "./card";
 import { ImageField } from "./ImageField";
 import { SlideField } from "./SlideField";
 import {
@@ -26,11 +27,14 @@ import {
  *
  * KHÔNG có nút đổi thứ tự: `lessons` cố ý không có cột `position` — xem
  * `db/schema/14-learning-hub.sql`.
+ *
+ * Nút "Xóa" đã rời khỏi header, xuống cùng tầng với biểu mẫu sửa. Trước đây nó đứng cách
+ * "Xuất bản" đúng 16px, cùng `text-body-sm`, cùng gạch chân, chỉ khác nhau ở sắc đỏ.
  */
 export function LessonAdmin({ bai, sach }: { bai: BaiGiang[]; sach: SachChon[] }) {
   return (
     <div className="flex flex-col gap-lg">
-      <section aria-labelledby="them-bai" className="rounded-md bg-surface p-md">
+      <section aria-labelledby="them-bai" className={ADMIN_CARD}>
         <h2 id="them-bai" className="font-heading text-headline-sm text-primary-dark">
           Thêm bài giảng
         </h2>
@@ -68,47 +72,155 @@ export function LessonAdmin({ bai, sach }: { bai: BaiGiang[]; sach: SachChon[] }
       </section>
 
       {bai.length === 0 ? (
-        <p className="font-body text-body-md text-secondary">
+        <p className={`font-body text-body-md text-secondary ${ADMIN_CARD}`}>
           Chưa có bài giảng nào. Tạo một bài ở trên để bắt đầu.
         </p>
       ) : (
         <ol className="flex flex-col gap-md">
           {bai.map((b) => (
             <li key={b.slug}>
-              <article
-                className="rounded-md bg-surface p-md"
-                aria-labelledby={`bai-${b.slug}-ten`}
-              >
-                <header className="flex flex-wrap items-center justify-between gap-sm border-b border-surface-locked pb-sm">
-                  <div>
-                    <h2
-                      id={`bai-${b.slug}-ten`}
-                      className="font-heading text-headline-sm text-primary-dark"
+              <article className={ADMIN_CARD} aria-labelledby={`bai-${b.slug}-ten`}>
+                <header className="flex flex-wrap items-center gap-sm">
+                  <h2
+                    id={`bai-${b.slug}-ten`}
+                    className="font-heading text-headline-sm text-primary-dark"
+                  >
+                    {b.title}
+                  </h2>
+                  {/* Huy hiệu thay cho câu "Lớp 10 · Nháp · slug" chạy liền một dòng: trạng
+                      thái nháp là thứ admin phải bắt được khi lướt, không phải một từ chìm
+                      giữa hai mẩu metadata. */}
+                  <PublishBadge published={b.published} />
+                  <span className="font-body text-caption text-secondary">
+                    Lớp {b.grade} · {b.slug}
+                  </span>
+                </header>
+
+                <div className={`mt-sm border-t ${CARD_DIVIDER} pt-sm`}>
+                  <ActionForm action={setLessonPublished} quietStatus>
+                    <input type="hidden" name="slug" value={b.slug} />
+                    <input type="hidden" name="published" value={b.published ? "0" : "1"} />
+                    <SubmitButton
+                      className={QUIET_BUTTON}
+                      pendingLabel={b.published ? "Đang ẩn…" : "Đang xuất bản…"}
                     >
-                      {b.title}
-                    </h2>
-                    <p className="font-body text-caption text-secondary">
-                      Lớp {b.grade} · {b.published ? "Đã xuất bản" : "Nháp"} · {b.slug}
-                    </p>
-                  </div>
+                      {b.published ? (
+                        <EyeOff aria-hidden className="h-4 w-4" />
+                      ) : (
+                        <Eye aria-hidden className="h-4 w-4" />
+                      )}
+                      {b.published ? "Đưa về nháp" : "Xuất bản"}
+                    </SubmitButton>
+                  </ActionForm>
+                </div>
 
-                  <div className="flex items-center gap-md">
-                    <ActionForm action={setLessonPublished}>
-                      <input type="hidden" name="slug" value={b.slug} />
-                      <input type="hidden" name="published" value={b.published ? "0" : "1"} />
-                      <SubmitButton
-                        className={QUIET_BUTTON}
-                        pendingLabel={b.published ? "Đang ẩn…" : "Đang xuất bản…"}
+                <CardDisclosure label="Sửa bài giảng">
+                  <ActionForm action={updateLesson} className="grid gap-sm sm:grid-cols-2">
+                    <input type="hidden" name="slug" value={b.slug} />
+
+                    <span className="flex flex-col gap-xs">
+                      <label className={LABEL} htmlFor={`ten-${b.slug}`}>
+                        Tên bài giảng
+                      </label>
+                      <input
+                        id={`ten-${b.slug}`}
+                        name="title"
+                        defaultValue={b.title}
+                        required
+                        maxLength={200}
+                        className={FIELD}
+                      />
+                    </span>
+
+                    <span className="flex flex-col gap-xs">
+                      <label className={LABEL} htmlFor={`lop-${b.slug}`}>
+                        Khối lớp
+                      </label>
+                      <select
+                        id={`lop-${b.slug}`}
+                        name="grade"
+                        defaultValue={String(b.grade)}
+                        className={FIELD}
                       >
-                        {b.published ? (
-                          <EyeOff aria-hidden className="h-4 w-4" />
-                        ) : (
-                          <Eye aria-hidden className="h-4 w-4" />
-                        )}
-                        {b.published ? "Đưa về nháp" : "Xuất bản"}
-                      </SubmitButton>
-                    </ActionForm>
+                        {CAC_LOP.map((lop) => (
+                          <option key={lop} value={lop}>
+                            Lớp {lop}
+                          </option>
+                        ))}
+                      </select>
+                    </span>
 
+                    <span className="flex flex-col gap-xs sm:col-span-2">
+                      <label className={LABEL} htmlFor={`tt-${b.slug}`}>
+                        Tóm tắt ngắn
+                      </label>
+                      <textarea
+                        id={`tt-${b.slug}`}
+                        name="summary"
+                        defaultValue={b.summary}
+                        rows={2}
+                        maxLength={500}
+                        className={FIELD}
+                      />
+                    </span>
+
+                    <span className="flex flex-col gap-xs sm:col-span-2">
+                      <label className={LABEL} htmlFor={`sach-${b.slug}`}>
+                        Gắn với quyển sách
+                      </label>
+                      <select
+                        id={`sach-${b.slug}`}
+                        name="bookSlug"
+                        defaultValue={b.bookSlug ?? ""}
+                        className={FIELD}
+                      >
+                        <option value="">— Không gắn quyển nào —</option>
+                        {sach.map((s) => (
+                          <option key={s.slug} value={s.slug}>
+                            {s.shelfName} — {s.title}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="max-w-measure font-body text-caption text-secondary">
+                        Đọc xong quyển này thì học sinh được gợi ý ngay bài giảng đây
+                        (content.md §7).
+                      </span>
+                    </span>
+
+                    <span className="sm:col-span-2">
+                      <SlideField defaultUrl={b.slideUrl} defaultFilename={b.slideFilename} />
+                    </span>
+
+                    <span className="sm:col-span-2">
+                      <ImageField
+                        prefix="preview"
+                        label="Ảnh xem trước bộ slide"
+                        hint="Chụp slide đầu tiên. PNG, JPEG, WebP hoặc GIF, tối đa 2 MB."
+                        defaultUrl={b.previewUrl}
+                        defaultSource={b.previewSource}
+                        defaultCredit={b.previewCredit}
+                      />
+                    </span>
+
+                    <span className="sm:col-span-2">
+                      <ImageField
+                        prefix="mindmap"
+                        label="Sơ đồ tư duy"
+                        hint="Ảnh sơ đồ tóm tắt chương. PNG, JPEG, WebP hoặc GIF, tối đa 2 MB."
+                        defaultUrl={b.mindmapUrl}
+                        defaultSource={b.mindmapSource}
+                        defaultCredit={b.mindmapCredit}
+                      />
+                    </span>
+
+                    <span className="sm:col-span-2">
+                      <SubmitButton className={PRIMARY_BUTTON} pendingLabel="Đang lưu…">
+                        Lưu
+                      </SubmitButton>
+                    </span>
+                  </ActionForm>
+
+                  <div className={`mt-md border-t ${CARD_DIVIDER} pt-sm`}>
                     <ActionForm
                       action={deleteLesson}
                       confirmText={`Xóa bài giảng "${b.title}"? Không hoàn tác được.`}
@@ -116,116 +228,11 @@ export function LessonAdmin({ bai, sach }: { bai: BaiGiang[]; sach: SachChon[] }
                       <input type="hidden" name="slug" value={b.slug} />
                       <SubmitButton className={DANGER_BUTTON} pendingLabel="Đang xóa…">
                         <Trash2 aria-hidden className="h-4 w-4" />
-                        Xóa
+                        Xóa bài giảng
                       </SubmitButton>
                     </ActionForm>
                   </div>
-                </header>
-
-                <ActionForm action={updateLesson} className="mt-sm grid gap-sm sm:grid-cols-2">
-                  <input type="hidden" name="slug" value={b.slug} />
-
-                  <span className="flex flex-col gap-xs">
-                    <label className={LABEL} htmlFor={`ten-${b.slug}`}>
-                      Tên bài giảng
-                    </label>
-                    <input
-                      id={`ten-${b.slug}`}
-                      name="title"
-                      defaultValue={b.title}
-                      required
-                      maxLength={200}
-                      className={FIELD}
-                    />
-                  </span>
-
-                  <span className="flex flex-col gap-xs">
-                    <label className={LABEL} htmlFor={`lop-${b.slug}`}>
-                      Khối lớp
-                    </label>
-                    <select
-                      id={`lop-${b.slug}`}
-                      name="grade"
-                      defaultValue={String(b.grade)}
-                      className={FIELD}
-                    >
-                      {CAC_LOP.map((lop) => (
-                        <option key={lop} value={lop}>
-                          Lớp {lop}
-                        </option>
-                      ))}
-                    </select>
-                  </span>
-
-                  <span className="flex flex-col gap-xs sm:col-span-2">
-                    <label className={LABEL} htmlFor={`tt-${b.slug}`}>
-                      Tóm tắt ngắn
-                    </label>
-                    <textarea
-                      id={`tt-${b.slug}`}
-                      name="summary"
-                      defaultValue={b.summary}
-                      rows={2}
-                      maxLength={500}
-                      className={FIELD}
-                    />
-                  </span>
-
-                  <span className="flex flex-col gap-xs sm:col-span-2">
-                    <label className={LABEL} htmlFor={`sach-${b.slug}`}>
-                      Gắn với quyển sách
-                    </label>
-                    <select
-                      id={`sach-${b.slug}`}
-                      name="bookSlug"
-                      defaultValue={b.bookSlug ?? ""}
-                      className={FIELD}
-                    >
-                      <option value="">— Không gắn quyển nào —</option>
-                      {sach.map((s) => (
-                        <option key={s.slug} value={s.slug}>
-                          {s.shelfName} — {s.title}
-                        </option>
-                      ))}
-                    </select>
-                    <span className="font-body text-caption text-secondary">
-                      Đọc xong quyển này thì học sinh được gợi ý ngay bài giảng đây
-                      (content.md §7).
-                    </span>
-                  </span>
-
-                  <span className="sm:col-span-2">
-                    <SlideField defaultUrl={b.slideUrl} defaultFilename={b.slideFilename} />
-                  </span>
-
-                  <span className="sm:col-span-2">
-                    <ImageField
-                      prefix="preview"
-                      label="Ảnh xem trước bộ slide"
-                      hint="Chụp slide đầu tiên. PNG, JPEG, WebP hoặc GIF, tối đa 2 MB."
-                      defaultUrl={b.previewUrl}
-                      defaultSource={b.previewSource}
-                      defaultCredit={b.previewCredit}
-                    />
-                  </span>
-
-                  <span className="sm:col-span-2">
-                    <ImageField
-                      prefix="mindmap"
-                      label="Sơ đồ tư duy"
-                      hint="Ảnh sơ đồ tóm tắt chương. PNG, JPEG, WebP hoặc GIF, tối đa 2 MB."
-                      defaultUrl={b.mindmapUrl}
-                      defaultSource={b.mindmapSource}
-                      defaultCredit={b.mindmapCredit}
-                    />
-                  </span>
-
-                  <span className="sm:col-span-2">
-                    <SubmitButton className={PRIMARY_BUTTON} pendingLabel="Đang lưu…">
-                      Lưu
-                    </SubmitButton>
-                  </span>
-                </ActionForm>
+                </CardDisclosure>
               </article>
             </li>
           ))}

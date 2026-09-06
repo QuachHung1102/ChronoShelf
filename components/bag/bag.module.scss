@@ -52,3 +52,21 @@
     transition: none;
   }
 }
+
+// Thước đo "đã sưu tầm bao nhiêu". Cùng công thức với thước ở màn kệ sách
+// (`BookShelf.module.scss`) và ở thẻ kệ trang chủ: rãnh tối có viền trong mảnh, thanh đầy
+// chuyển sắc cam. Ở SCSS vì gradient, `box-shadow: inset` và chiều cao 6px (ngoài thang
+// spacing) là thứ Tailwind không diễn đạt gọn được.
+.thuoc {
+  height: 6px;
+  overflow: hidden;
+  background: theme('colors.surface-room / 75%');
+  border-radius: theme('borderRadius.full');
+  box-shadow: inset 0 0 0 1px theme('colors.secondary / 45%');
+}
+
+.thuocDay {
+  height: 100%;
+  background: linear-gradient(to right, theme('colors.tertiary-deep'), theme('colors.tertiary'));
+  border-radius: theme('borderRadius.full');
+}

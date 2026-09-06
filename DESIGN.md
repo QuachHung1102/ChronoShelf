@@ -15,13 +15,18 @@ colors:
   surface-reader: "#241209"
   surface-room: "#160B05"
   surface-locked: "#5A3B22"
-  secondary-light: "#C4A886"
+  secondary-light: "#E3C39B"
   on-primary: "#F6ECDA"
   ring: "#A83A10"
   ring-on-dark: "#F6ECDA"
   destructive: "#B3261E"
   on-destructive: "#FFFFFF"
 typography:
+  headline-xl:
+    fontFamily: Playfair Display
+    fontSize: 48px
+    fontWeight: 700
+    lineHeight: 1.1
   headline-lg:
     fontFamily: Playfair Display
     fontSize: 36px
@@ -41,7 +46,7 @@ typography:
     fontFamily: Playfair Display
     fontSize: 15px
     fontWeight: 700
-    lineHeight: 1.3
+    lineHeight: 1.4
   body-md:
     fontFamily: Lora
     fontSize: 14px
@@ -61,7 +66,7 @@ typography:
     fontFamily: Lora
     fontSize: 12px
     fontWeight: 700
-    lineHeight: 1
+    lineHeight: 1.3
     letterSpacing: 0.12em
   caption:
     fontFamily: Lora
@@ -84,6 +89,9 @@ spacing:
   md: 16px
   lg: 24px
   xl: 32px
+  2xl: 48px
+  3xl: 64px
+  measure: 456px
   page-margin: 48px
   shelf-gap: 28px
   header-height: 72px
@@ -230,10 +238,16 @@ Bảng màu xoay quanh ba vai trò trong content.md: **nâu đất/nâu gỗ** c
 - **Secondary (#7A6248) — Nâu nhạt:** chữ phụ, caption, metadata **trên nền sáng**. Đã được
   làm đậm hơn màu nâu nhạt ban đầu (`#8A7259`) để đạt 4.5:1 trên nền `neutral` — chữ caption
   cỡ nhỏ nên không được phép mờ hơn mức này.
-- **Secondary Light (#C4A886) — Nâu kem:** cùng vai trò `secondary` nhưng **trên nền tối**.
+- **Secondary Light (#E3C39B) — Nâu kem:** cùng vai trò `secondary` nhưng **trên nền tối**.
   `secondary` trên `surface-room` chỉ đạt 2.9:1, không đọc được. Đây là cặp bắt buộc: chữ phụ
   đặt trên gỗ tối phải dùng token này, đừng hạ opacity của `on-primary` để giả nó — opacity
   không khai báo được trong `components` nên `design:lint` không kiểm tra được.
+  **Đã làm sáng từ #C4A886 lên #E3C39B ngày 2026-09-04.** Giá trị cũ chỉ đạt 3.46:1 trên
+  `primary` (thẻ chuỗi giữ lửa ở Cộng đồng) và 4.46:1 trên `surface-locked` (niên đại trên
+  bìa sách đang khóa) — cả hai trượt ngưỡng 4.5:1, mà `design:lint` không bắt được vì không
+  cặp nào trong hai cặp đó được khai báo ở `components`. Giá trị mới đạt tối thiểu 4.68:1
+  trên MỌI nền tối hệ đang dùng: `primary` 4.68, `surface-locked` 6.02, `primary-dark` 8.66,
+  `surface-shelf` 10.30, `surface-reader` 10.76, `surface-room` 11.57.
 - **Tertiary (#E8622C) — Cam lửa:** *chỉ dùng cho đồ họa*, không dùng làm nền có chữ. Viền
   phát sáng của quyển đã mở khóa, ngọn lửa Streak, luồng sáng khi vật phẩm rơi ra, icon.
 - **Tertiary Deep (#A83A10) — Cam đất:** biến thể đậm dùng khi accent phải làm **nền cho
@@ -263,6 +277,20 @@ Hai họ chữ, phân vai rõ ràng:
   đọc dài trên màn hình, và **hỗ trợ đầy đủ dấu tiếng Việt** — đây là điều kiện bắt buộc, đừng
   thay bằng font không có bộ dấu.
 
+`headline-xl` 48px là bậc **đỉnh** của thang, và nó tồn tại vì một chỗ duy nhất: bìa sách ở
+màn hình đọc. Bìa chiếm gần trọn khung nhìn nhưng tên sách trước đây chỉ 24px (`headline-md`)
+— bằng đúng một tiêu đề mục trong thanh bên, nên vật thể lớn nhất trên màn hình lại mang chữ
+cỡ trung. Chỉ dùng cho tên sách trên bìa và cho tên vật phẩm ở khoảnh khắc nhận thưởng; đây là
+hai chỗ mà chữ PHẢI cân được với một vật thể chiếm cả màn hình.
+
+Hai giãn dòng đã được nới ngày 2026-09-04, cả hai vì cùng một lý do — **dấu chồng tiếng Việt**:
+
+- `label-caps` từ 1.0 lên 1.3. Giãn dòng 1.0 nghĩa là hộp dòng cao đúng bằng cỡ chữ 12px,
+  trong khi mực chữ viết hoa có dấu (`Ộ`, `Ế`, `Ữ`) cao tới ~14px — chữ tràn khỏi hộp dòng
+  và ăn vào khoảng cách với tiêu đề ngay dưới, có chỗ chỉ còn hở 3px.
+- `title-book` từ 1.3 lên 1.4. Tên sách hai dòng trên bìa chỉ còn hở 3px giữa hai dòng, nên
+  dấu của dòng dưới gần chạm chân chữ dòng trên.
+
 Cỡ chữ nhỏ nhất trong hệ là 12px (`caption`, `label-caps`). Không đặt chữ nhỏ hơn mức này —
 người dùng chính là học sinh và phần lớn nội dung là văn xuôi lịch sử.
 
@@ -279,9 +307,20 @@ bao giờ dùng cho một cụm từ.
 Bố cục desktop dùng lưới cố định, nội dung căn giữa, lề trang 48px (`page-margin`). Header cao
 72px và luôn dính trên cùng.
 
-Thang khoảng cách theo bội số 8px (`xs` 4 / `sm` 8 / `md` 16 / `lg` 24 / `xl` 32), cộng thêm
-hai giá trị theo ngữ cảnh: `shelf-gap` 28px là khoảng cách giữa các quyển sách trên kệ, và
-`page-margin` 48px là lề ngoài của trang.
+Thang khoảng cách theo bội số 8px (`xs` 4 / `sm` 8 / `md` 16 / `lg` 24 / `xl` 32 / `2xl` 48 /
+`3xl` 64), cộng thêm ba giá trị theo ngữ cảnh: `shelf-gap` 28px là khoảng cách giữa các quyển
+sách trên kệ, `page-margin` 48px là lề ngoài của trang, và `measure` 456px là bề rộng tối đa
+của một cột văn xuôi.
+
+`2xl` và `3xl` thêm ngày 2026-09-04 vì thang cũ **dừng ở 32px**, nên mọi cấp phân cấp dọc trên
+trang chủ — giữa hero và chương, giữa chương và chương, giữa tiêu đề và khối con — đều phải
+dùng chung đúng một giá trị `xl`. Ba cấp khác nhau mà cùng một khoảng cách thì mắt không đọc
+ra cấp nào chứa cấp nào. Dùng `3xl` giữa các chương lớn, `2xl` giữa các khối trong một chương,
+`xl` trở xuống bên trong một khối.
+
+`measure` 456px ≈ 65 ký tự ở `body-md` 14px. Trước đó văn xuôi dùng `max-w-2xl` (672px) — con
+số ấy hợp với chữ 16px, nhưng `body-md` là 14px nên dòng chạy 95–102 ký tự, vượt xa khoảng
+60–75 mà mắt bắt được khi xuống dòng. Dùng `max-w-measure` cho mọi đoạn văn xuôi dài.
 
 Kệ sách là một hàng ngang duy nhất, các bìa căn theo **đáy** để chúng đứng trên tấm ván như
 sách thật; dưới hàng đó là một tầng sách trang trí để tủ đọc ra là đồ nội thất chứ không phải
@@ -428,8 +467,9 @@ thành phần accent duy nhất mang chữ; mọi chỗ accent khác đều là 
 lại nằm trên thẻ `bg-surface`, tức ô nhập cùng màu nền của thẻ chứa nó — 1.00:1, người dùng
 không thấy ô ở đâu cho tới khi bấm trúng. Viền là `surface-locked` (9.20:1 trên `surface`,
 7.93:1 trên `neutral`), cùng màu với đường kẻ chia phần đã dùng trong khu quản trị. Hai lựa
-chọn khác đã tính: `secondary` đạt 5.22:1 cũng qua, `secondary-light` chỉ 2.06:1 nên **không
-dùng được** — nó trượt ngưỡng 3:1 của WCAG 1.4.11.
+chọn khác đã tính: `secondary` đạt 5.22:1 cũng qua, `secondary-light` chỉ 1.53:1 nên **không
+dùng được** — nó trượt ngưỡng 3:1 của WCAG 1.4.11. (Con số đó là của #E3C39B; bản #C4A886
+dùng tới 2026-09-04 đạt 2.06:1 — vẫn trượt, nên kết luận không đổi.)
 
 Khai báo này dùng đúng thủ thuật của `focus-ring`: `components` trong `design.md` chỉ có
 `backgroundColor` và `textColor` — không có `borderColor` — nên một cặp màu-ranh-giới phải

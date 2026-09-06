@@ -32,19 +32,26 @@ export function ItemDropOverlay({
     <div className="flex flex-col items-center gap-lg px-page-margin text-center">
       {item && (
         <>
+          {/* Kích thước ở đây là NỘI DUNG chứ không phải trang trí: đây là phần thưởng cho
+              cả một quyển sách vừa đọc xong. Bản trước vẽ vật phẩm sáng vỏn vẹn 67px và cả
+              cụm chỉ chiếm 313px giữa một vùng trống 724px, nên khoảnh khắc cao trào đọc ra
+              như một dòng thông báo. Vẫn đúng một nguồn sáng trên màn — luật "một quầng sáng"
+              của DESIGN.md § Quầng sáng mời gọi là luật của màn KỆ SÁCH, không phải màn này. */}
           <div
-            className={`${s.itemGlow} ${anim(s.dropItem)} flex h-40 w-40 items-center justify-center rounded-full`}
+            className={`${s.itemGlow} ${anim(s.dropItem)} flex h-56 w-56 items-center justify-center rounded-full`}
           >
             {item.image ? (
               // eslint-disable-next-line @next/next/no-img-element -- ảnh vật phẩm tĩnh trong public/
-              <img src={item.image} alt="" className="h-24 w-24 object-contain" />
+              <img src={item.image} alt="" className="h-36 w-36 object-contain" />
             ) : (
-              <Sparkles aria-hidden className="h-16 w-16 text-tertiary-light" />
+              <Sparkles aria-hidden className="h-24 w-24 text-tertiary-light" />
             )}
           </div>
 
           <div className={anim(s.dropText)}>
-            <p className="font-heading text-headline-md text-on-primary">
+            {/* `headline-xl` 48px: DESIGN.md § Typography dựng bậc này cho đúng hai chỗ, và
+                đây là một trong hai — "chữ PHẢI cân được với một vật thể chiếm cả màn hình". */}
+            <p className="font-heading text-headline-xl text-on-primary">
               {replay ? `Vật phẩm đã có: ${item.name}` : `Bạn nhận được: ${item.name}`}
             </p>
             <p className="mt-sm max-w-xl font-body text-body-md text-secondary-light">
@@ -55,10 +62,21 @@ export function ItemDropOverlay({
                 được thỏa ở đúng chỗ nó có hiệu lực. `GhiCongAnh` tự quyết định bọc liên
                 kết hay in nguyên văn — xem lý do trong chính component đó. */}
             {item.image && (
+              // Ba class, ba lý do đo được:
+              //   `text-secondary-light` — `secondary` trên nền phòng chỉ đạt 3.38:1, đúng
+              //     thứ DESIGN.md § Do's and Don'ts cấm thẳng ("Don't dùng `secondary` … làm
+              //     màu chữ trên nền tối của căn phòng"). Cặp đúng đo được 11.57:1 trên
+              //     `surface-room` và 10.76:1 trên `surface-reader`.
+              //   `max-w-xl` — dòng này từng rộng 784px, rộng hơn cả câu mô tả nó chú thích
+              //     (547px) và rộng nhất màn hình. Cùng mép với câu mô tả ngay trên.
+              //   `mt-md` — thang khe dọc phải là 12px (tiêu đề→mô tả) < 16px (mô tả→ghi
+              //     công) < 24px (→dòng mở khóa). `mt-xs` cũ chỉ 4px nên dòng ghi công đọc
+              //     ra như dòng thứ hai của mô tả.
+              // Giữ nguyên việc in nguyên văn, không bọc `<a>` — lý do ở chính `GhiCongAnh`.
               <GhiCongAnh
                 credit={item.imageCredit}
                 nguon={item.imageSource}
-                className="mt-xs font-body text-caption text-secondary"
+                className="mt-md max-w-xl font-body text-caption text-secondary-light"
               />
             )}
           </div>

@@ -4,11 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut, UserRound } from "lucide-react";
+import { navItemClass } from "@/components/ui/controls";
 import { getSignedInUser, onAuthChange, signOut, type SignedInUser } from "@/lib/api/auth";
-
-const FOCUS_ON_DARK =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-on-dark " +
-  "focus-visible:ring-offset-2 focus-visible:ring-offset-primary rounded-sm";
 
 /**
  * Component này vẫn chạy phía client dù phiên nay đã nằm trong cookie `httpOnly` (nên
@@ -59,7 +56,7 @@ export function AuthMenu() {
     return (
       <Link
         href={`/dang-nhap?next=${encodeURIComponent(pathname)}`}
-        className={`font-body text-label-md text-on-primary transition-colors duration-200 ease-out hover:text-tertiary-light ${FOCUS_ON_DARK}`}
+        className={navItemClass(pathname === "/dang-nhap")}
       >
         Đăng nhập
       </Link>
@@ -68,14 +65,21 @@ export function AuthMenu() {
 
   return (
     <span className="flex items-center gap-sm">
+      {/* Hiện phần TRƯỚC dấu @, không phải cả email. `max-w-[14ch]` cắt "ui-audit@example.com"
+          thành "ui-audit@exampl…" — vừa không đọc được vì cắt đúng chỗ vô nghĩa, vừa vẫn phơi
+          phần đầu địa chỉ lên máy chiếu lớp học, mà phần người ta tự nhận ra mình lại nằm
+          trước dấu @. Email đủ vẫn còn trong `title` để tra khi cần. `public.users` chưa có
+          cột tên hiển thị; ngày nào có thì đây là chỗ DUY NHẤT phải sửa. */}
       <span className="flex items-center gap-xs text-on-primary" title={user.email}>
         <UserRound aria-hidden className="h-5 w-5" />
-        <span className="max-w-[14ch] truncate font-body text-label-md">{user.email}</span>
+        <span className="max-w-[12ch] truncate font-body text-label-md">
+          {user.email.split("@")[0]}
+        </span>
       </span>
       <button
         type="button"
         onClick={() => void signOut().catch(() => undefined)}
-        className={`flex items-center text-on-primary transition-colors duration-200 ease-out hover:text-tertiary-light ${FOCUS_ON_DARK}`}
+        className={navItemClass(false)}
       >
         <LogOut aria-hidden className="h-5 w-5" />
         <span className="sr-only">Đăng xuất</span>

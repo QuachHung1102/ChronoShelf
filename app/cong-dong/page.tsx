@@ -24,6 +24,7 @@ const dinhDangThoiGian = new Intl.DateTimeFormat("vi-VN", {
 export default async function CongDongPage() {
   const shelves = await readShelfList();
   const bangTin = await readBangTin();
+  const bangTinRong = bangTin.bai.length === 0;
 
   return (
     <>
@@ -35,12 +36,23 @@ export default async function CongDongPage() {
           <h1 className="mt-sm font-heading text-headline-lg text-primary-dark">
             Chuyện lịch sử đáng để kể tiếp
           </h1>
-          <p className="mt-sm max-w-2xl font-body text-body-md text-secondary">
+          <p className="mt-sm max-w-measure font-body text-body-md text-secondary">
             Đặt một câu hỏi còn vướng, chia sẻ điều vừa khám phá, hoặc góp thêm một mảnh
             ghép cho câu chuyện của bạn học.
           </p>
 
-          <div className="mt-xl grid items-start gap-lg lg:grid-cols-[minmax(0,1fr)_18rem]">
+          {/* Bảng tin rỗng thì đổ về MỘT cột. Bố cục hai cột chỉ hợp lý khi cột chính có
+              bài để đọc; lúc chưa có bài nào, nó đẩy hành động duy nhất của màn hình —
+              "viết bài đầu tiên" — vào cột hẹp 288px và để hơn nửa trang trống hoác.
+              DESIGN.md § Overview: mỗi màn hình chỉ có MỘT hành động chính rõ ràng.
+              Hai nhánh đều là chuỗi literal đầy đủ để JIT của Tailwind quét được. */}
+          <div
+            className={
+              bangTinRong
+                ? "mt-xl grid items-start gap-lg"
+                : "mt-xl grid items-start gap-lg lg:grid-cols-[minmax(0,1fr)_18rem]"
+            }
+          >
             <section className="min-w-0" aria-labelledby="bang-tin">
               <div className="flex items-center justify-between gap-md">
                 <h2 id="bang-tin" className="font-heading text-headline-md text-primary-dark">
@@ -51,16 +63,13 @@ export default async function CongDongPage() {
                 </span>
               </div>
 
-              {bangTin.bai.length === 0 ? (
-                <div className="mt-md rounded-md border border-surface-locked bg-surface p-lg">
-                  <MessageSquare aria-hidden className="h-8 w-8 text-tertiary-deep" />
-                  <p className="mt-sm font-heading text-headline-sm text-primary-dark">
-                    Chưa có câu chuyện nào
-                  </p>
-                  <p className="mt-xs font-body text-body-sm text-secondary">
-                    Hãy là người đầu tiên mở cuộc trò chuyện.
-                  </p>
-                </div>
+              {bangTinRong ? (
+                // Một dòng dẫn, không phải một cái hộp viền: hộp "chưa có gì" chiếm chỗ
+                // ngang với nội dung thật mà không nói thêm điều gì ngoài con số "0 bài"
+                // ngay phía trên. Ô soạn bài nằm ngay dưới dòng này.
+                <p className="mt-md max-w-measure font-body text-body-md text-secondary">
+                  Chưa ai kể chuyện gì. Bạn mở đầu nhé.
+                </p>
               ) : (
                 <ol className="mt-md space-y-md">
                   {bangTin.bai.map((bai) => {
@@ -75,7 +84,15 @@ export default async function CongDongPage() {
                         >
                           <header className="flex items-start justify-between gap-md">
                             <div className="flex items-center gap-sm">
-                              <span className="grid h-9 w-9 place-items-center rounded-full bg-primary text-on-primary">
+                              {/* Vòng tròn đổi màu theo loại bài — đây là kênh quét bằng
+                                  mắt duy nhất còn lại sau khi byline tụt xuống cỡ chữ
+                                  metadata. Không phải phân biệt CHỈ bằng màu (WCAG 1.4.1):
+                                  icon khác hình và chữ vẫn ghi rõ "Câu hỏi"/"Chia sẻ". */}
+                              <span
+                                className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-on-primary ${
+                                  laCauHoi ? "bg-tertiary-deep" : "bg-primary"
+                                }`}
+                              >
                                 {laCauHoi ? (
                                   <HelpCircle aria-hidden className="h-5 w-5" />
                                 ) : (
@@ -83,9 +100,12 @@ export default async function CongDongPage() {
                                 )}
                               </span>
                               <div>
+                                {/* Vẫn là <h2> (aria-labelledby của <article> trỏ vào nó),
+                                    chỉ thôi mang cỡ chữ tiêu đề: biệt danh là một chuỗi băm
+                                    4 ký tự, nó không được to hơn chính bài viết. */}
                                 <h2
                                   id={`bai-${bai.id}`}
-                                  className="font-heading text-headline-sm text-primary-dark"
+                                  className="font-body text-label-md text-secondary"
                                 >
                                   {laCauHoi ? "Câu hỏi" : "Chia sẻ"} của {bai.tacGia}
                                 </h2>
@@ -99,7 +119,10 @@ export default async function CongDongPage() {
                             </div>
                           </header>
 
-                          <p className="mt-md whitespace-pre-wrap break-words font-body text-body-md text-primary-dark">
+                          {/* `body-book` 16px/1.75 là thang chữ dành cho văn xuôi đọc dài,
+                              và `max-w-measure` giữ dòng trong khoảng 60–75 ký tự
+                              (DESIGN.md § Layout). Nội dung bài là vật nặng nhất trong thẻ. */}
+                          <p className="mt-md max-w-measure whitespace-pre-wrap break-words font-body text-body-book text-primary-dark">
                             {bai.body}
                           </p>
 
@@ -129,7 +152,7 @@ export default async function CongDongPage() {
                                         {dinhDangThoiGian.format(binhLuan.createdAt)}
                                       </time>
                                     </div>
-                                    <p className="mt-xs whitespace-pre-wrap break-words font-body text-body-sm text-secondary">
+                                    <p className="mt-xs max-w-measure whitespace-pre-wrap break-words font-body text-body-sm text-secondary">
                                       {binhLuan.body}
                                     </p>
                                   </li>
@@ -138,30 +161,53 @@ export default async function CongDongPage() {
                             )}
 
                             {bangTin.daDangNhap && (
-                              <ActionForm
-                                action={action}
-                                resetOnSuccess
-                                className="mt-md flex flex-col gap-sm"
-                              >
-                                <label className={LABEL} htmlFor={`binh-luan-${bai.id}`}>
+                              // Form bình luận nằm trong <details>. Mở sẵn ở MỌI bài thì
+                              // bảng tin biến thành một chồng ô nhập rỗng và không còn đọc
+                              // được — mà đọc mới là việc chính ở đây. <details> là của
+                              // trình duyệt: đã có aria-expanded, mở được bằng bàn phím,
+                              // không tốn một dòng JS nào.
+                              <details className="mt-md">
+                                <summary className={`${QUIET_BUTTON} cursor-pointer list-none`}>
+                                  <MessageSquare aria-hidden className="h-4 w-4" />
                                   Thêm bình luận
-                                </label>
-                                <textarea
-                                  id={`binh-luan-${bai.id}`}
-                                  name="body"
-                                  required
-                                  rows={2}
-                                  className={FIELD}
-                                  placeholder="Viết câu trả lời hoặc góp thêm một ý…"
-                                />
-                                <SubmitButton
-                                  className={`${QUIET_BUTTON} self-start py-sm`}
-                                  pendingLabel="Đang gửi…"
+                                </summary>
+
+                                <ActionForm
+                                  action={action}
+                                  resetOnSuccess
+                                  className="mt-sm flex flex-col gap-sm"
                                 >
-                                  <Send aria-hidden className="h-4 w-4" />
-                                  Gửi bình luận
-                                </SubmitButton>
-                              </ActionForm>
+                                  <label className={LABEL} htmlFor={`binh-luan-${bai.id}`}>
+                                    Bình luận của bạn
+                                  </label>
+                                  {/* `maxLength` chặn ngay trong trình duyệt đúng con số
+                                      máy chủ chặn (lib/community/actions.ts). Máy chủ đếm
+                                      CODE POINT (`[...value].length` sau `trim()`), còn
+                                      `maxLength` đếm UTF-16 code unit — tiếng Việt dựng sẵn
+                                      đều nằm trong BMP nên hai cách đếm trùng nhau; khác
+                                      biệt duy nhất là maxLength tính cả khoảng trắng đầu
+                                      cuối sẽ bị trim, tức nó chỉ chặt hơn, không chặn nhầm. */}
+                                  <textarea
+                                    id={`binh-luan-${bai.id}`}
+                                    name="body"
+                                    required
+                                    rows={3}
+                                    maxLength={500}
+                                    className={FIELD}
+                                    placeholder="Viết câu trả lời hoặc góp thêm một ý…"
+                                  />
+                                  <p className="font-body text-caption text-secondary">
+                                    Tối đa 500 ký tự.
+                                  </p>
+                                  <SubmitButton
+                                    className={`${QUIET_BUTTON} self-start py-sm`}
+                                    pendingLabel="Đang gửi…"
+                                  >
+                                    <Send aria-hidden className="h-4 w-4" />
+                                    Gửi bình luận
+                                  </SubmitButton>
+                                </ActionForm>
+                              </details>
                             )}
                           </section>
                         </article>
@@ -192,11 +238,14 @@ export default async function CongDongPage() {
                       <label className={LABEL} htmlFor="noi-dung-bai">
                         Nội dung
                       </label>
+                      {/* Con số 1.000 ở dòng dưới trước đây chỉ là một lời hứa suông —
+                          không ô nào chặn. Xem ghi chú code point / UTF-16 ở ô bình luận. */}
                       <textarea
                         id="noi-dung-bai"
                         name="body"
                         required
                         rows={6}
+                        maxLength={1000}
                         className={`${FIELD} mt-xs`}
                         placeholder="Điều gì trong lịch sử khiến bạn tò mò?"
                       />
@@ -224,9 +273,15 @@ export default async function CongDongPage() {
               </section>
 
               {bangTin.daDangNhap && (
-                <section className="rounded-md bg-primary p-lg text-on-primary">
+                // Nền `primary-dark` chứ không phải `primary`: hai dòng caption dưới đây
+                // dùng `secondary-light`, và cặp đó trên `primary` chỉ đạt 4.68:1 sát
+                // ngưỡng, trong khi trên `primary-dark` là 8.66:1 — đúng cặp DESIGN.md đã
+                // khai báo cho `book-tooltip`. Đường kẻ `border-secondary-light` cũng lên
+                // theo. Đây là chỗ nói người học đang giữ chuỗi bao nhiêu ngày, nó không
+                // được là chỗ mờ nhất màn hình.
+                <section className="rounded-md bg-primary-dark p-lg text-on-primary">
                   <div className="flex items-center gap-sm">
-                    <Flame aria-hidden className="h-6 w-6 text-tertiary-light" />
+                    <Flame aria-hidden className="h-6 w-6 shrink-0 text-tertiary-light" />
                     <div>
                       <p className="font-heading text-headline-sm">{bangTin.streak} ngày liên tục</p>
                       <p className="font-body text-caption text-secondary-light">

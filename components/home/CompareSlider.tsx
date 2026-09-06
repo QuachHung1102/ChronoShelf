@@ -86,6 +86,30 @@ export function CompareSlider({ xua, nay, chuDe }: Props) {
           decoding="async"
         />
 
+        {/* Hai nhãn cố định ở góc trên mỗi nửa khung. Không có chúng thì manh mối DUY NHẤT
+            về việc nửa nào là quá khứ nằm ở dòng ghi công 12px bên dưới ảnh — mà chính sự
+            đối lập giữa hai nửa mới là nội dung của khối. Với cặp ảnh không có bối cảnh rõ
+            (người thời đồ đá / người trong cửa hàng) người xem không nhất thiết đoán ra.
+
+            Nền `primary-dark` ĐẶC chứ không phải nền trong suốt hạ opacity: opacity không
+            khai báo được trong khối `components` nên `design:lint` mù với nó, còn cặp
+            `on-primary` trên `primary-dark` là 12.37:1 và kiểm được.
+
+            `pointer-events: none` cùng lý do đã ghi cho `.vach`: thanh trượt thật phủ kín
+            khung và nằm dưới hai nhãn này, chúng không được nuốt thao tác kéo. */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute left-sm top-sm z-10 rounded-sm bg-primary-dark px-sm py-xs font-body text-label-caps uppercase text-on-primary"
+        >
+          Ngày ấy
+        </span>
+        <span
+          aria-hidden
+          className="pointer-events-none absolute right-sm top-sm z-10 rounded-sm bg-primary-dark px-sm py-xs font-body text-label-caps uppercase text-on-primary"
+        >
+          Bây giờ
+        </span>
+
         <span aria-hidden className={s.vach} />
         <span aria-hidden className={s.num}>
           <MoveHorizontal className="h-5 w-5" />

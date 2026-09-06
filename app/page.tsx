@@ -15,6 +15,12 @@ export const dynamic = "force-dynamic";
  *
  * Dòng thời gian cuộn dọc, mỗi chủ đề là một khối so sánh "Ngày ấy – Bây giờ" kéo được
  * vạch giữa hai ảnh. Cuối trang là ba lối vào kệ kèm chỉ báo tiến độ.
+ *
+ * NHỊP DỌC — ba cấp, ba giá trị khác nhau, đúng thang DESIGN.md § Layout:
+ * `3xl` (64px) giữa các CHƯƠNG (hero → dòng thời gian → "Bắt đầu đọc"), `2xl` (48px)
+ * giữa các KHỐI trong dòng thời gian, `xl` trở xuống bên trong một khối. Trước đây cả ba
+ * cấp dùng chung `xl` 32px, nên trang đọc ra thành một cột dài đều đều: ranh giới giữa hai
+ * chương bằng đúng ranh giới giữa một tiêu đề và đoạn văn của nó.
  */
 export default async function Home() {
   // MỘT truy vấn, không phải hai: `ShelfChain` đã bao gồm nguyên `ShelfSummary` mà Header
@@ -27,33 +33,52 @@ export default async function Home() {
       <Header activeHref="/" shelves={chains} />
 
       <main id="noi-dung" className="flex-1 px-page-margin py-xl">
-        <section className="mx-auto max-w-4xl">
+        {/* `max-w-5xl` (1024px) là bề rộng cột nội dung dùng chung với /cong-dong và
+            /bai-giang. Trước đây trang này dùng `max-w-4xl` nên lề trái của <h1> nhảy
+            ~56px mỗi lần bấm qua lại giữa hai màn nằm cạnh nhau trên cùng thanh nav. */}
+        <section className="mx-auto max-w-5xl">
           <p className="font-body text-label-caps uppercase text-tertiary-deep">Cửa sổ lịch sử</p>
           <h1 className="mt-sm font-heading text-headline-lg text-primary-dark">
             Mọi thứ quanh bạn đều từng khác hẳn
           </h1>
-          <p className="mt-md max-w-2xl font-body text-body-md text-secondary">
+          {/* `max-w-measure` = 456px ≈ 65 ký tự ở `body-md` 14px. `max-w-2xl` cũ là con số
+              hợp với chữ 16px, ở đây nó cho dòng dài 95–102 ký tự. */}
+          <p className="mt-md max-w-measure font-body text-body-md text-secondary">
             Bữa ăn, bộ quần áo, mái nhà, cái điện thoại trong túi — mỗi thứ là kết quả của
             hàng nghìn năm. Kéo vạch giữa hai tấm ảnh để thấy khoảng cách đó bằng mắt, rồi
             mở một quyển sách để biết chuyện gì đã xảy ra ở giữa.
           </p>
         </section>
 
-        <div className={`${s.day} mx-auto mt-xl max-w-4xl pl-lg`}>
+        <div className={`${s.day} mx-auto mt-3xl max-w-5xl pl-lg`}>
           {KHOI_SO_SANH.map((khoi) => (
             <section
               key={khoi.key}
-              className={`${s.moc} ${s.hienDan} relative mb-xl pl-lg last:mb-0`}
+              className={`${s.moc} ${s.hienDan} relative mb-2xl pl-lg last:mb-0`}
               aria-labelledby={`khoi-${khoi.key}`}
             >
-              <p className="font-body text-label-caps uppercase text-tertiary-deep">{khoi.moc}</p>
+              {/* CHỦ ĐỀ dẫn, khoảng thời gian lùi xuống làm nhãn phụ.
+
+                  Trước đây thứ tự ngược lại, và nó nói sai một điều: sợi dây dọc kèm chấm
+                  tròn là từ vựng hình ảnh của một TRỤC THỜI GIAN, nhưng bốn khối này không
+                  nối tiếp nhau về thời gian — cả bốn ("Thời tiền sử → hôm nay", "Thời đồ đá
+                  → thế kỷ 21", "Hang đá → đô thị", "Thẻ tre → tức thì") đều trải ĐÚNG cùng
+                  một khoảng, mỗi khối tự nó đã là một cặp xưa→nay hoàn chỉnh. Đặt khoảng
+                  thời gian lên đầu mỗi mốc là mời người đọc hiểu bốn mốc như bốn chặng kế
+                  tiếp. Cho chủ đề dẫn thì sợi dây đọc ra đúng thứ nó là: mạch nối bốn
+                  chương của cùng một trang, không phải dòng chảy thời gian. */}
               <h2
                 id={`khoi-${khoi.key}`}
-                className="mt-xs font-heading text-headline-md text-primary-dark"
+                className="font-heading text-headline-md text-primary-dark"
               >
                 {khoi.chuDe}
               </h2>
-              <p className="mb-md mt-sm max-w-2xl font-body text-body-md text-secondary">
+              {/* Viên thuốc viền thay vì dòng nhãn viết hoa: nó là một khoảng, không phải
+                  một cái tên chương. `tertiary-deep` trên `neutral` đạt 5.04:1. */}
+              <p className="mt-sm inline-flex rounded-full border border-tertiary-deep px-sm py-xs font-body text-caption text-tertiary-deep">
+                {khoi.moc}
+              </p>
+              <p className="mb-md mt-sm max-w-measure font-body text-body-md text-secondary">
                 {khoi.dan}
               </p>
               <CompareSlider xua={khoi.xua} nay={khoi.nay} chuDe={khoi.chuDe} />
@@ -61,11 +86,14 @@ export default async function Home() {
           ))}
         </div>
 
-        <section className="mx-auto mt-xl max-w-4xl" aria-labelledby="vao-ke">
-          <h2 id="vao-ke" className="font-heading text-headline-md text-primary-dark">
+        <section className="mx-auto mt-3xl max-w-5xl" aria-labelledby="vao-ke">
+          {/* Nhãn phụ để chương thứ ba mở đầu cùng một khuôn với hero và từng mốc thời
+              gian — nếu không, nó là tiêu đề duy nhất trên trang không có nhãn dẫn. */}
+          <p className="font-body text-label-caps uppercase text-tertiary-deep">Kệ sách</p>
+          <h2 id="vao-ke" className="mt-sm font-heading text-headline-md text-primary-dark">
             Bắt đầu đọc
           </h2>
-          <p className="mb-md mt-sm font-body text-body-md text-secondary">
+          <p className="mb-lg mt-sm max-w-measure font-body text-body-md text-secondary">
             Mỗi kệ là một mạch thời gian. Đọc xong một quyển, bạn nhận được vật phẩm mở khóa
             quyển tiếp theo.
           </p>

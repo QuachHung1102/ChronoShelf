@@ -66,14 +66,16 @@ export function BookPage({
         </figure>
       )}
 
-      <p className={`${s.body} font-body text-body-book leading-[1.75] text-primary-dark`}>
-        {page.body}
-      </p>
+      {/* Không viết `leading-[…]` cạnh một token cỡ chữ: token `body-book` đã mang sẵn giãn
+          dòng 1.75 và `body-md` mang 1.6, nên một giá trị viết tay hoặc là nhân đôi nguồn sự
+          thật, hoặc là một con số nằm ngoài DESIGN.md (bản trước để `leading-[1.7]` ở khối ý
+          chính — 1.7 không tồn tại trong hệ). */}
+      <p className={`${s.body} font-body text-body-book text-primary-dark`}>{page.body}</p>
 
       {page.summary && (
         <ul className={`${s.summary} mt-md flex flex-col gap-sm`}>
           {page.summary.map((line) => (
-            <li key={line} className="font-body text-body-md leading-[1.7] text-primary-dark">
+            <li key={line} className="font-body text-body-md text-primary-dark">
               {line}
             </li>
           ))}

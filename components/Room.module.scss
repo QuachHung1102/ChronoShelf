@@ -5,7 +5,11 @@
 .room {
   position: relative;
   background: theme('colors.surface-room');
-  overflow: hidden;
+  // Chỉ chặn cuộn NGANG. Bản trước là `overflow: hidden` cả hai chiều, và chính nó giấu
+  // đi việc hàng sách tràn 218px ra ngoài khoang tủ ở 1024px — không có thanh cuộn nào
+  // xuất hiện, phần tràn bị cắt trong im lặng, nên lỗi sống sót qua nhiều phiên. Nay hàng
+  // sách tự xuống tầng nên tủ có thể cao hơn khung nhìn; lúc đó trang phải cuộn được.
+  overflow-x: hidden;
   // Cắt mọi lớp nền khỏi stacking context của trang: vignette không được leo lên header.
   isolation: isolate;
 }

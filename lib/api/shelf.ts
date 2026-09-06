@@ -50,6 +50,7 @@ export function buildShelfView(shelf: ContentShelf, state: UserShelfState): Shel
   return {
     slug: shelf.slug,
     name: shelf.name,
+    blurb: shelf.blurb,
     cover: shelf.cover,
     coverSource: shelf.coverSource,
     coverCredit: shelf.coverCredit,

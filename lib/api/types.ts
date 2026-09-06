@@ -15,6 +15,8 @@ export interface BookView {
 export interface ShelfView {
   slug: string;
   name: string;
+  /** Giới thiệu ngắn của kệ. Chuỗi rỗng nghĩa là admin chưa soạn. */
+  blurb: string;
   /** Ảnh nền căn phòng + ghi công của nó. Đi thẳng từ `ContentShelf`, không phụ thuộc
    *  trạng thái người dùng — nhưng `BookShelf` chỉ nhận `ShelfView` nên phải qua đây. */
   cover: string | null;

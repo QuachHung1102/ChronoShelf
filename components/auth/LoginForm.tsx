@@ -65,13 +65,31 @@ export function LoginForm({ next }: { next: string }) {
     "khoi-phuc": "Quên mật khẩu",
   }[cheDo];
 
+  // Cảnh báo về câu hỏi bảo mật KHÔNG còn nằm ở đây. Nó từng bị nhét vào mô tả chế độ
+  // đăng ký, tức xuất hiện ở đầu thẻ — trước lúc người dùng chạm tới ô câu hỏi — bằng
+  // kiểu chữ mờ nhất trên thẻ (`body-sm`/`secondary`). Nay nó là một khối ghi chú đặt
+  // ngay trên chính ô đó, xem `ghiChuCauHoi` bên dưới.
   const moTa = {
     "dang-nhap": "Nhập email và mật khẩu của bạn.",
-    "dang-ky": `Mật khẩu tối thiểu ${MAT_KHAU_TOI_THIEU} ký tự. Câu hỏi bảo mật là cách DUY NHẤT lấy lại tài khoản nếu quên mật khẩu — hãy chọn câu bạn chắc chắn nhớ.`,
+    "dang-ky": `Mật khẩu tối thiểu ${MAT_KHAU_TOI_THIEU} ký tự.`,
     "khoi-phuc": cauHoiCuaToi
       ? "Trả lời câu hỏi bảo mật rồi đặt mật khẩu mới."
-      : "Nhập email để bọn mình hỏi lại câu hỏi bảo mật của bạn.",
+      : "Bọn mình không gửi email đặt lại mật khẩu. Nhập email để lấy câu hỏi bảo mật của bạn.",
   }[cheDo];
+
+  /**
+   * Ứng dụng KHÔNG gửi bất kỳ email nào (CLAUDE.md § Đăng nhập) — không có nhà cung cấp
+   * mail và sẽ không gắn. Nhưng một ô "Email" dạy người dùng đúng điều ngược lại: mọi ứng
+   * dụng khác đều gửi thư xác thực và có nút "gửi lại mật khẩu". Điều ngoại lệ đó phải
+   * được nói đúng lúc người ta đang chọn câu hỏi, vì hậu quả của việc chọn bừa là mất tài
+   * khoản vĩnh viễn. Dùng lại đúng kiểu khối ghi chú của bước khôi phục ở dưới.
+   */
+  const ghiChuCauHoi = (
+    <p className="rounded-md bg-surface p-md font-body text-body-md text-primary-dark">
+      Đây là cách <strong className="font-semibold">duy nhất</strong> lấy lại tài khoản nếu bạn quên mật khẩu — bọn
+      mình không gửi email đặt lại. Hãy chọn câu bạn chắc chắn nhớ.
+    </p>
+  );
 
   const oEmail = (
     <>
@@ -130,13 +148,19 @@ export function LoginForm({ next }: { next: string }) {
             {busy ? "Đang kiểm tra…" : "Đăng nhập"}
           </button>
 
+          {/* Nhãn phải nói nút LÀM GÌ: "Chưa có tài khoản?" là một câu hỏi, đọc xong vẫn
+              chưa biết bấm vào thì chuyện gì xảy ra (mở trang khác? hiện thêm ô?). Cả hai
+              nay cùng khuôn "câu hỏi rồi động từ" như nút ở hai chế độ kia, và cùng có
+              icon — `KeyRound` chính là icon của nút gửi ở chế độ khôi phục, tức người
+              dùng sẽ gặp lại nó ở bước sau. */}
           <div className="flex flex-wrap items-center justify-between gap-md">
             <button type="button" onClick={() => doiCheDo("dang-ky")} className={QUIET_BUTTON}>
               <UserPlus aria-hidden className="h-4 w-4" />
-              Chưa có tài khoản?
+              Chưa có tài khoản? Tạo mới
             </button>
             <button type="button" onClick={() => doiCheDo("khoi-phuc")} className={QUIET_BUTTON}>
-              Quên mật khẩu?
+              <KeyRound aria-hidden className="h-4 w-4" />
+              Quên mật khẩu? Khôi phục
             </button>
           </div>
         </form>
@@ -167,6 +191,8 @@ export function LoginForm({ next }: { next: string }) {
             onChange={(e) => setMatKhau(e.target.value)}
             className={FIELD}
           />
+
+          {ghiChuCauHoi}
 
           <label className={LABEL} htmlFor="auth-cau-hoi">
             Câu hỏi bảo mật

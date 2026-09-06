@@ -155,7 +155,12 @@
     position: absolute;
     top: 0;
     bottom: 0;
-    left: 0;
+    // Sợi dây phải chạy qua TÂM các chấm mốc, không phải chạy song song bên cạnh chúng.
+    // `.moc` là con của `.day` nên nó bắt đầu sau `pl-lg` (24px) của `.day`, còn chấm
+    // `.moc::before` lùi -5px và rộng 12px — tâm chấm rơi vào 24 − 5 + 6 = 25px. Sợi dây
+    // rộng 2px nên mép trái phải là 24px thì tâm mới trùng. Bản trước để `left: 0`, tức
+    // dây và chấm cách nhau 24px: dòng thời gian có một sợi dây và một cột chấm rời nhau.
+    left: theme('spacing.lg');
     width: 2px;
     content: '';
     background: linear-gradient(
@@ -178,4 +183,29 @@
   border: 2px solid theme('colors.neutral');
   border-radius: 9999px;
   translate: 0 0.55rem;
+}
+
+// ---------------------------------------------------------------------------
+// Thước đo tiến độ trên thẻ kệ ở cuối trang
+//
+// Cùng công thức với thước ở màn kệ sách (`BookShelf.module.scss`) để hai màn nói cùng
+// một ngôn ngữ: rãnh tối có viền trong mảnh, thanh đầy chuyển sắc cam. Nằm ở SCSS vì
+// `linear-gradient`, `box-shadow: inset` và chiều cao 6px (ngoài thang spacing) đều là
+// thứ Tailwind không diễn đạt gọn được. Màu vẫn lấy từ token qua `theme()`.
+// ---------------------------------------------------------------------------
+
+.thuoc {
+  display: block;
+  height: 6px;
+  overflow: hidden;
+  background: theme('colors.surface-room / 75%');
+  border-radius: theme('borderRadius.full');
+  box-shadow: inset 0 0 0 1px theme('colors.secondary / 45%');
+}
+
+.thuocDay {
+  display: block;
+  height: 100%;
+  background: linear-gradient(to right, theme('colors.tertiary-deep'), theme('colors.tertiary'));
+  border-radius: theme('borderRadius.full');
 }

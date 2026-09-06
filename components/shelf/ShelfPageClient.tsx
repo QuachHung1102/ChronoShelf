@@ -8,6 +8,7 @@ import type { ContentShelf } from "@/lib/content/types";
 import { onAuthChange } from "@/lib/api/auth";
 import { buildShelfView, getUserShelfState } from "@/lib/api/shelf";
 import type { UserShelfState } from "@/lib/api/types";
+import type { UserStatePlain } from "@/lib/content/user-state";
 import { BookShelf } from "./BookShelf";
 
 /** Chưa đăng nhập: kệ vẫn xem được, chỉ quyển đầu mở và tiến độ không lưu. */
@@ -18,6 +19,21 @@ const SIGNED_OUT: UserShelfState = {
 };
 
 /**
+ * Dựng `UserShelfState` từ hình dạng THUẦN mà cả server component lẫn `/api/me/state`
+ * cùng trả về. Một hàm dựng duy nhất cho hai đường đọc — hai đường mà dựng riêng là cách
+ * chắc chắn nhất để chúng trôi xa nhau.
+ */
+function dungTrangThai(plain: UserStatePlain): UserShelfState {
+  return {
+    streak: plain.streak ?? 0,
+    ownedItemSlugs: new Set(plain.ownedItemSlugs),
+    progressByBook: new Map(
+      plain.progress.map((p) => [p.bookSlug, { currentPage: p.currentPage, completed: p.completed }]),
+    ),
+  };
+}
+
+/**
  * Nội dung tới từ server component qua prop; chỉ trạng thái người dùng (vật phẩm,
  * tiến độ) mới phải hỏi máy chủ.
  *
@@ -26,8 +42,17 @@ const SIGNED_OUT: UserShelfState = {
  * trạng thái này phải làm mới lại NGAY sau khi đọc xong một quyển (nhận vật phẩm →
  * mở khóa quyển sau) và sau khi đăng nhập ở header — cả hai đều không đổi route.
  */
-export function ShelfPageClient({ shelf }: { shelf: ContentShelf }) {
-  const [userState, setUserState] = useState<UserShelfState>(SIGNED_OUT);
+export function ShelfPageClient({
+  shelf,
+  trangThaiBanDau,
+}: {
+  shelf: ContentShelf;
+  /** Trạng thái người dùng đọc sẵn ở server, để lần sơn đầu tiên không vẽ sai. */
+  trangThaiBanDau?: UserStatePlain;
+}) {
+  const [userState, setUserState] = useState<UserShelfState>(() =>
+    trangThaiBanDau ? dungTrangThai(trangThaiBanDau) : SIGNED_OUT,
+  );
   const [openBookSlug, setOpenBookSlug] = useState<string | null>(null);
   const [justUnlockedSlugs, setJustUnlockedSlugs] = useState<Set<string>>(new Set());
   const [stateError, setStateError] = useState<string | null>(null);
@@ -87,9 +112,13 @@ export function ShelfPageClient({ shelf }: { shelf: ContentShelf }) {
 
   return (
     <>
-      {/* Vùng aria-live có sẵn từ đầu (chỉ ẩn khi rỗng) để trình đọc màn hình đọc được lỗi
-          lúc nó xuất hiện; dựng mới cả thẻ thì thông báo hay bị bỏ qua. */}
-      <p aria-live="polite" className="empty:hidden">
+      {/* Vùng aria-live phải CÓ MẶT SẴN, rỗng nhưng vẫn hiện.
+          `empty:hidden` là `display: none`, mà `display: none` gỡ phần tử khỏi cây trợ
+          năng — nên khi lỗi xuất hiện thì nội dung VÀ việc hiện lại rơi vào cùng một lần
+          cập nhật DOM, và trình đọc màn hình coi đó là một vùng live vừa được THÊM chứ
+          không phải một thay đổi, rồi thường bỏ qua. Đây đúng là cái bẫy CLAUDE.md đã ghi
+          và repo đã tự cấm ở hai file khác. Vùng rỗng cao 0px nên không chiếm chỗ. */}
+      <p aria-live="polite">
         {stateError && (
           <span className="flex items-start gap-xs bg-destructive px-page-margin py-sm font-body text-body-sm text-on-destructive">
             <AlertCircle aria-hidden className="mt-[0.15em] h-4 w-4 shrink-0" />

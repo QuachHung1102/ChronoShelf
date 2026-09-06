@@ -14,7 +14,7 @@
         "surface-reader": "#241209",
         "surface-room": "#160b05",
         "surface-locked": "#5a3b22",
-        "secondary-light": "#c4a886",
+        "secondary-light": "#e3c39b",
         "on-primary": "#f6ecda",
         "ring": "#a83a10",
         "ring-on-dark": "#f6ecda",
@@ -22,6 +22,9 @@
         "on-destructive": "#ffffff"
       },
       "fontFamily": {
+        "headline-xl": [
+          "Playfair Display"
+        ],
         "headline-lg": [
           "Playfair Display"
         ],
@@ -57,6 +60,13 @@
         ]
       },
       "fontSize": {
+        "headline-xl": [
+          "48px",
+          {
+            "fontWeight": "700",
+            "lineHeight": "1.1"
+          }
+        ],
         "headline-lg": [
           "36px",
           {
@@ -82,7 +92,7 @@
           "15px",
           {
             "fontWeight": "700",
-            "lineHeight": "1.3"
+            "lineHeight": "1.4"
           }
         ],
         "body-md": [
@@ -111,7 +121,7 @@
           {
             "letterSpacing": "0.12em",
             "fontWeight": "700",
-            "lineHeight": "1"
+            "lineHeight": "1.3"
           }
         ],
         "caption": [
@@ -149,6 +159,9 @@
         "md": "16px",
         "lg": "24px",
         "xl": "32px",
+        "2xl": "48px",
+        "3xl": "64px",
+        "measure": "456px",
         "page-margin": "48px",
         "shelf-gap": "28px",
         "header-height": "72px"

@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { BookOpen, ChevronDown, ChevronUp, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, BookOpen, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
 import { ActionForm, SubmitButton } from "./ActionForm";
+import { ADMIN_CARD, CARD_DIVIDER, CardDisclosure, ORDER_BUTTON, PublishBadge } from "./card";
 import { CountryPicker } from "./CountryPicker";
 import { ImageField } from "./ImageField";
 import {
@@ -20,25 +21,26 @@ import {
   QUIET_BUTTON,
 } from "@/components/ui/controls";
 
-const ICON_BUTTON =
-  "inline-flex h-8 w-8 items-center justify-center rounded-sm text-secondary transition-colors " +
-  "duration-200 ease-out hover:text-tertiary-deep aria-disabled:cursor-not-allowed " +
-  "aria-disabled:opacity-30 aria-disabled:hover:text-secondary " +
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 " +
-  "focus-visible:ring-offset-surface";
-
 /**
  * Màn `/quan-tri`: danh sách kệ + form sửa từng kệ. Server Component — không có
  * JavaScript nào của riêng nó gửi xuống trình duyệt ngoài `ActionForm`/`SubmitButton`.
  *
  * Mỗi hàng là vài `<form>` nhỏ độc lập thay vì một form lớn có JavaScript điều phối.
  * Đổi lại: một hàng hỏng không kéo cả trang theo, và trạng thái đang-gửi của từng nút
- * tách bạch — bấm ▲ ở hàng ba không làm mờ nút Lưu ở hàng một.
+ * tách bạch — bấm mũi tên ở hàng ba không làm mờ nút Lưu ở hàng một.
+ *
+ * Mỗi thẻ có ba tầng, xếp theo thứ tự admin cần tới chúng:
+ *  1. `<header>` — nhận diện và đổi thứ tự. Luôn hiện.
+ *  2. Hàng điều hướng — vào sách con, xuất bản/về nháp. Luôn hiện.
+ *  3. `<CardDisclosure>` — biểu mẫu soạn thảo + nút xóa. **Gập mặc định.**
+ * Nút xóa nằm trong tầng 3 chứ không đứng cạnh "Xuất bản" ở tầng 2: hai nút đó trước
+ * đây cùng cỡ chữ, cùng gạch chân, cách nhau 16px và chỉ khác nhau sắc đỏ — ở 13px thì
+ * mắt không tách được. Nay chúng không còn đứng cạnh nhau nữa.
  */
 export function ShelfAdmin({ shelves }: { shelves: AdminShelfRow[] }) {
   return (
     <div className="flex flex-col gap-lg">
-      <section aria-labelledby="them-ke" className="rounded-md bg-surface p-md">
+      <section aria-labelledby="them-ke" className={ADMIN_CARD}>
         <h2 id="them-ke" className="mb-sm font-heading text-headline-sm text-primary-dark">
           Thêm kệ mới
         </h2>
@@ -69,7 +71,7 @@ export function ShelfAdmin({ shelves }: { shelves: AdminShelfRow[] }) {
           </SubmitButton>
           {/* Slug sinh tự động từ tên nên không có ô nhập: một slug gõ tay sai chính tả
               là một URL sai vĩnh viễn, mà sửa slug sau đó thì gãy mọi liên kết đã chia sẻ. */}
-          <p className="w-full font-body text-caption text-secondary">
+          <p className="w-full max-w-measure font-body text-caption text-secondary">
             Đường dẫn sinh tự động từ tên. Kệ mới luôn ở dạng nháp cho tới khi bạn xuất bản.
           </p>
         </ActionForm>
@@ -81,122 +83,60 @@ export function ShelfAdmin({ shelves }: { shelves: AdminShelfRow[] }) {
         </h2>
 
         {shelves.length === 0 && (
-          <p className="rounded-md bg-surface p-md font-body text-body-md text-secondary">
+          <p className={`${ADMIN_CARD} font-body text-body-md text-secondary`}>
             Chưa có kệ nào. Tạo kệ đầu tiên ở trên.
           </p>
         )}
 
         {shelves.map((shelf, index) => (
-          <article key={shelf.slug} className="rounded-md bg-surface p-md">
-            <header className="mb-sm flex flex-wrap items-center justify-between gap-sm">
-              <div className="flex items-center gap-sm">
+          <article key={shelf.slug} className={ADMIN_CARD}>
+            <header className="flex flex-wrap items-center justify-between gap-sm">
+              <div className="flex flex-wrap items-center gap-sm">
                 <h3 className="font-heading text-headline-sm text-primary-dark">{shelf.name}</h3>
-                <span
-                  className={`rounded-full px-sm py-[0.15rem] font-body text-caption uppercase tracking-wide ${
-                    shelf.published
-                      ? "bg-tertiary-deep text-on-primary"
-                      : "bg-neutral text-primary-dark"
-                  }`}
-                >
-                  {shelf.published ? "Đã xuất bản" : "Nháp"}
-                </span>
+                <PublishBadge published={shelf.published} />
                 <span className="font-body text-caption text-secondary">
                   /{shelf.slug} · {shelf.bookCount} quyển
                 </span>
               </div>
 
-              {/* Nút ▲/▼ dùng `aria-disabled` chứ KHÔNG dùng `disabled`. Khi admin bấm ▲
-                  liên tiếp để đẩy kệ lên đầu, chính cái nút vừa bấm trở thành vô hiệu —
-                  trình duyệt lấy luôn tiêu điểm khỏi một phần tử `disabled`, nên người
-                  dùng bàn phím rơi về `<body>` và phải Tab lại từ đầu trang.
-                  `aria-disabled` giữ nút ở trong luồng Tab; thứ chặn submit là
-                  `type="button"` — thuần HTML, không cần JavaScript. Cùng kỹ thuật với
-                  `components/shelf/BookCover.tsx`.
-                  Đánh đổi: mất phần tự khóa lúc đang gửi của `SubmitButton`, nên bấm
-                  nhanh hai lần có thể đổi chỗ hai lần. Không mất mát gì và hoàn tác được
-                  bằng nút ngược lại. */}
+              {/* Mũi tên, KHÔNG phải chevron. Chevron là glyph gập/mở thẻ — và từ khi thân
+                  thẻ thật sự gập được thì hai nghĩa đó đứng cạnh nhau trên cùng header;
+                  người lần đầu vào màn này thấy cặp `^ v` ở góc thẻ sẽ đoán nó thu gọn
+                  thẻ, bấm thử, và thứ đổi lại là thứ tự đọc của học sinh.
+                  Nhãn "Thứ tự" hiện ra bằng mắt vì tên của hai nút này trước đó chỉ nằm
+                  trong `title=` (phải rê chuột chờ) và trong `sr-only`. */}
               <div className="flex items-center gap-xs">
-                <ActionForm action={moveShelf}>
+                <span className="font-body text-caption text-secondary">Thứ tự</span>
+                <ActionForm action={moveShelf} quietStatus>
                   <input type="hidden" name="slug" value={shelf.slug} />
                   <input type="hidden" name="direction" value="-1" />
                   <button
                     type={index === 0 ? "button" : "submit"}
                     aria-disabled={index === 0 || undefined}
-                    className={ICON_BUTTON}
+                    className={ORDER_BUTTON}
                     title="Lên trên"
                   >
-                    <ChevronUp aria-hidden className="h-5 w-5" />
+                    <ArrowUp aria-hidden className="h-5 w-5" />
                     <span className="sr-only">Đưa kệ {shelf.name} lên trên</span>
                   </button>
                 </ActionForm>
-                <ActionForm action={moveShelf}>
+                <ActionForm action={moveShelf} quietStatus>
                   <input type="hidden" name="slug" value={shelf.slug} />
                   <input type="hidden" name="direction" value="1" />
                   <button
                     type={index === shelves.length - 1 ? "button" : "submit"}
                     aria-disabled={index === shelves.length - 1 || undefined}
-                    className={ICON_BUTTON}
+                    className={ORDER_BUTTON}
                     title="Xuống dưới"
                   >
-                    <ChevronDown aria-hidden className="h-5 w-5" />
+                    <ArrowDown aria-hidden className="h-5 w-5" />
                     <span className="sr-only">Đưa kệ {shelf.name} xuống dưới</span>
                   </button>
                 </ActionForm>
               </div>
             </header>
 
-            <ActionForm action={updateShelf} className="grid gap-sm sm:grid-cols-2">
-              <input type="hidden" name="slug" value={shelf.slug} />
-              <span className="flex flex-col gap-xs">
-                <label className={LABEL} htmlFor={`ten-${shelf.slug}`}>
-                  Tên kệ
-                </label>
-                <input
-                  id={`ten-${shelf.slug}`}
-                  name="name"
-                  defaultValue={shelf.name}
-                  required
-                  maxLength={120}
-                  className={FIELD}
-                />
-              </span>
-              <CountryPicker
-                id={`qg-${shelf.slug}`}
-                name="countryCode"
-                defaultValue={shelf.countryCode ?? ""}
-                className="sm:col-span-2"
-              />
-              <span className="flex flex-col gap-xs sm:col-span-2">
-                <label className={LABEL} htmlFor={`gt-${shelf.slug}`}>
-                  Giới thiệu ngắn
-                </label>
-                <textarea
-                  id={`gt-${shelf.slug}`}
-                  name="blurb"
-                  defaultValue={shelf.blurb}
-                  rows={2}
-                  maxLength={500}
-                  className={FIELD}
-                />
-              </span>
-              <span className="sm:col-span-2">
-                <ImageField
-                  prefix="cover"
-                  label="Ảnh bìa kệ"
-                  hint="Ảnh nền của kệ trên trang học sinh. PNG, JPEG, WebP hoặc GIF, tối đa 2 MB."
-                  defaultUrl={shelf.coverUrl}
-                  defaultSource={shelf.coverSource}
-                  defaultCredit={shelf.coverCredit}
-                />
-              </span>
-              <span className="sm:col-span-2">
-                <SubmitButton className={PRIMARY_BUTTON} pendingLabel="Đang lưu…">
-                  Lưu
-                </SubmitButton>
-              </span>
-            </ActionForm>
-
-            <footer className="mt-md flex flex-wrap items-center gap-md border-t border-surface-locked pt-sm">
+            <div className={`mt-sm flex flex-wrap items-center gap-md border-t ${CARD_DIVIDER} pt-sm`}>
               <Link
                 href={`/quan-tri/${shelf.slug}`}
                 className={`inline-flex items-center gap-xs rounded-sm font-body text-body-sm text-tertiary-deep underline underline-offset-2 ${FOCUS_RING}`}
@@ -205,7 +145,7 @@ export function ShelfAdmin({ shelves }: { shelves: AdminShelfRow[] }) {
                 Quản lý sách ({shelf.bookCount})
               </Link>
 
-              <ActionForm action={setShelfPublished}>
+              <ActionForm action={setShelfPublished} quietStatus>
                 <input type="hidden" name="slug" value={shelf.slug} />
                 <input type="hidden" name="publish" value={shelf.published ? "0" : "1"} />
                 <SubmitButton className={QUIET_BUTTON}>
@@ -217,22 +157,78 @@ export function ShelfAdmin({ shelves }: { shelves: AdminShelfRow[] }) {
                   {shelf.published ? "Chuyển về nháp" : "Xuất bản"}
                 </SubmitButton>
               </ActionForm>
+            </div>
 
-              <ActionForm
-                action={deleteShelf}
-                confirmText={`Xóa kệ "${shelf.name}"? Không hoàn tác được.`}
-              >
+            <CardDisclosure label="Sửa kệ">
+              <ActionForm action={updateShelf} className="grid gap-sm sm:grid-cols-2">
                 <input type="hidden" name="slug" value={shelf.slug} />
-                <SubmitButton
-                  className={DANGER_BUTTON}
-                  disabled={shelf.bookCount > 0}
-                  title={shelf.bookCount > 0 ? "Gỡ hết sách khỏi kệ rồi mới xóa được" : undefined}
-                >
-                  <Trash2 aria-hidden className="h-4 w-4" />
-                  Xóa kệ
-                </SubmitButton>
+                <span className="flex flex-col gap-xs">
+                  <label className={LABEL} htmlFor={`ten-${shelf.slug}`}>
+                    Tên kệ
+                  </label>
+                  <input
+                    id={`ten-${shelf.slug}`}
+                    name="name"
+                    defaultValue={shelf.name}
+                    required
+                    maxLength={120}
+                    className={FIELD}
+                  />
+                </span>
+                <CountryPicker
+                  id={`qg-${shelf.slug}`}
+                  name="countryCode"
+                  defaultValue={shelf.countryCode ?? ""}
+                  className="sm:col-span-2"
+                />
+                <span className="flex flex-col gap-xs sm:col-span-2">
+                  <label className={LABEL} htmlFor={`gt-${shelf.slug}`}>
+                    Giới thiệu ngắn
+                  </label>
+                  <textarea
+                    id={`gt-${shelf.slug}`}
+                    name="blurb"
+                    defaultValue={shelf.blurb}
+                    rows={2}
+                    maxLength={500}
+                    className={FIELD}
+                  />
+                </span>
+                <span className="sm:col-span-2">
+                  <ImageField
+                    prefix="cover"
+                    label="Ảnh bìa kệ"
+                    hint="Ảnh nền của kệ trên trang học sinh. PNG, JPEG, WebP hoặc GIF, tối đa 2 MB."
+                    defaultUrl={shelf.coverUrl}
+                    defaultSource={shelf.coverSource}
+                    defaultCredit={shelf.coverCredit}
+                  />
+                </span>
+                <span className="sm:col-span-2">
+                  <SubmitButton className={PRIMARY_BUTTON} pendingLabel="Đang lưu…">
+                    Lưu
+                  </SubmitButton>
+                </span>
               </ActionForm>
-            </footer>
+
+              <div className={`mt-md border-t ${CARD_DIVIDER} pt-sm`}>
+                <ActionForm
+                  action={deleteShelf}
+                  confirmText={`Xóa kệ "${shelf.name}"? Không hoàn tác được.`}
+                >
+                  <input type="hidden" name="slug" value={shelf.slug} />
+                  <SubmitButton
+                    className={DANGER_BUTTON}
+                    disabled={shelf.bookCount > 0}
+                    title={shelf.bookCount > 0 ? "Gỡ hết sách khỏi kệ rồi mới xóa được" : undefined}
+                    pendingLabel="Đang xóa…"
+                  >
+                    <Trash2 aria-hidden className="h-4 w-4" />
+                    Xóa kệ
+                  </SubmitButton>
+                </ActionForm>
+              </div>
+            </CardDisclosure>
           </article>
         ))}
       </section>

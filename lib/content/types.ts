@@ -49,6 +49,12 @@ export interface ContentBook {
    * liên kết chỉ hiện khi thật sự có chỗ để tới.
    */
   baiGiang: { slug: string; title: string; grade: number }[];
+  /**
+   * Quyển này đã xuất bản chưa. Policy "read published" đã lọc bản nháp cho người
+   * thường, nên với họ trường này LUÔN true; nó chỉ mang thông tin khi người xem là
+   * admin — và đúng lúc đó kệ phải nói rõ quyển nào học sinh chưa nhìn thấy.
+   */
+  published: boolean;
   pages: ContentPage[];
 }
 
@@ -56,6 +62,8 @@ export interface ContentShelf {
   slug: string;
   name: string;
   order: number;
+  /** Giới thiệu ngắn do admin soạn. Chuỗi rỗng nghĩa là chưa có. */
+  blurb: string;
   /** Mã ISO-3166-1 numeric để nối với bản đồ thế giới; null nghĩa là chưa gắn. */
   countryCode: string | null;
   /** Ảnh nền của căn phòng khi vào kệ này. Không có thì phòng vẽ hoàn toàn bằng CSS. */

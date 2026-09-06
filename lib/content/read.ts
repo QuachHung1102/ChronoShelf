@@ -44,6 +44,7 @@ function toPage(row: Page): ContentPage {
 function toBook(row: Book, baiGiangTheoSach: Map<string, ContentBook["baiGiang"]>): ContentBook {
   return {
     baiGiang: baiGiangTheoSach.get(row.slug) ?? [],
+    published: row.published,
     slug: row.slug,
     title: row.title,
     era: row.era,
@@ -118,6 +119,7 @@ export const readShelf = cache(async function readShelf(slug: string): Promise<C
       slug: shelf.slug,
       name: shelf.name,
       order: shelf.position,
+      blurb: shelf.blurb,
       countryCode: shelf.countryCode,
       cover: shelf.coverUrl,
       coverSource: shelf.coverSource,

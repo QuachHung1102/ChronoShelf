@@ -59,36 +59,77 @@
     inset 0 0 0 1px theme('colors.surface-room / 75%');
 }
 
-// Hàng sách nổi lên trên tấm ván, nhờ vậy bóng tiếp đất của từng quyển (thò xuống
-// dưới -7px) đổ ĐÈ LÊN mặt ván thay vì bị tấm ván che mất.
+// ---------------------------------------------------------------------------
+// Hàng sách — LƯỚI tự xuống tầng, không phải flex một hàng cứng
+//
+// Bản trước là `display: flex; justify-content: center` với `.slot { width: 190px }` cố
+// định và không co. Số học của nó: khoang `.bay` rộng 1000px ở 1280 và 844px ở 1024, trong
+// khi n quyển chiếm `n×190 + (n−1)×28`. Tức là vừa được ĐÚNG 4 quyển ở cả hai độ phân giải.
+// Kệ "Lịch sử Việt Nam" đã xuất bản 5 quyển, nên hàng sách rộng 1062px và tràn ra ngoài
+// khoang 62px ở 1280 (mỗi bên 7px, đè lên trụ tủ) và 218px ở 1024 (mỗi bên 85px, quyển đầu
+// bị cắt còn một nửa). Admin lại thấy thêm cả sách nháp, nên trên máy admin là 6 quyển →
+// lệch 140px mỗi bên. Không có thanh cuộn nào cứu: `.room` đặt `overflow: hidden`, nên phần
+// tràn bị cắt trong im lặng — đó là lý do lỗi này sống sót tới tận bây giờ.
+//
+// `repeat(auto-fit, minmax(...))` trả lời vĩnh viễn cho câu "admin thêm bao nhiêu quyển":
+// trình duyệt tự đếm số cột vừa khoang, và quyển thứ n+1 xuống tầng dưới thay vì tràn ra
+// ngoài. Đây cũng đúng ngôn ngữ của vật thể: một cái tủ CÓ nhiều tầng.
+// ---------------------------------------------------------------------------
+
 .row {
+  --plank-h: 28px;
+  // Trần chiều cao một quyển (BookCover.module.scss) nhân tỉ lệ cao nhất trong SCALES.
+  --row-h: calc(min(272px, 30vh) * 1.03 + var(--plank-h));
+
   position: relative;
   z-index: 1;
-  display: flex;
-  align-items: flex-end;
+  display: grid;
+  // Trần 190px giữ đúng khổ sách cũ khi có chỗ; sàn 132px là mức mà tên sách hai dòng và
+  // niên đại còn đọc được — dưới mức đó thì thà xuống tầng.
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
   justify-content: center;
-  gap: theme('spacing.shelf-gap');
+  align-items: end;
+  grid-auto-rows: var(--row-h);
+  column-gap: theme('spacing.shelf-gap');
   list-style: none;
-}
+  // Ăn hết bề ngang khoang để tấm ván chạy sát hai trụ, nhưng trả lại padding để các cột
+  // vẫn nằm đúng trong lòng khoang.
+  margin-inline: -24px;
+  padding-inline: 24px;
 
-// Tấm ván: mặt trên bắt sáng, cạnh vát, mặt trước chìm trong bóng. Cố tình để góc
-// vuông — nó là thanh gỗ, không phải cái thẻ (DESIGN.md § Shapes).
-.plank {
-  height: 28px;
-  margin: 0 -24px; // ăn hết bề ngang khoang, không chừa mép hai bên
-  background: linear-gradient(
+  // Tấm ván vẽ bằng nền LẶP THEO TẦNG, không phải một phần tử riêng: mỗi tầng lưới cao đúng
+  // `--row-h`, nên một ô nền cao `--row-h` với 28px ván ở đầu ô, dịch xuống đáy tầng, sẽ tự
+  // sinh ra đúng một tấm ván dưới mỗi tầng sách — bao nhiêu tầng cũng đúng.
+  // Mặt trên bắt sáng, cạnh vát, mặt trước chìm trong bóng. Cố tình để góc vuông — nó là
+  // thanh gỗ, không phải cái thẻ (DESIGN.md § Shapes).
+  background-image: linear-gradient(
     to bottom,
     theme('colors.secondary') 0 2px,
     theme('colors.primary') 2px 10px,
     theme('colors.primary-dark') 10px 13px,
-    theme('colors.surface-shelf') 13px 100%
+    theme('colors.surface-shelf') 13px var(--plank-h),
+    transparent var(--plank-h)
   );
-  box-shadow: 0 8px 16px -5px theme('colors.surface-room');
+  background-size: 100% var(--row-h);
+  background-position: 0 calc(var(--row-h) - var(--plank-h));
+  background-repeat: repeat-y;
 }
 
-// Tầng dưới của tủ — sách trang trí thuần, `aria-hidden`. Một cái kệ chỉ có đúng năm quyển
+// Sách đứng TRÊN tấm ván: chừa đúng bề dày ván ở đáy mỗi tầng. Nhờ vậy bóng tiếp đất của
+// từng quyển (thò xuống dưới -10px) đổ ĐÈ LÊN mặt ván thay vì bị tấm ván che mất.
+.row > li {
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+  margin-bottom: var(--plank-h);
+}
+
+// Tầng dưới của tủ — sách trang trí thuần, `aria-hidden`. Một cái kệ chỉ có vài quyển
 // xếp ngay ngắn giữa một khoang rỗng thì đọc ra là "hàng nút bấm", không phải "thư viện".
 // Không có quyển nào ở đây bấm được và không quyển nào mang thông tin.
+//
+// Padding ngang phải KHỚP với `.row`: bản trước tầng này bám mép trái khoang còn tầng sách
+// thật thì căn giữa, nên hai tầng lệch mép nhau tới 60px và cái tủ không đọc ra là một khối.
 .shelfLower {
   position: relative;
   z-index: 1;
@@ -97,7 +138,8 @@
   justify-content: flex-start;
   gap: 5px;
   height: min(132px, 14vh);
-  padding: 0 14px;
+  margin-inline: -24px;
+  padding: 0 38px;
 }
 
 // Gáy sách nhìn từ ngoài: cạnh trái tối (mặt không bắt sáng), mặt gáy sáng dần lên trên.
@@ -163,4 +205,40 @@
 // Ván đáy tủ: mỏng hơn ván giữa vì nó nằm sát đáy khoang, không phải đỡ cả một tầng sách.
 .plankLower {
   height: 20px;
+  margin: 0 -24px;
+  background: linear-gradient(
+    to bottom,
+    theme('colors.secondary') 0 2px,
+    theme('colors.primary') 2px 10px,
+    theme('colors.primary-dark') 10px 13px,
+    theme('colors.surface-shelf') 13px 100%
+  );
+  box-shadow: 0 8px 16px -5px theme('colors.surface-room');
+}
+
+// ---------------------------------------------------------------------------
+// Thước tiến độ của kệ
+//
+// DESIGN.md khai báo sẵn token `progress-ribbon` từ đầu nhưng chưa chỗ nào dùng, trong khi
+// tiến độ kệ thì chỉ có đúng một dòng chữ "Bạn đã mở 4/6 quyển". Một con số không cho biết
+// còn bao xa; một cái thước thì có.
+// ---------------------------------------------------------------------------
+
+.meter {
+  position: relative;
+  height: 6px;
+  border-radius: theme('borderRadius.full');
+  background: theme('colors.surface-room / 75%');
+  box-shadow: inset 0 0 0 1px theme('colors.secondary / 45%');
+  overflow: hidden;
+}
+
+.meterFill {
+  height: 100%;
+  border-radius: theme('borderRadius.full');
+  background: linear-gradient(
+    to right,
+    theme('colors.tertiary-deep'),
+    theme('colors.tertiary')
+  );
 }

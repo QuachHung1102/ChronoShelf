@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { QueryTypes } from "sequelize";
 import { getSessionUserId } from "@/lib/auth/session";
 import { sequelize } from "@/lib/db/sequelize";
@@ -22,8 +23,18 @@ import { withRole } from "@/lib/db/tx";
  *      nội dung. Đây là lớp duy nhất không thể quên gọi.
  */
 
-/** Trả về id nếu người đang đăng nhập là admin, null nếu không (kể cả khi chưa đăng nhập). */
-export async function getAdminUserId(): Promise<string | null> {
+/**
+ * Trả về id nếu người đang đăng nhập là admin, null nếu không (kể cả khi chưa đăng nhập).
+ *
+ * Bọc `cache()` của React vì hàm này nay bị hỏi HAI lần trong cùng một lượt render trang
+ * quản trị: `Header` gọi `isAdmin()` để quyết định có hiện mục "Quản trị" hay không, rồi
+ * `AdminGate` gọi lại để quyết định hiện màn nào. Không có lớp này thì mỗi lượt xem
+ * `/quan-tri/*` tốn hai transaction và hai câu `SELECT public.is_admin()`.
+ *
+ * `cache()` chỉ nhớ trong phạm vi MỘT request, nên nó không thể giữ lại quyền admin cũ
+ * sang request sau — điều đó quan trọng, vì đây là hàm quyết định quyền.
+ */
+export const getAdminUserId = cache(async function getAdminUserId(): Promise<string | null> {
   const userId = await getSessionUserId();
   if (!userId) return null;
 
@@ -34,7 +45,7 @@ export async function getAdminUserId(): Promise<string | null> {
     }),
   );
   return rows[0]?.is_admin ? userId : null;
-}
+});
 
 export async function isAdmin(): Promise<boolean> {
   return (await getAdminUserId()) !== null;

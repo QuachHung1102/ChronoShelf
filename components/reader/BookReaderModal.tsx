@@ -15,6 +15,15 @@ import s from "./reader.module.scss";
 const ROUND_BUTTON =
   "flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary transition duration-200 ease-out hover:brightness-110 disabled:pointer-events-none disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-on-dark focus-visible:ring-offset-2 focus-visible:ring-offset-surface-room";
 
+/**
+ * Hành động chính của màn hình đọc — và trên mỗi trạng thái chỉ có ĐÚNG MỘT cái mang hình
+ * này (DESIGN.md § Overview). Viên thuốc cam `tertiary-deep` là ngôn ngữ nút bấm của cả
+ * app; thứ gì chỉ mang thông tin thì không được mượn nó, nếu không học sinh phải thử mới
+ * biết cái nào bấm được.
+ */
+const PILL_BUTTON =
+  "rounded-full bg-tertiary-deep px-lg py-sm font-body text-label-md text-on-primary transition duration-200 ease-out hover:brightness-110 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-on-dark focus-visible:ring-offset-2 focus-visible:ring-offset-surface-room";
+
 /** Một mặt giấy trong sách. Bìa và trang trắng độn cũng là "mặt" — chúng chiếm chỗ thật. */
 type Face =
   | { kind: "cover" }
@@ -176,6 +185,28 @@ export function BookReaderModal({
   // "Quay lại kệ sách") phải đi qua cùng một chỗ, nếu không hộp thoại còn kẹt lại ở top layer.
   const close = useCallback(() => dialogRef.current?.close(), []);
 
+  // Cú đóng mềm 240ms dựng ở reader.module.scss § Khung modal trước đây KHÔNG BAO GIỜ chạy:
+  // sự kiện `close` của `<dialog>` là sự kiện rời rạc nên React xả state đồng bộ, component
+  // bị tháo khỏi cây ngay trong cùng một task và thẻ `<dialog>` biến mất khỏi DOM trước khi
+  // transition kịp một khung hình. Nên phải tự giữ mình sống hết cú đóng rồi mới báo lên
+  // trên. Hệ quả có chủ ý: `refresh()` ở màn kệ sách chạy chậm hơn 240ms, nhờ vậy hoạt cảnh
+  // bung đai sắt của quyển vừa mở khóa diễn ra trên một cái kệ đã nhìn thấy được —
+  // DESIGN.md § Motion đòi chuỗi ba chặng TUẦN TỰ, không chồng lên nhau.
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const finishClosing = useCallback(() => {
+    if (closeTimer.current !== null) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+    onClose();
+  }, [onClose]);
+  useEffect(
+    () => () => {
+      if (closeTimer.current !== null) clearTimeout(closeTimer.current);
+    },
+    [],
+  );
+
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (result) return;
@@ -219,7 +250,29 @@ export function BookReaderModal({
   return (
     <dialog
       ref={dialogRef}
-      onClose={onClose}
+      onClose={() => {
+        // Giảm chuyển động thì không có transition nào để chờ — đóng ngay, và trạng thái
+        // cuối giống hệt chế độ kia (DESIGN.md § Motion).
+        if (reduced) {
+          finishClosing();
+          return;
+        }
+        // Lưới an toàn: transition bị hủy giữa chừng (đổi tab, trình duyệt bỏ qua) thì
+        // `transitionend` không bao giờ tới, và hộp thoại sẽ treo lại vĩnh viễn.
+        closeTimer.current = setTimeout(finishClosing, 400);
+      }}
+      onTransitionEnd={(event) => {
+        // Chỉ nghe transition của CHÍNH hộp thoại: cú lật trang ở `.leaf` cũng nổi bọt lên
+        // tới đây. Lọc `opacity` để bỏ qua `scale` và hai transition rời rạc
+        // `display`/`overlay`; lọc `open` để bỏ qua cú mở.
+        if (
+          event.target === event.currentTarget &&
+          event.propertyName === "opacity" &&
+          dialogRef.current?.open === false
+        ) {
+          finishClosing();
+        }
+      }}
       aria-label={`Đang đọc: ${book.title}`}
       className={s.dialog}
     >
@@ -240,10 +293,89 @@ export function BookReaderModal({
           // màn hình, cách quyển sách cả trăm pixel, nên nó đọc ra như thanh trạng thái
           // của trình duyệt chứ không phải số trang của quyển sách đang cầm.
           <div className="flex flex-1 flex-col items-center justify-center gap-lg">
-            {/* `fitViewport` thu cả cụm (sân khấu + hai nút lật) cho vừa màn hẹp. Không có
-                nó thì ở 1024px hai nút lật nằm HẲN ngoài khung nhìn — sách mở được mà
-                không lật được trang. */}
-            <div className={`flex items-center gap-lg ${s.fitViewport}`}>
+            {/* Tắt chuyển động ở đúng một chỗ: `--flip-duration` chi phối cả cú xoay của
+                tờ giấy, cú trượt căn giữa của cả quyển, lẫn bề dày khối giấy. Tắt lẻ từng
+                cái thì sót — bản trước sót đúng cú trượt 230px của cả quyển.
+                Trạng thái cuối giống hệt hai chế độ (DESIGN.md § Motion). */}
+            <div
+              className={s.stage}
+              style={reduced ? ({ "--flip-duration": "0ms" } as CSSProperties) : undefined}
+            >
+              <div aria-hidden className={s.bookShadow} />
+              <div className={s.book} style={{ transform: `translateX(${shift})` }}>
+                <div
+                  aria-hidden
+                  className={`${s.edge} ${s.edgeLeft}`}
+                  style={{ transform: `scaleX(${edgeScale(readRatio)})` }}
+                />
+                <div
+                  aria-hidden
+                  className={`${s.edge} ${s.edgeRight}`}
+                  style={{ transform: `scaleX(${edgeScale(1 - readRatio)})` }}
+                />
+
+                {Array.from({ length: sheets }, (_, i) => {
+                  const front = faces[2 * i];
+                  const back = faces[2 * i + 1];
+                  const isFlipped = i < flipped;
+                  return (
+                    <div
+                      key={i}
+                      className={`${s.leaf} ${i === flying ? s.turning : ""}`}
+                      style={{
+                        zIndex: i === flying ? sheets + 2 : isFlipped ? i + 1 : sheets - i,
+                        transform: leafTransform(i, flipped),
+                      }}
+                      onTransitionEnd={(event) => {
+                        if (event.target === event.currentTarget) setFlying(null);
+                      }}
+                    >
+                      <div
+                        className={`${s.face} ${s.front} ${
+                          front.kind === "page" ? "" : s.hardCover
+                        }`}
+                      >
+                        {front.kind === "cover" ? (
+                          <CoverFace
+                            title={book.title}
+                            era={book.era}
+                            anhBia={book.cover}
+                            credit={book.coverCredit}
+                            nguon={book.coverSource}
+                            // Chỉ trao lối bấm khi bìa đang THẬT SỰ là mặt đang nhìn. Mọi tờ
+                            // giấy đều được render sẵn, mà `backface-visibility: hidden` chỉ
+                            // chặn VẼ chứ không chặn focus — một nút để lại đây sẽ vẫn bắt
+                            // được Tab sau khi người đọc đã lật qua bìa.
+                            onOpen={flipped === 0 ? () => flip("next") : undefined}
+                          />
+                        ) : front.kind === "end" ? (
+                          <EndFace />
+                        ) : (
+                          <FaceContent face={front} gutter="left" bookTitle={book.title} />
+                        )}
+                      </div>
+                      <div
+                        className={`${s.face} ${s.back} ${
+                          back.kind === "page" ? "" : s.hardCover
+                        }`}
+                      >
+                        {back.kind === "end" ? (
+                          <EndFace />
+                        ) : (
+                          <FaceContent face={back} gutter="right" bookTitle={book.title} />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Hai mũi tên lật trang nằm ở HÀNG NÀY chứ không kẹp hai bên quyển sách — lý do
+                và số đo ghi ở `.controls` trong reader.module.scss. Hàng rộng đúng bằng trang
+                đôi nên hai mũi tên vẫn thẳng hàng với hai mép sách, và vì hai nút bằng nhau
+                nên `justify-between` giữ cụm ở giữa nằm đúng tâm. */}
+            <div className={`${s.controls} flex items-center justify-between gap-lg`}>
               <button
                 type="button"
                 onClick={() => flip("previous")}
@@ -254,77 +386,42 @@ export function BookReaderModal({
                 <ChevronLeft aria-hidden className="h-6 w-6" />
               </button>
 
-              {/* Tắt chuyển động ở đúng một chỗ: `--flip-duration` chi phối cả cú xoay của
-                  tờ giấy, cú trượt căn giữa của cả quyển, lẫn bề dày khối giấy. Tắt lẻ từng
-                  cái thì sót — bản trước sót đúng cú trượt 230px của cả quyển.
-                  Trạng thái cuối giống hệt hai chế độ (DESIGN.md § Motion). */}
-              <div
-                className={s.stage}
-                style={reduced ? ({ "--flip-duration": "0ms" } as CSSProperties) : undefined}
-              >
-                <div aria-hidden className={s.bookShadow} />
-                <div className={s.book} style={{ transform: `translateX(${shift})` }}>
-                  <div
-                    aria-hidden
-                    className={`${s.edge} ${s.edgeLeft}`}
-                    style={{ transform: `scaleX(${edgeScale(readRatio)})` }}
-                  />
-                  <div
-                    aria-hidden
-                    className={`${s.edge} ${s.edgeRight}`}
-                    style={{ transform: `scaleX(${edgeScale(1 - readRatio)})` }}
-                  />
+              <div className="flex items-center gap-md">
+                {/* Số trang là THÔNG TIN, không phải hành động. Trước đây nó mang đúng hình
+                    viên thuốc cam của nút chính, nên ở trang cuối có hai vật giống hệt nhau
+                    đứng cạnh nhau mà chỉ một cái bấm được — DESIGN.md § Overview đòi mỗi màn
+                    hình chỉ có MỘT hành động chính rõ ràng. Hạ xuống đúng cặp `room-caption`
+                    đã khai trong DESIGN.md (`secondary-light` trên nền phòng, 11.57:1).
+                    Vùng `aria-live` phải LUÔN có mặt: tháo ra rồi gắn lại thì trình đọc màn
+                    hình coi đó là vùng vừa được THÊM chứ không phải một thay đổi. */}
+                <p aria-live="polite" className="font-body text-caption text-secondary-light">
+                  {currentPage === 0 ? "Bìa sách" : `Trang ${currentPage}/${pageCount}`}
+                </p>
 
-                  {Array.from({ length: sheets }, (_, i) => {
-                    const front = faces[2 * i];
-                    const back = faces[2 * i + 1];
-                    const isFlipped = i < flipped;
-                    return (
-                      <div
-                        key={i}
-                        className={`${s.leaf} ${i === flying ? s.turning : ""}`}
-                        style={{
-                          zIndex: i === flying ? sheets + 2 : isFlipped ? i + 1 : sheets - i,
-                          transform: leafTransform(i, flipped),
-                        }}
-                        onTransitionEnd={(event) => {
-                          if (event.target === event.currentTarget) setFlying(null);
-                        }}
-                      >
-                        <div
-                          className={`${s.face} ${s.front} ${
-                            front.kind === "page" ? "" : s.hardCover
-                          }`}
-                        >
-                          {front.kind === "cover" ? (
-                            <CoverFace
-                              title={book.title}
-                              era={book.era}
-                              anhBia={book.cover}
-                              credit={book.coverCredit}
-                              nguon={book.coverSource}
-                            />
-                          ) : front.kind === "end" ? (
-                            <EndFace />
-                          ) : (
-                            <FaceContent face={front} gutter="left" bookTitle={book.title} />
-                          )}
-                        </div>
-                        <div
-                          className={`${s.face} ${s.back} ${
-                            back.kind === "page" ? "" : s.hardCover
-                          }`}
-                        >
-                          {back.kind === "end" ? (
-                            <EndFace />
-                          ) : (
-                            <FaceContent face={back} gutter="right" bookTitle={book.title} />
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                {/* Đúng MỘT nút chính và luôn ở cùng một chỗ: mở sách ở bìa, nhận vật phẩm ở
+                    trang cuối, không có gì ở giữa. Viết dạng if/else chứ không phải hai điều
+                    kiện rời — một quyển rỗng (0 trang) thỏa cả hai. Hai `key` khác nhau để
+                    React tháo nút ra dựng lại thay vì tái dùng một phần tử cho hai vai. */}
+                {flipped === 0 ? (
+                  <button
+                    key="mo-sach"
+                    type="button"
+                    onClick={() => flip("next")}
+                    className={PILL_BUTTON}
+                  >
+                    Mở sách
+                  </button>
+                ) : atLastPage ? (
+                  <button
+                    key="doc-xong"
+                    type="button"
+                    onClick={finish}
+                    disabled={busy}
+                    className={PILL_BUTTON}
+                  >
+                    {busy ? "Đang ghi nhận…" : "Đọc xong — nhận vật phẩm"}
+                  </button>
+                ) : null}
               </div>
 
               <button
@@ -336,26 +433,6 @@ export function BookReaderModal({
               >
                 <ChevronRight aria-hidden className="h-6 w-6" />
               </button>
-            </div>
-
-            <div className="flex items-center gap-md">
-              <p
-                aria-live="polite"
-                className="rounded-full bg-tertiary-deep px-md py-sm font-body text-label-md text-on-primary"
-              >
-                {currentPage === 0 ? "Bìa sách" : `Trang ${currentPage}/${pageCount}`}
-              </p>
-
-              {atLastPage && (
-                <button
-                  type="button"
-                  onClick={finish}
-                  disabled={busy}
-                  className="rounded-full bg-tertiary-deep px-lg py-sm font-body text-label-md text-on-primary transition duration-200 ease-out hover:brightness-110 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-on-dark focus-visible:ring-offset-2 focus-visible:ring-offset-surface-room"
-                >
-                  {busy ? "Đang ghi nhận…" : "Đọc xong — nhận vật phẩm"}
-                </button>
-              )}
             </div>
 
             {error && (
@@ -399,25 +476,45 @@ function CoverFace({
   anhBia,
   credit,
   nguon,
+  onOpen,
 }: {
   title: string;
   era: string;
   anhBia: string | null;
   credit: string | null;
   nguon: string | null;
+  /** Có giá trị thì mặt bìa bấm được để mở sách. `undefined` khi bìa đã bị lật qua. */
+  onOpen?: () => void;
 }) {
   return (
-    <div className="relative flex h-full w-full flex-col items-center justify-center p-xl text-center">
+    <div className="relative flex h-full w-full flex-col items-center p-xl text-center">
       {anhBia && (
-        // eslint-disable-next-line @next/next/no-img-element -- ảnh trong bảng media
-        <img src={anhBia} alt="" className={s.coverArt} />
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element -- ảnh trong bảng media */}
+          <img src={anhBia} alt="" className={s.coverArt} />
+          {/* Lớp phủ đục — thứ THẬT SỰ bảo đảm chữ sáng đọc được trên một tấm bìa bất kỳ do
+              admin tải lên. `brightness()` một mình không làm nổi việc đó; số đo ở
+              `.coverArt` trong reader.module.scss. */}
+          <span aria-hidden className={s.coverScrim} />
+        </>
       )}
+
+      {/* Khối chữ đặt ở khoảng phần ba trên theo lối bìa sách in, bằng hai ô co giãn tỉ lệ
+          2:3 — không có kích thước cứng nào nên nó đúng ở mọi chiều cao bìa. Trước đây khối
+          này căn giữa dọc, chiếm 5,4% diện tích bìa, nên tấm bìa 490×580 đọc ra là một khối
+          gỗ trống có một hòn đảo chữ lơ lửng giữa. */}
+      <span aria-hidden className="flex-[2]" />
+
       <p className="relative font-body text-label-caps uppercase text-tertiary-light">
         Cửa sổ lịch sử
       </p>
-      <p className="relative mt-md font-heading text-headline-md text-on-primary">{title}</p>
+      {/* `headline-xl` 48px — DESIGN.md § Typography dựng bậc đỉnh này cho đúng chỗ này:
+          "bìa chiếm gần trọn khung nhìn nhưng tên sách trước đây chỉ 24px". */}
+      <p className="relative mt-md font-heading text-headline-xl text-on-primary">{title}</p>
       <span aria-hidden className={s.coverRule} />
       <p className="relative font-body text-body-md text-secondary-light">{era}</p>
+
+      <span aria-hidden className="flex-[3]" />
 
       {/* Ghi công ảnh bìa. Trên kệ thì bìa sách quá nhỏ để chứa dòng này, nên đây là chỗ
           đầu tiên đủ rộng mà người đọc chắc chắn đi qua — mở sách ra là thấy. Điều kiện BY
@@ -428,6 +525,21 @@ function CoverFace({
           Ảnh bìa: {credit}
           {nguon && <> — Nguồn: {nguon}</>}
         </p>
+      )}
+
+      {/* Bấm thẳng vào bìa để mở sách — phản xạ đầu tiên khi thấy một quyển sách đóng nằm
+          giữa màn hình. Là một nút TRONG SUỐT phủ lên mặt bìa chứ không phải bọc khối chữ
+          vào `<button>`: nội dung của `<button>` phải là phrasing content, mà ở đây là mấy
+          thẻ `<p>`. Vòng focus vẽ vào phía trong (`ring-inset`) vì `.face` có
+          `overflow: hidden` sẽ cắt mất vòng vẽ ra ngoài. `.face::before` (rãnh gáy) đã có
+          `pointer-events: none` nên không chặn cú bấm này. */}
+      {onOpen && (
+        <button
+          type="button"
+          onClick={onOpen}
+          aria-label={`Mở sách: ${title}`}
+          className="absolute inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring-on-dark"
+        />
       )}
     </div>
   );

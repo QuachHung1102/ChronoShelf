@@ -282,7 +282,14 @@ $half: 490px;
 // Ổ… đều là MỘT ký tự ở dạng tổ hợp sẵn — đừng thay bằng cách cắt `body[0]` trong JS, cách đó
 // sẽ tách rời dấu nếu chuỗi rơi vào dạng tổ hợp rời.
 .body {
-  text-align: justify;
+  // Canh TRÁI, không canh đều — và đừng bật `justify` lại. Canh đều lấp phần dư của mỗi
+  // dòng bằng cách giãn khoảng trắng, nên nó chỉ đẹp khi có gạch nối để cắt từ HOẶC cột đủ
+  // dài (60-75 ký tự). Ở đây thiếu cả hai: cột chữ chỉ 394px ≈ 45 ký tự, mà tiếng Việt thì
+  // không ngắt từ được (xem dưới). Đo trên ảnh chụp thật: hai dòng NẰM CẠNH NHAU chạy khe
+  // từ 4px và 10px — chênh 2,5 lần, mắt bám vào các "dòng sông" trắng dọc thay vì chạy
+  // ngang theo chữ. Mép phải răng cưa dễ đọc hơn khe từ nhấp nhô, và đây là màn đọc lâu
+  // nhất của sản phẩm.
+  text-align: left;
   // Tiếng Việt không ngắt từ bằng gạch nối; bật hyphens ở đây sẽ cắt sai âm tiết.
   hyphens: none;
 }
@@ -321,7 +328,9 @@ $half: 490px;
   align-self: center;
   padding-inline: 20px;
   font-family: var(--font-body), serif;
-  font-size: 12px;
+  // Lấy thẳng bậc `caption` của thang chữ thay vì gõ 12px: cùng một giá trị, nhưng đổi
+  // trong DESIGN.md thì chỗ này đi theo.
+  font-size: theme('fontSize.caption[0]');
   color: theme('colors.secondary');
 }
 
@@ -447,48 +456,34 @@ $half: 490px;
   background: theme('colors.tertiary-light / 70%');
 }
 
-// Thu cả cụm đọc sách cho vừa khung nhìn nhỏ.
+// Hàng điều khiển dưới quyển sách, rộng ĐÚNG bằng trang đôi để hai mũi tên lật trang
+// thẳng hàng với hai mép sách.
 //
-// LỖI ĐƯỢC SỬA (đo thật, không suy đoán): cụm này rộng 1116px cố định — sân khấu 980
-// cộng hai nút lật trang 44 cộng hai khoảng gap-lg. Ở màn 1024px, hai nút bị đẩy HẲN ra
-// ngoài khung nhìn:
-//     Trang trước   x = -46 .. -2
-//     Trang sau     x = 1026 .. 1070
-// Sân khấu vẫn nguyên nên nhìn qua tưởng không sao, nhưng học sinh mở được sách mà
-// KHÔNG LẬT ĐƯỢC TRANG. 1024x768 là cỡ máy phòng tin học phổ thông ở Việt Nam.
+// Đây là thứ THAY CHO cơ chế `zoom` đã gỡ bỏ. Cụm đọc cũ kẹp hai mũi tên hai bên quyển
+// sách nên rộng 1116px cố định (980 + 2×44 + 2×gap-lg); ở màn 1024 hai nút bị đẩy HẲN ra
+// ngoài khung nhìn, và bản vá cho việc đó là ba bậc `zoom` 0.9 / 0.82 / 0.72. `zoom` nhân
+// vào CỠ CHỮ DÙNG-ĐỂ-VẼ, nên ở đúng 1024×768 — cỡ máy phòng tin học phổ thông, ngưỡng thấp
+// nhất bắt buộc — chú thích ảnh, số trang và tên sách chạy đầu trang tụt xuống 9,8px, dưới
+// sàn 12px mà DESIGN.md § Typography đặt cứng ("Không đặt chữ nhỏ hơn mức này").
 //
-// Dùng `zoom` chứ KHÔNG `transform: scale()`: sân khấu bên trong dựng bằng `preserve-3d`,
-// mà một transform ở tổ tiên tạo containing block mới và có thể làm bẹp không gian 3D đó.
-// `zoom` đổi kích thước dùng-để-bố-trí nên không đụng vào ngữ cảnh 3D.
+// Đưa hai mũi tên xuống hàng này thì cụm chỉ còn rộng 980px: lọt 1024 với 22px lề mỗi bên,
+// và mọi chữ giữ nguyên cỡ thật. Chiều dọc: 76 (thanh đầu) + 580 (sách) + 24 (gap-lg) + 44
+// = 724 < 768. ĐÁNH ĐỔI đã biết: khung nhìn CAO dưới ~724px không còn được co lại nữa nên
+// quyển sách bị cắt trên/dưới. Đó là đổi một chỗ hỏng ngoài phạm vi bắt buộc lấy một chỗ
+// hỏng NGAY TẠI ngưỡng bắt buộc — đừng chữa bằng cách bật `zoom` trở lại.
+.controls {
+  width: $book-width;
+}
+
+// Ảnh bìa sách trên MẶT BÌA trong trình đọc: làm tối để tên sách và niên đại (chữ sáng)
+// vẫn đọc được, bất kể admin tải lên tấm bìa sáng hay tối.
 //
-// Bậc rời rạc bằng media query thay vì công thức liên tục: CSS không chia được
-// length/length nên `min(1, calc(100vw / 1116px))` là cú pháp không hợp lệ. Ba bậc là đủ
-// — không ai nhận ra khác biệt giữa 0.82 và 0.84. Dấu phẩy là HOẶC, và mỗi luật sau chặt
-// hơn luật trước trên CẢ HAI trục, nên luật khớp cuối cùng luôn là luật hạn chế nhất.
-.fitViewport {
-  transform-origin: center center;
-}
-
-@media (max-width: 1180px), (max-height: 760px) {
-  .fitViewport {
-    zoom: 0.9;
-  }
-}
-
-@media (max-width: 1080px), (max-height: 700px) {
-  .fitViewport {
-    zoom: 0.82;
-  }
-}
-
-@media (max-width: 1000px), (max-height: 650px) {
-  .fitViewport {
-    zoom: 0.72;
-  }
-}
-
-// Ảnh bìa sách trên MẶT BÌA trong trình đọc. Cùng lý do làm tối như `.coverArt` của
-// `BookCover`: tên sách và niên đại là chữ sáng, nên một tấm bìa sáng sẽ nuốt mất chúng.
+// `filter: brightness()` một mình KHÔNG làm được việc đó — nó NHÂN màu trong không gian
+// sRGB nên không đặt được TRẦN độ sáng: ảnh trắng qua `brightness(0.5)` vẫn ra #808080, và
+// `secondary-light` trên nền đó chỉ đạt 2.38:1 (đo bằng công thức WCAG, không ước lượng).
+// Thứ kẹp được trần là `.coverScrim` — một lớp phủ ĐỤC nằm trên ảnh, dưới chữ. Cặp
+// `brightness(0.4)` + phủ 50% cho nền tệ nhất rgb(62,57,54): `secondary-light` 6.85:1,
+// `tertiary-light` 7.26:1, `on-primary` 9.78:1. Đổi một trong hai số thì phải đo lại.
 .coverArt {
   position: absolute;
   inset: 0;
@@ -496,5 +491,16 @@ $half: 490px;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: brightness(0.5) saturate(0.85);
+  filter: brightness(0.4) saturate(0.85);
+}
+
+// Nằm SAU `<img>` và TRƯỚC khối chữ trong DOM. Các `<p>` trên bìa đều `position: relative`
+// với `z-index: auto`, nên thứ tự vẽ giữa chúng và lớp phủ này do thứ tự DOM quyết định —
+// phủ đè lên ảnh, chữ đè lên phủ.
+.coverScrim {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: theme('colors.surface-room / 50%');
 }
