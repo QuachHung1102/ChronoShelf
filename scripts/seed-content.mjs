@@ -126,6 +126,22 @@ out.push(
     "  ('__nhap-khong-bao-gio-xuat-ban', 'lich-su-viet-nam', 900,\n" +
     "   'Mồi nhử cho db:check — đừng xuất bản', '—', false)\n" +
     "ON CONFLICT (slug) DO UPDATE SET published = false;",
+  // Quyển nháp phải CÓ một câu hỏi, nếu không phép kiểm "không đọc được câu hỏi của sách
+  // nháp" luôn thấy 0 dòng và luôn báo đạt — kể cả khi policy `read published` của
+  // `book_questions` bị nới thành USING (true). Đúng cùng một lý do như chính quyển nháp
+  // này: mọi sách THẬT đều đã xuất bản nên không còn dòng nào để mà soi.
+  //
+  // `WHERE NOT EXISTS` chứ KHÔNG `ON CONFLICT (book_slug, position)`: ràng buộc UNIQUE của
+  // bảng này là DEFERRABLE, mà Postgres từ chối dùng ràng buộc deferrable làm trọng tài cho
+  // ON CONFLICT — sqlstate 55000, "does not support deferrable unique constraints as
+  // arbiters". Đã đo thật ngày 2026-09-07. Đây cũng đúng lý do vòng lặp phía trên xóa-rồi-
+  // chèn-lại thay vì upsert.
+  "INSERT INTO public.book_questions (book_slug, position, prompt, choices, correct_index)\n" +
+    "SELECT '__nhap-khong-bao-gio-xuat-ban', 1,\n" +
+    "       'Mồi nhử cho db:check — câu hỏi này không được lộ ra ngoài',\n" +
+    "       ARRAY['mồi nhử A', 'mồi nhử B']::text[], 0\n" +
+    " WHERE NOT EXISTS (SELECT 1 FROM public.book_questions\n" +
+    "                    WHERE book_slug = '__nhap-khong-bao-gio-xuat-ban');",
   // Mồi nhử phải có mật khẩu: `15-mat-khau.sql` XÓA mọi tài khoản không có
   // `password_hash` (người dùng đã chọn "xóa làm lại"), nên thiếu mấy cột này thì mồi
   // nhử biến mất ngay lần `db:migrate` kế tiếp và hai phép kiểm phụ thuộc nó hết nghĩa.

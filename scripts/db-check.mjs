@@ -624,6 +624,42 @@ try {
     `${e.code} "${e.message}"`);
 }
 
+// Câu hỏi của một quyển CHƯA XUẤT BẢN không được lọt ra. Hàng rào ở đây là policy
+// `read published`, KHÁC hai phép trên (ở đó hàng rào là GRANT theo cột) — nên nó phải
+// được khẳng định theo đúng cơ chế của chính nó: không có lỗi nào cả, chỉ là 0 dòng.
+//
+// Phép này CHỈ CÓ NGHĨA nhờ dòng mồi nhử do `seed:content` tạo ra. Mọi câu hỏi thật đều
+// thuộc sách đã xuất bản, nên thiếu mồi nhử thì nó luôn thấy 0 dòng và luôn báo đạt — kể
+// cả khi policy bị nới thành USING (true). Đối chứng ngay dưới là thứ bắt được chuyện đó.
+{
+  const NHAP = "__nhap-khong-bao-gio-xuat-ban";
+  const dem = async (role, userId) =>
+    Number(
+      (await asRoleUndo(role, userId, [
+        [`SELECT count(*) AS n FROM public.book_questions WHERE book_slug = $1`, [NHAP]],
+      ])).rows[0].n,
+    );
+
+  const moiNhu = Number(
+    (await asRoleUndo("chronoshelf_auth", ADMIN_DECOY, [
+      [`SELECT count(*) AS n FROM public.admin_book_questions($1)`, [NHAP]],
+    ])).rows[0].n,
+  );
+  check(moiNhu > 0,
+    "đối chứng: quyển nháp CÓ câu hỏi mồi nhử để mà giấu",
+    `admin thấy ${moiNhu} câu — chạy lại npm run seed:content, thiếu nó thì phép dưới vô nghĩa`);
+
+  check((await dem("chronoshelf_anon", null)) === 0,
+    "người chưa đăng nhập KHÔNG đọc được câu hỏi của sách nháp");
+  check((await dem("chronoshelf_auth", userA)) === 0,
+    "người đã đăng nhập (không phải admin) KHÔNG đọc được câu hỏi của sách nháp");
+
+  // Đối chứng chiều ngược: admin PHẢI thấy, nếu không thì policy đã bị siết quá tay và
+  // hai phép trên đạt vì lý do sai.
+  check((await dem("chronoshelf_auth", ADMIN_DECOY)) > 0,
+    "đối chứng: admin ĐỌC ĐƯỢC câu hỏi của sách nháp (policy không bị siết quá tay)");
+}
+
 // `admin_book_questions` là cửa DUY NHẤT đọc được đáp án. Nó SECURITY DEFINER nên tự bỏ
 // qua RLS — thứ chặn người thường là dòng `is_admin()` bên trong, và đây là phép đo nó.
 {

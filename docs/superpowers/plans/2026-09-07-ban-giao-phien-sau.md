@@ -70,15 +70,45 @@ văn bản đã seed. `db/seed/*.json` có thêm khóa `questions`, và `seed-co
 
 ```
 npm run check        → exit 0
-npm run db:check     → 98 đạt / 0 hỏng      (+13 phép mới ở mục "Bài trắc nghiệm cuối sách")
-npm run db:mutation  → 43 đạt / 0 hỏng      (+3 đột biến mới)
+npm run db:check     → 102 đạt / 0 hỏng     (+17 phép mới ở mục "Bài trắc nghiệm cuối sách")
+npm run db:mutation  → 45 đạt / 0 hỏng      (+5 đột biến mới)
 ```
 
-Trong 13 phép mới, quan trọng nhất là phép chạy `complete_book` THẬT với đáp án sai rồi đòi
+Trong 17 phép mới, quan trọng nhất là phép chạy `complete_book` THẬT với đáp án sai rồi đòi
 `user_items` **không nhúc nhích**, và một phép đối chứng chứng minh quyển KHÔNG có câu hỏi vẫn
-trao vật phẩm như trước. Ba đột biến mới phá đúng ba đường làm lộ đáp án: cấp `SELECT` cho
-`correct_index`, dựng lại bản `complete_book` một-tham-số, và gỡ dòng `is_admin()` khỏi
-`admin_book_questions`.
+trao vật phẩm như trước. Năm đột biến mới phá đúng năm đường làm lộ đáp án hoặc lộ nội dung:
+cấp `SELECT` cho `correct_index`, dựng lại bản `complete_book` một-tham-số, gỡ dòng `is_admin()`
+khỏi `admin_book_questions`, nới policy `read published` thành `USING (true)`, và thêm một
+policy SELECT thứ hai bên cạnh policy cũ.
+
+### Một đợt review đối kháng đã tìm ra 6 lỗi — đã sửa hết
+
+Bản đầu của đợt này commit ở `6aad311`; `1d7a48b` sửa những gì một agent review đối kháng tìm
+được. Hai cái đáng ghi lại vì chúng là loại lỗi dễ lặp lại:
+
+- **Cổng canh policy `read published` HOÀN TOÀN KHÔNG CÓ, và không có dữ liệu để mà canh.**
+  Khối B2 bản đầu chỉ khẳng định GRANT theo cột và policy GHI. Tệ hơn: quyển nháp mồi nhử có
+  **0 câu hỏi**, nên kể cả khi thêm một phép kiểm thì nó cũng luôn thấy 0 dòng và luôn báo đạt —
+  đúng cái bẫy `CLAUDE.md` đã ghi bằng máu cho `__nhap-khong-bao-gio-xuat-ban`. Nay seed tạo
+  thêm **một câu hỏi mồi nhử thuộc quyển nháp** (mồi nhử thứ ba, đừng dọn), `db:check` có bốn
+  phép quanh nó kèm đối chứng chiều ngược, và `db:mutation` có hai đột biến.
+- **`array_length('{}'::text[], 1)` trả NULL, mà CHECK chỉ từ chối khi biểu thức ra FALSE.**
+  Nên hai ràng buộc `book_questions_choices_ck` và `book_questions_correct_range_ck` nhận một
+  dòng `choices = '{}'` với `correct_index` bất kỳ — đúng thứ chúng tuyên bố là chặn. Đã đo
+  thật: `('{}'::text[], 7)` ghi được. Nay bọc `coalesce(…, 0)`; hai ràng buộc chuyển sang đặt
+  bằng `ALTER TABLE` vì `CREATE TABLE IF NOT EXISTS` không sửa được bảng đã tồn tại.
+
+Bốn lỗi còn lại: "Quay lại đọc" xóa sạch bài làm (state bài kiểm tra nay sống ở
+`BookReaderModal`, không ở `QuizPanel` — panel bị tháo khỏi cây khi quay lại đọc); nộp lần hai
+làm đỏ lại những câu vừa sửa suốt một vòng round-trip (nay xóa `wrongPositions` ngay lúc bắt đầu
+nộp); `readAnswers` chép `MAX_CHOICES` thành bản sao thứ TƯ mà ba bản kia không nhắc tới (nay
+chốt theo trần `smallint`, không còn hằng số nào để trôi); và `Number("")` là `0` nên một POST
+thiếu trường `correct` âm thầm chọn ô 1 làm đáp án.
+
+**Và một lỗi tôi tự tìm ra trong lúc sửa**: `ON CONFLICT (book_slug, position)` KHÔNG dùng được
+trên bảng này — ràng buộc UNIQUE là DEFERRABLE, mà Postgres từ chối dùng ràng buộc deferrable làm
+trọng tài (`55000`). Đây chính là lý do vòng lặp seed xóa-rồi-chèn-lại thay vì upsert. Câu chèn
+mồi nhử nay dùng `WHERE NOT EXISTS`; đã chạy `seed:content` **hai lần** để chứng minh idempotent.
 
 ### Đã đo thật trong trình duyệt ở 1024×768
 

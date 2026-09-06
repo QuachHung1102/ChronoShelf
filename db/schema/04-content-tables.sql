@@ -75,17 +75,32 @@ CREATE TABLE IF NOT EXISTS public.book_questions (
   prompt        text NOT NULL CHECK (btrim(prompt) <> '' AND length(prompt) <= 300),
   choices       text[] NOT NULL,
   correct_index smallint NOT NULL,
-  CONSTRAINT book_questions_book_position_key UNIQUE (book_slug, position) DEFERRABLE INITIALLY DEFERRED,
-  -- 2..4 lựa chọn: một câu một lựa chọn không phải câu hỏi, và quá bốn thì không còn
-  -- vừa một trang giấy da bên cạnh câu hỏi.
-  CONSTRAINT book_questions_choices_ck CHECK (
-    array_length(choices, 1) BETWEEN 2 AND 4
-    AND array_position(choices, NULL) IS NULL
-    AND NOT ('' = ANY (choices))
-  ),
-  -- Chỉ số 0-based. Không có ràng buộc nào ở tầng Node bắt được lỗi này khi admin xóa
-  -- bớt một lựa chọn mà quên hạ đáp án xuống.
-  CONSTRAINT book_questions_correct_range_ck CHECK (
-    correct_index >= 0 AND correct_index < array_length(choices, 1)
-  )
+  CONSTRAINT book_questions_book_position_key UNIQUE (book_slug, position) DEFERRABLE INITIALLY DEFERRED
+);
+
+-- Hai ràng buộc dưới đây ĐẶT RIÊNG bằng ALTER chứ không viết trong CREATE TABLE, vì
+-- `CREATE TABLE IF NOT EXISTS` không sửa được bảng đã tồn tại — bản đầu tiên của chúng
+-- lọt một lỗ và phải thay được trên database đang chạy.
+--
+-- LỖ ĐÓ LÀ `choices = '{}'`: `array_length('{}'::text[], 1)` trả **NULL**, mà CHECK chỉ
+-- từ chối khi biểu thức ra FALSE — NULL thì cho qua. Nên bản cũ nhận một dòng mảng rỗng
+-- với `correct_index` bất kỳ, đúng thứ nó tuyên bố là chặn. Đã đo thật ngày 2026-09-07:
+-- `('{}'::text[], 7)` ghi được. Hậu quả nếu lọt: `QuizPanel` vẽ một câu không có ô chọn
+-- nào, `chuaChon` không bao giờ về 0, nút "Nộp bài" tắt vĩnh viễn — quyển sách đó không
+-- ai hoàn thành được nữa. `coalesce(…, 0)` biến NULL thành 0 và đưa nó về nhánh FALSE.
+ALTER TABLE public.book_questions DROP CONSTRAINT IF EXISTS book_questions_choices_ck;
+ALTER TABLE public.book_questions DROP CONSTRAINT IF EXISTS book_questions_correct_range_ck;
+
+-- 2..4 lựa chọn: một câu một lựa chọn không phải câu hỏi, và quá bốn thì không còn
+-- vừa một trang giấy da bên cạnh câu hỏi.
+ALTER TABLE public.book_questions ADD CONSTRAINT book_questions_choices_ck CHECK (
+  coalesce(array_length(choices, 1), 0) BETWEEN 2 AND 4
+  AND array_position(choices, NULL) IS NULL
+  AND NOT ('' = ANY (choices))
+);
+
+-- Chỉ số 0-based. Không có ràng buộc nào ở tầng Node bắt được lỗi này khi admin xóa
+-- bớt một lựa chọn mà quên hạ đáp án xuống.
+ALTER TABLE public.book_questions ADD CONSTRAINT book_questions_correct_range_ck CHECK (
+  correct_index >= 0 AND correct_index < coalesce(array_length(choices, 1), 0)
 );

@@ -99,6 +99,20 @@ const MUTATIONS = [
     "bản nạp chồng cũ",
   ],
   [
+    'policy "read published" của book_questions nới thành USING (true)',
+    `DROP POLICY "read published" ON public.book_questions;
+     CREATE POLICY "read published" ON public.book_questions FOR SELECT USING (true)`,
+    "không còn soi quyển cha đã published",
+  ],
+  [
+    // Policy cũ vẫn nguyên vẹn nên phép so khớp biểu thức vẫn xanh — chỉ phép ĐẾM bắt
+    // được. Postgres OR các policy PERMISSIVE lại với nhau, nên một policy thừa là đủ
+    // mở toang. Cùng khuôn với đột biến của `user_items`.
+    "book_questions mọc thêm một policy SELECT USING (true)",
+    `CREATE POLICY "leak" ON public.book_questions FOR SELECT USING (true)`,
+    "nhiều hơn một policy SELECT",
+  ],
+  [
     "admin_book_questions mất dòng kiểm is_admin()",
     `CREATE OR REPLACE FUNCTION public.admin_book_questions(p_book_slug text)
        RETURNS TABLE (id uuid, "position" integer, prompt text, choices text[], correct_index smallint)

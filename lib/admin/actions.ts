@@ -938,7 +938,13 @@ const MAX_CHOICES = 4;
 function readChoices(
   fd: FormData,
 ): { choices: string[]; correctIndex: number } | { error: string } {
-  const chosenSlot = Number(field(fd, "correct"));
+  // `Number("")` là `0`, nên đọc thẳng bằng `Number(field(...))` biến "thiếu trường
+  // `correct`" thành "đáp án là ô 1" trong im lặng. Mỗi export ở file này là một endpoint
+  // POST công khai — một POST không kèm `correct` phải nhận câu từ chối rõ ràng, không
+  // phải một câu hỏi có đáp án bịa. Qua giao diện thì không xảy ra (form nào cũng có sẵn
+  // một radio `defaultChecked`), nhưng giao diện không phải hàng rào.
+  const rawSlot = field(fd, "correct");
+  const chosenSlot = /^\d+$/.test(rawSlot) ? Number(rawSlot) : -1;
   const choices: string[] = [];
   let correctIndex = -1;
 

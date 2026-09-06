@@ -224,6 +224,24 @@ BEGIN
     RAISE EXCEPTION 'book_questions_book_position_key không phải DEFERRABLE INITIALLY DEFERRED';
   END IF;
 
+  -- Policy ĐỌC, cùng khuôn với `pages` và `lessons`. Thiếu khẳng định này thì một lần nới
+  -- thành USING (true) sẽ lọt qua MỌI cổng, trong khi khách chưa đăng nhập đọc được cả bài
+  -- trắc nghiệm của quyển chưa xuất bản. (Bổ sung 2026-09-07 sau một đợt review đối kháng —
+  -- khối B2 bản đầu chỉ canh GRANT và policy GHI.)
+  IF NOT EXISTS (SELECT 1 FROM pg_policies
+                  WHERE schemaname='public' AND tablename='book_questions'
+                    AND policyname='read published' AND cmd='SELECT'
+                    AND qual LIKE '%books%' AND qual LIKE '%published%' AND qual LIKE '%is_admin()%') THEN
+    RAISE EXCEPTION 'policy "read published" trên book_questions thiếu, hoặc không còn soi quyển cha đã published';
+  END IF;
+  -- Đếm policy SELECT, không chỉ so khớp cái đang có: policy cũ vẫn nguyên vẹn khi ai đó
+  -- THÊM một policy USING (true) bên cạnh, và Postgres OR các policy PERMISSIVE lại với
+  -- nhau. Đúng cái đã bắt được ở `user_items`.
+  IF (SELECT count(*) FROM pg_policies
+       WHERE schemaname='public' AND tablename='book_questions' AND cmd='SELECT') <> 1 THEN
+    RAISE EXCEPTION 'book_questions có nhiều hơn một policy SELECT — policy thừa được OR vào và có thể mở toang';
+  END IF;
+
   -- Cửa duy nhất cho admin đọc đáp án. Nó SECURITY DEFINER nên tự bỏ qua RLS — mất
   -- `is_admin()` bên trong là ai đăng nhập cũng đọc được đáp án của mọi quyển.
   IF NOT EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace

@@ -160,6 +160,13 @@ export function BookReaderModal({
   const coBaiKiemTra = book.cauHoi.length > 0 && !daHoanThanh;
   const [quizOpen, setQuizOpen] = useState(false);
   const [wrongPositions, setWrongPositions] = useState<number[]>([]);
+  // Bài làm sống ở ĐÂY chứ không trong `QuizPanel`: bấm "Quay lại đọc" tháo panel khỏi
+  // cây, nên state nằm trong panel là mỗi lần quay lại đọc lại mất sạch đáp án — kể cả
+  // những câu đã trả lời đúng, và đúng vào lúc sản phẩm vừa khuyên học sinh đi đọc lại.
+  const [answers, setAnswers] = useState<number[]>(() => book.cauHoi.map(() => -1));
+  // Bản chụp `answers` ở lần nộp gần nhất, để `QuizPanel` biết dấu "chưa đúng" nào còn
+  // nói về câu trả lời hiện tại và dấu nào đã cũ.
+  const [daNop, setDaNop] = useState<number[]>([]);
 
   const reduced = useReducedMotion();
   const currentPage = pagesSeen(faces, flipped);
@@ -234,10 +241,16 @@ export function BookReaderModal({
   //
   // `answers` song song với `book.cauHoi`; mảng rỗng khi quyển không có bài kiểm tra.
   // Máy chủ chấm, không phải chỗ này — đáp án chưa từng rời khỏi database.
-  async function finish(answers: number[]) {
+  async function finish() {
     setBusy(true);
     setError(null);
     setNeedsLogin(false);
+    // Chụp lại bài làm VÀ xóa dấu sai cũ ngay tại đây. Không xóa thì trong lúc chờ máy chủ
+    // trả lời, `daNop` đã bằng `answers` nên MỌI câu trong `wrongPositions` cũ lại thỏa
+    // điều kiện đánh dấu — hai câu học sinh vừa sửa đúng nhấp nháy đỏ trở lại suốt một
+    // vòng round-trip rồi mới tắt.
+    setDaNop(answers);
+    setWrongPositions([]);
     try {
       // RPC chỉ chốt hoàn thành khi current_page đã tới trang cuối — lưu trước rồi mới gọi,
       // nhờ vậy nút "Thử lại" sửa được cả trường hợp lần lưu trước rớt mạng.
@@ -254,6 +267,11 @@ export function BookReaderModal({
         // Ở lại màn bài kiểm tra: `QuizPanel` đánh dấu đúng những câu sai và giữ nguyên
         // các câu đã trả lời đúng. Không đặt `result` — chưa có vật phẩm nào rơi ra.
         setWrongPositions(res.wrongPositions);
+        // MỞ bài kiểm tra dù đường nào dẫn tới đây. `daHoanThanh` đến từ `/api/me/state`
+        // và có thể cũ hơn sự thật (đọc xong ở một tab khác rồi quay lại tab này); lúc đó
+        // nút hiện "nhận vật phẩm", máy chủ vẫn chấm bài, và thiếu dòng này thì học sinh
+        // rơi vào ngõ cụt câm — không vật phẩm, không màn nào giải thích.
+        setQuizOpen(true);
         return;
       }
       setResult(res);
@@ -320,10 +338,15 @@ export function BookReaderModal({
           // đẻ thêm một tầng bẫy focus không ai cần.
           <QuizPanel
             cauHoi={book.cauHoi}
+            answers={answers}
+            daNop={daNop}
             wrongPositions={wrongPositions}
             busy={busy}
             error={error}
-            onSubmit={(answers) => void finish(answers)}
+            onChon={(i, choice) =>
+              setAnswers((cu) => cu.map((v, k) => (k === i ? choice : v)))
+            }
+            onSubmit={() => void finish()}
             onBack={() => setQuizOpen(false)}
           />
         ) : (
@@ -455,7 +478,7 @@ export function BookReaderModal({
                   <button
                     key="doc-xong"
                     type="button"
-                    onClick={coBaiKiemTra ? () => setQuizOpen(true) : () => void finish([])}
+                    onClick={coBaiKiemTra ? () => setQuizOpen(true) : () => void finish()}
                     disabled={busy}
                     className={PILL_BUTTON}
                   >
@@ -502,7 +525,7 @@ export function BookReaderModal({
                       // mảng rỗng thì máy chủ chấm trượt và học sinh không thấy màn nào
                       // giải thích vì sao.
                       if (coBaiKiemTra) setQuizOpen(true);
-                      else void finish([]);
+                      else void finish();
                     }}
                     disabled={busy}
                     className="rounded-sm underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-on-destructive"

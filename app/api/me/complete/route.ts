@@ -18,19 +18,34 @@ export const dynamic = "force-dynamic";
 const MAX_ANSWERS = 50;
 
 /**
+ * Trần của `smallint` trong Postgres. Đây là RÀNG BUỘC KIỂU, không phải số lựa chọn tối đa
+ * của một câu hỏi — và sự khác biệt đó là có chủ ý.
+ *
+ * Bản đầu chốt ở `x < 4`, tức là chép lại `MAX_CHOICES` thành BẢN SAO THỨ TƯ mà ba bản kia
+ * (`lib/admin/actions.ts`, `components/admin/QuestionAdmin.tsx`, `book_questions_choices_ck`)
+ * không hề nhắc tới. Ngày nào nâng số lựa chọn lên 5, cả ba chỗ được sửa đúng còn chỗ này
+ * âm thầm biến đáp án thứ 5 thành `-1` — học sinh chọn đúng vẫn bị chấm sai, không lỗi ở đâu
+ * cả. Nay ở đây không còn hằng số nào để mà trôi: một chỉ số ngoài phạm vi thì SAI, chấm hết,
+ * và việc nó sai vì lý do gì thì `correct_index` tự trả lời.
+ */
+const SMALLINT_MAX = 32767;
+
+/**
  * Đọc mảng đáp án: chỉ số 0-based, song song với `book.cauHoi`.
  *
- * Mọi phần tử không phải số nguyên trong khoảng hợp lệ đều thành `-1` — một chỉ số
- * KHÔNG BAO GIỜ khớp `correct_index` (ràng buộc `book_questions_correct_range_ck` bắt
- * nó phải >= 0). Nhờ vậy rác gửi lên chỉ có thể làm bài kiểm tra TRƯỢT, không thể làm
- * nó đạt và cũng không làm truy vấn nổ.
+ * Mọi phần tử không phải số nguyên không âm đều thành `-1` — một chỉ số KHÔNG BAO GIỜ khớp
+ * `correct_index` (ràng buộc `book_questions_correct_range_ck` bắt nó phải >= 0). Nhờ vậy rác
+ * gửi lên chỉ có thể làm bài kiểm tra TRƯỢT, không thể làm nó đạt. Trần `SMALLINT_MAX` ở đây
+ * để một con số khổng lồ không làm chính truy vấn nổ khi bind vào `smallint[]`.
  */
 function readAnswers(body: Record<string, unknown> | null): number[] {
   const v = body?.answers;
   if (!Array.isArray(v)) return [];
   return v
     .slice(0, MAX_ANSWERS)
-    .map((x) => (typeof x === "number" && Number.isInteger(x) && x >= 0 && x < 4 ? x : -1));
+    .map((x) =>
+      typeof x === "number" && Number.isInteger(x) && x >= 0 && x <= SMALLINT_MAX ? x : -1,
+    );
 }
 
 /**

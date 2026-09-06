@@ -117,12 +117,13 @@ Admin phải tạo được sách lúc chạy mà không cần build lại. Lý 
 `db/seed/*.json` là **bootstrap một chiều**: `npm run seed:content` ghi thẳng vào database (cần
 `PGADMIN_URL`). Sửa file đó KHÔNG làm đổi nội dung đang chạy.
 
-Seed cũng tạo **hai dòng mồi nhử** mà `npm run db:check` phụ thuộc: quyển nháp vĩnh viễn
-`__nhap-khong-bao-gio-xuat-ban` và dòng vai trò `admin` của tài khoản mồi nhử
-`22222222-2222-2222-2222-222222222222`. **Đừng "dọn" chúng.** Thiếu mồi nhử thì hai phép kiểm
-vẫn chạy, vẫn báo đạt, nhưng hết nghĩa — mọi sách thật đều đã xuất bản nên phép đọc-sách-nháp
-luôn thấy 0 dòng, và `user_roles` không còn dòng "của người khác" nào nên phép đọc-trộm-vai-trò
-cũng luôn thấy 0 dòng, kể cả khi RLS hỏng hoàn toàn.
+Seed cũng tạo **ba dòng mồi nhử** mà `npm run db:check` phụ thuộc: quyển nháp vĩnh viễn
+`__nhap-khong-bao-gio-xuat-ban`, **một câu hỏi trắc nghiệm thuộc quyển nháp đó**, và dòng vai
+trò `admin` của tài khoản mồi nhử `22222222-2222-2222-2222-222222222222`. **Đừng "dọn" chúng.**
+Thiếu mồi nhử thì các phép kiểm vẫn chạy, vẫn báo đạt, nhưng hết nghĩa — mọi sách thật đều đã
+xuất bản nên phép đọc-sách-nháp luôn thấy 0 dòng, mọi câu hỏi thật cũng thuộc sách đã xuất bản
+nên phép đọc-câu-hỏi-của-sách-nháp cũng vậy, và `user_roles` không còn dòng "của người khác"
+nào nên phép đọc-trộm-vai-trò cũng luôn thấy 0 dòng, kể cả khi RLS hỏng hoàn toàn.
 
 **Không có cột "vật phẩm cần để mở".** Quyển `i` mở bằng vật phẩm thưởng của quyển `i-1`,
 suy ra từ vị trí chứ không lưu — nên chuỗi mở khóa không thể đứt. Đánh đổi và đường nâng cấp
@@ -309,6 +310,19 @@ phải JWT**: định dạng này không có trường `alg`, nên không có g�
   workflow vẫn kết thúc `status: completed`, tổng kết ghi "33 phát hiện bị bác" trong khi 32 cái chưa
   từng được ai xem — và cả 25 cái sau đó được xác nhận là lỗi thật. Luôn tách BA trạng thái —
   sống-sót, bị-bác, CHƯA-XỬ — rồi chạy lại nhóm cuối. Đừng để phiếu trắng đếm thành phiếu chống.
+- **`array_length('{}'::text[], 1)` trả NULL, và CHECK chỉ TỪ CHỐI khi biểu thức ra FALSE.** NULL
+  thì cho qua. Nên `CHECK (array_length(a,1) BETWEEN 2 AND 4)` nhận thẳng một mảng rỗng — đúng thứ
+  nó tuyên bố là chặn. Đã đo thật 2026-09-07 trên `book_questions`: `('{}'::text[], 7)` ghi được,
+  qua cả hai ràng buộc. Mọi CHECK trên `text[]` phải bọc `coalesce(array_length(a, 1), 0)`.
+- **`ON CONFLICT` KHÔNG dùng được với ràng buộc UNIQUE `DEFERRABLE`** — Postgres từ chối dùng nó
+  làm trọng tài, sqlstate `55000`. Ba bảng nội dung đều có ràng buộc vị trí deferrable, nên upsert
+  theo `(book_slug, position)` là không viết được; dùng `DELETE` rồi `INSERT`, hoặc
+  `INSERT … SELECT … WHERE NOT EXISTS`. Đây là lý do thật sự đằng sau cách `seed-content.mjs` xóa
+  sạch trang rồi chèn lại.
+- **`CREATE TABLE IF NOT EXISTS` KHÔNG sửa được bảng đã tồn tại.** Ràng buộc viết trong thân
+  `CREATE TABLE` chỉ có hiệu lực với database chưa có bảng đó — sửa nó trên máy đã migrate là
+  không có gì xảy ra, âm thầm. Ràng buộc nào còn phải sửa thì đặt riêng bằng
+  `ALTER TABLE … DROP CONSTRAINT IF EXISTS` + `ADD CONSTRAINT`.
 
 ## Lệnh
 

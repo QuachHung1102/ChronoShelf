@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { AlertCircle, BookOpen, CheckCircle2 } from "lucide-react";
 import type { ContentQuestion } from "@/lib/content/types";
 
@@ -22,47 +21,51 @@ import type { ContentQuestion } from "@/lib/content/types";
  */
 export function QuizPanel({
   cauHoi,
+  answers,
+  daNop,
   wrongPositions,
   busy,
   error,
+  onChon,
   onSubmit,
   onBack,
 }: {
   cauHoi: ContentQuestion[];
+  /**
+   * Lựa chọn đang chọn của từng câu, `-1` = chưa chọn. **State này thuộc về
+   * `BookReaderModal`, không phải panel** — bấm "Quay lại đọc" tháo panel khỏi cây, nên
+   * giữ ở đây là mỗi lần quay lại đọc lại xóa sạch bài làm. Chính panel này khuyên học
+   * sinh đi đọc lại, nên nó không được phạt họ vì đã nghe lời.
+   */
+  answers: number[];
+  /** Bản chụp `answers` ở lần nộp gần nhất — cùng lý do, cũng thuộc về modal. */
+  daNop: number[];
   /** Vị trí (đánh số từ 1) các câu máy chủ vừa chấm là sai. */
   wrongPositions: number[];
   busy: boolean;
   error: string | null;
-  onSubmit: (answers: number[]) => void;
+  onChon: (i: number, choice: number) => void;
+  onSubmit: () => void;
   onBack: () => void;
 }) {
+  // "Câu nào còn đang bị đánh dấu sai" là một giá trị SUY RA trong lúc render chứ không
+  // phải một state thứ hai phải đồng bộ bằng `useEffect`: dấu "chưa đúng" biến mất ngay
+  // khi học sinh đổi lựa chọn của đúng câu đó, vì lựa chọn hiện tại không còn khớp cái đã
+  // bị chấm. Modal xóa `wrongPositions` ngay lúc bắt đầu nộp, nên trong lúc chờ máy chủ
+  // trả lời thì không câu nào đỏ.
+  const conSai = wrongPositions.filter((n) => answers[n - 1] === daNop[n - 1]);
+
   // `-1` = chưa chọn. Máy chủ coi mọi thứ khác đáp án đúng là sai, nên bỏ trống không
   // bao giờ lọt qua được — nhưng vẫn chặn ở đây để học sinh không nộp bài thiếu rồi
   // nhận về một danh sách câu sai gây hoang mang.
-  const [answers, setAnswers] = useState<number[]>(() => cauHoi.map(() => -1));
-
-  // Bản chụp đáp án ở LẦN NỘP GẦN NHẤT. Nhờ nó, "câu nào còn đang bị đánh dấu sai" là
-  // một giá trị SUY RA được trong lúc render chứ không phải một state thứ hai phải đồng
-  // bộ bằng `useEffect` — dấu "chưa đúng" biến mất ngay khi học sinh đổi lựa chọn của
-  // đúng câu đó, vì lựa chọn hiện tại không còn khớp cái đã bị chấm.
-  const [daNop, setDaNop] = useState<number[]>([]);
-  const conSai = wrongPositions.filter((n) => answers[n - 1] === daNop[n - 1]);
-
   const chuaChon = answers.filter((a) => a < 0).length;
-
-  function chon(i: number, choice: number) {
-    setAnswers((cu) => cu.map((v, k) => (k === i ? choice : v)));
-  }
 
   return (
     <div className="flex w-full flex-1 justify-center overflow-y-auto px-page-margin py-lg">
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          if (chuaChon === 0 && !busy) {
-            setDaNop(answers);
-            onSubmit(answers);
-          }
+          if (chuaChon === 0 && !busy) onSubmit();
         }}
         className="flex h-fit w-full max-w-2xl flex-col gap-lg rounded-md bg-surface p-xl"
       >
@@ -113,7 +116,7 @@ export function QuizPanel({
                       type="radio"
                       name={`cauhoi-${i}`}
                       checked={answers[i] === k}
-                      onChange={() => chon(i, k)}
+                      onChange={() => onChon(i, k)}
                       disabled={busy}
                       className="mt-[0.2em] h-4 w-4 shrink-0 accent-tertiary-deep focus-visible:outline-none"
                     />
