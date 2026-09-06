@@ -54,3 +54,6 @@ next-env.d.ts
 # ảnh chụp màn hình khi kiểm tra UI + output của Playwright MCP
 /*.png
 .playwright-mcp/
+
+# cau hinh Codex cuc bo — config.toml chua Bearer token cua MCP server
+.codex/config.toml
