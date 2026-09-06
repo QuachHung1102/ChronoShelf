@@ -5,9 +5,9 @@ import {
   bamTheoThamSo,
   chuanHoaDapAn,
   docThamSo,
-  kiemMatKhau,
-  MAT_KHAU_TOI_THIEU,
 } from "./mat-khau.ts";
+// Hai file riêng, và đó là chủ ý — xem chú thích đầu `mat-khau-quy-tac.ts`.
+import { kiemMatKhau, MAT_KHAU_TOI_THIEU } from "./mat-khau-quy-tac.ts";
 
 test("băm rồi băm lại theo đúng tham số thì khớp", async () => {
   const { thamSo, bam } = await bamMoi("mat-khau-cua-toi");

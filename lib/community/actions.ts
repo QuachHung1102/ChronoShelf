@@ -5,7 +5,7 @@ import type { ActionState } from "@/lib/action-state";
 import { sequelize } from "@/lib/db/sequelize";
 import { withRole } from "@/lib/db/tx";
 import { getSessionUserId } from "@/lib/auth/session";
-import { docLoaiBai, docNoiDung } from "./validation";
+import { BAI_TOI_DA, BINH_LUAN_TOI_DA, docLoaiBai, docNoiDung } from "./validation";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -19,7 +19,7 @@ export async function dangBai(
   const kind = docLoaiBai(formData.get("kind"));
   if (!kind) return { error: "Loại bài không hợp lệ." };
 
-  const noiDung = docNoiDung(formData.get("body"), 1_000);
+  const noiDung = docNoiDung(formData.get("body"), BAI_TOI_DA);
   if ("error" in noiDung) return noiDung;
 
   try {
@@ -48,7 +48,7 @@ export async function dangBinhLuan(
   if (!userId) return { error: "Bạn cần đăng nhập trước khi bình luận." };
   if (!UUID_RE.test(postId)) return { error: "Bài viết không hợp lệ." };
 
-  const noiDung = docNoiDung(formData.get("body"), 500);
+  const noiDung = docNoiDung(formData.get("body"), BINH_LUAN_TOI_DA);
   if ("error" in noiDung) return noiDung;
 
   try {

@@ -17,9 +17,12 @@ import { sequelize } from "./sequelize";
  * về RLS, policy, ràng buộc DEFERRABLE hay hàm SECURITY DEFINER, nên bảng nó tự tạo
  * sẽ là bảng KHÔNG CÓ HÀNG RÀO NÀO.
  *
- * `login_codes` cố tình KHÔNG có model: bảng đó chỉ vào được qua hai hàm
- * `app.issue_login_code` / `app.consume_login_code`. Có model là mời gọi người ta
- * truy vấn thẳng, mà quyền thì không cho — chỉ tổ sinh lỗi khó hiểu.
+ * BA BẢNG CỐ TÌNH KHÔNG CÓ MODEL ở đây. Có model là mời gọi người ta truy vấn thẳng,
+ * mà quyền thì không cho — chỉ tổ sinh lỗi khó hiểu:
+ *  - `user_roles`: cửa duy nhất là `public.is_admin()` (SECURITY DEFINER), và
+ *    `chronoshelf_auth` không có GRANT ghi nào lên bảng đó.
+ *  - `media` và `documents`: kho blob chỉ-ghi-thêm, đọc/ghi bằng SQL viết tay để
+ *    không bao giờ vô tình kéo cột `bytes` về cùng phần còn lại của một dòng.
  */
 
 const base = { sequelize, underscored: true, timestamps: false as const };
@@ -38,20 +41,6 @@ User.init(
     createdAt: { type: DataTypes.DATE, allowNull: false },
   },
   { ...base, tableName: "users" },
-);
-
-export class UserRole extends Model<InferAttributes<UserRole>, InferCreationAttributes<UserRole>> {
-  declare userId: string;
-  declare role: "user" | "admin";
-  declare grantedAt: CreationOptional<Date>;
-}
-UserRole.init(
-  {
-    userId: { type: DataTypes.UUID, primaryKey: true },
-    role: { type: DataTypes.TEXT, allowNull: false },
-    grantedAt: { type: DataTypes.DATE, allowNull: false },
-  },
-  { ...base, tableName: "user_roles" },
 );
 
 export class Shelf extends Model<InferAttributes<Shelf>, InferCreationAttributes<Shelf>> {

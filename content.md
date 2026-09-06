@@ -68,7 +68,9 @@ Khi người dùng lật đến **trang cuối cùng** của quyển sách:
 3. Vật phẩm được cất vào **Túi hành trang** của người dùng.
 4. Quay lại kệ sách, quyển tiếp theo có hoạt cảnh **ổ khóa bật mở**, dây xích rơi xuống, bìa sách sáng dần lên — báo hiệu chặng tiếp theo đã sẵn sàng.
 
-**Tùy chọn nâng cao:** trước khi thả vật phẩm, hiển thị 2–3 câu hỏi trắc nghiệm ngắn về nội dung vừa đọc. Trả lời đúng mới nhận được vật phẩm. Cơ chế này biến việc mở khóa thành phần thưởng cho việc *hiểu bài*, không chỉ *lướt qua bài*.
+**Bài kiểm tra cuối sách — ĐÃ DỰNG:** trước khi thả vật phẩm, quyển nào có câu hỏi thì hiện 2–3 câu trắc nghiệm ngắn về nội dung vừa đọc. Trả lời đúng **hết** mới nhận được vật phẩm; sai thì đọc lại và làm lại không giới hạn số lần. Cơ chế này biến việc mở khóa thành phần thưởng cho việc *hiểu bài*, không chỉ *lướt qua bài*.
+
+"Tùy chọn" nay hiểu theo nghĩa **dữ liệu**: quyển không có dòng `book_questions` nào giữ nguyên hành vi cũ — đọc hết trang là nhận vật phẩm. Chấm bài nằm ở máy chủ và đáp án không bao giờ rời khỏi database. Thiết kế đầy đủ: `docs/superpowers/specs/2026-09-07-bai-trac-nghiem-cuoi-sach-design.md`.
 
 ### 4.4. Bộ vật phẩm theo từng kệ sách
 
@@ -152,28 +154,42 @@ Mỗi chuyên mục có một bộ vật phẩm riêng, gắn với nội dung b
 
 ## 8. CÔNG NGHỆ ÁP DỤNG (TECH STACK)
 
-* **Nền tảng:** **Next.js** cho toàn bộ ứng dụng — giao diện và API xử lý trong cùng một codebase. Trang nội dung tĩnh (bài học, kệ sách) được render sẵn để tải nhanh và thân thiện với tìm kiếm; phần tương tác (lật sách, mở khóa, túi hành trang) xử lý phía client.
-* **Cơ sở dữ liệu:** **PostgreSQL**, lưu tài khoản người dùng, nội dung bài học và từng trang sách, tiến độ đọc, kho vật phẩm, chuỗi Streak, bài đăng và bình luận cộng đồng.
-* **Xác thực:** đăng nhập bằng email hoặc tài khoản Google; toàn bộ tiến độ gắn với tài khoản để người dùng đọc tiếp trên bất kỳ thiết bị nào.
-* **Lưu trữ tệp:** hình minh họa, bìa sách và tệp `.pptx` lưu trên dịch vụ lưu trữ đối tượng, phân phối qua CDN.
-* **Logic mở khóa:** đặt ở phía máy chủ. Client chỉ gửi tín hiệu "đã đọc xong quyển X"; máy chủ kiểm tra điều kiện, ghi nhận vật phẩm và trả về trạng thái mới của kệ sách — tránh việc mở khóa bằng cách can thiệp từ trình duyệt.
-* **Thiết bị:** thiết kế responsive, hiệu ứng lật sách có phiên bản vuốt tối giản trên điện thoại để giữ độ mượt.
+> Mục này mô tả **hiện trạng đã dựng**, không phải dự định. Bốn chỗ dưới đây từng nói ngược
+> với thực tế và đã được sửa ngày 2026-09-07 (render tĩnh, đăng nhập Google, object storage,
+> responsive). Chi tiết kỹ thuật đầy đủ ở `CLAUDE.md` — file này chỉ nói ở mức sản phẩm.
+
+* **Nền tảng:** **Next.js App Router** cho toàn bộ ứng dụng — giao diện và Route Handler trong cùng một codebase, không có server riêng. Mọi trang render **động theo từng request**, không render tĩnh: trang nào cũng phụ thuộc phiên đăng nhập (streak, túi hành trang, quyển nào đã mở), và nội dung nằm trong database nên admin sửa xong là thấy ngay mà không phải build lại.
+* **Cơ sở dữ liệu:** **PostgreSQL 18 chạy cục bộ**, lưu tài khoản, nội dung bài học và từng trang sách, câu hỏi trắc nghiệm, tiến độ đọc, kho vật phẩm, chuỗi Streak, bài đăng và bình luận cộng đồng. Mỗi request chạy dưới một role hạn chế và đi qua row-level security.
+* **Xác thực:** **email + mật khẩu**, khôi phục bằng **câu hỏi bảo mật**. **KHÔNG gửi email** và **KHÔNG đăng nhập bằng Google** — dự án không có nhà cung cấp mail và sẽ không gắn. Toàn bộ tiến độ gắn với tài khoản để đọc tiếp trên bất kỳ thiết bị nào.
+* **Lưu trữ tệp:** hình minh họa, bìa sách và tệp `.pptx` lưu **thẳng trong database** (`media` / `documents`), phục vụ qua `/media/[id]` và `/tai-lieu/[id]`. Không object storage, không CDN — ghi file vào thư mục `public/` lúc chạy thì `next start` trả 404.
+* **Logic mở khóa và chấm bài:** đặt ở phía máy chủ. Client chỉ gửi "đã đọc xong quyển X" kèm bài làm; máy chủ kiểm tra điều kiện, chấm bài, ghi nhận vật phẩm và trả về trạng thái mới — đáp án không bao giờ có mặt trong HTML.
+* **Thiết bị:** **CHỈ màn hình PC**, ngưỡng thấp nhất là 1024×768. Không có breakpoint mobile và không có bản vuốt trang trên điện thoại — đã cân nhắc và loại.
 
 ---
 
 ## 9. MÔ HÌNH DỮ LIỆU RÚT GỌN
 
+> **Nguồn sự thật là `db/schema/*.sql`**, không phải bảng dưới đây. Bảng này chỉ để đọc lướt;
+> nó đã từng trôi lệch (khai một cột "vật phẩm yêu cầu để mở" mà dự án bảo đảm KHÔNG tồn tại).
+> Thứ tự chạy và lý do từng file: `db/schema/README.md`.
+
 | Bảng | Nội dung chính |
 | --- | --- |
-| `User` | Tài khoản, ngày Streak hiện tại, ngày hoạt động gần nhất |
-| `Shelf` | Kệ sách / chuyên mục, thứ tự hiển thị |
-| `Book` | Quyển sách: tiêu đề, ảnh bìa, thuộc kệ nào, vị trí trên kệ, vật phẩm yêu cầu để mở, vật phẩm sẽ trao |
-| `Page` | Từng trang của quyển sách: số thứ tự, nội dung, hình minh họa |
-| `Item` | Vật phẩm: tên, hình ảnh, mô tả lịch sử ngắn |
-| `UserBookProgress` | Người dùng đang đọc tới trang nào của quyển nào, đã hoàn thành chưa |
-| `UserItem` | Vật phẩm người dùng đang sở hữu, thời điểm nhận |
-| `Post` / `Comment` | Bài đăng và bình luận trên bảng tin cộng đồng |
-| `Resource` | Slide, mindmap: khối lớp, chương, tệp đính kèm |
+| `users` | Tài khoản, mật khẩu đã băm, câu hỏi bảo mật |
+| `user_activity` | Mỗi ngày học một dòng — chuỗi Streak tính từ đây |
+| `shelves` | Kệ sách / chuyên mục, thứ tự hiển thị |
+| `books` | Quyển sách: tiêu đề, ảnh bìa, thuộc kệ nào, vị trí trên kệ, **vật phẩm sẽ trao** |
+| `pages` | Từng trang: số thứ tự, nội dung, hình minh họa, ý chính ở trang cuối |
+| `book_questions` | Bài kiểm tra cuối sách. Cột đáp án KHÔNG đọc được từ ứng dụng |
+| `items` | Vật phẩm: tên, hình ảnh, mô tả lịch sử ngắn |
+| `user_book_progress` | Đang đọc tới trang nào của quyển nào, đã hoàn thành chưa |
+| `user_items` | Vật phẩm đang sở hữu, thời điểm nhận. Chỉ máy chủ ghi được |
+| `community_posts` / `community_comments` | Bài đăng và bình luận trên bảng tin |
+| `lessons` / `documents` | Slide, mindmap: khối lớp, chương, tệp đính kèm |
+| `media` | Ảnh do admin tải lên, lưu thẳng trong database |
+
+**Không có cột "vật phẩm yêu cầu để mở."** Quyển `i` mở bằng vật phẩm thưởng của quyển `i-1`,
+suy ra từ vị trí chứ không lưu — nên chuỗi mở khóa không thể đứt. Xem `lib/api/unlock.ts`.
 
 ---
 

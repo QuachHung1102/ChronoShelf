@@ -208,6 +208,11 @@ components:
     typography: "{typography.body-sm}"
     rounded: "{rounded.md}"
     padding: "{spacing.md}"
+  quiz-wrong:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.destructive}"
+    typography: "{typography.body-sm}"
+    rounded: "{rounded.md}"
 ---
 
 # Cửa Sổ Lịch Sử — Design System
@@ -303,6 +308,11 @@ một thẻ giao diện. Chỉ dùng cho ký tự đầu tiên của đoạn m�
 bao giờ dùng cho một cụm từ.
 
 ## Layout
+
+**CHỈ MÀN HÌNH PC. Ngưỡng thấp nhất phải chạy đúng là 1024×768.** Không có breakpoint mobile,
+không có bản vuốt trang trên điện thoại — đã cân nhắc và loại. Đây là ràng buộc THIẾT KẾ, nên
+nó ở đây chứ không nằm trong một file bàn giao rồi bị xóa theo: DESIGN.md là file duy nhất
+được `design:verify` canh trong `npm run check`. Báo cáo lỗi bố cục dưới ~1000px thì bỏ qua.
 
 Bố cục desktop dùng lưới cố định, nội dung căn giữa, lề trang 48px (`page-margin`). Header cao
 72px và luôn dính trên cùng.
@@ -475,6 +485,13 @@ Khai báo này dùng đúng thủ thuật của `focus-ring`: `components` trong
 `backgroundColor` và `textColor` — không có `borderColor` — nên một cặp màu-ranh-giới phải
 mượn khe `textColor` thì `design:lint` mới tính tương phản cho nó. Ngưỡng lint là 4.5:1, chặt
 hơn mức 3:1 mà ranh giới cần, nên qua được lint là dư an toàn.
+
+`quiz-wrong` là `destructive` trên `surface` (5.96:1) — cặp màu dùng cho câu trả lời sai ở bài
+kiểm tra cuối sách: viền của ô câu hỏi và dòng "Chưa đúng…" bên dưới nó. Khai ở đây vì đó là
+**cặp duy nhất trong sản phẩm báo LỖI cho học sinh**, tức chỗ ít được phép trượt tương phản
+nhất, và vì `design:lint` chỉ nhìn thấy những cặp được khai trong file này — nó không đọc
+component. Màu KHÔNG phải tín hiệu duy nhất ở đó (còn icon và câu chữ, WCAG 1.4.1); cặp này
+tồn tại để giữ cho phần màu của tín hiệu không âm thầm tụt xuống dưới ngưỡng.
 
 ## Do's and Don'ts
 

@@ -135,22 +135,11 @@ export function chuanHoaDapAn(raw: string): string {
     .trim();
 }
 
-/** Độ dài tối thiểu của mật khẩu. */
-export const MAT_KHAU_TOI_THIEU = 8;
-
-/**
- * Trả về câu lỗi, hoặc `null` khi mật khẩu dùng được.
- *
- * CỐ Ý KHÔNG có luật "phải có chữ hoa, số và ký tự đặc biệt": NIST SP 800-63B khuyến
- * nghị bỏ hẳn những luật đó vì chúng đẩy người dùng tới `Matkhau@123` — dễ đoán hơn
- * hẳn một câu dài. Chỉ ràng buộc độ dài, và đếm theo KÝ TỰ chứ không theo byte.
- */
-export function kiemMatKhau(mk: unknown): string | null {
-  if (typeof mk !== "string") return "Thiếu mật khẩu.";
-  const soKyTu = [...mk].length;
-  if (soKyTu < MAT_KHAU_TOI_THIEU) {
-    return `Mật khẩu phải có ít nhất ${MAT_KHAU_TOI_THIEU} ký tự.`;
-  }
-  if (soKyTu > 200) return "Mật khẩu quá dài (tối đa 200 ký tự).";
-  return null;
-}
+// `MAT_KHAU_TOI_THIEU` và `kiemMatKhau` nay ở `mat-khau-quy-tac.ts`.
+//
+// File NÀY mở đầu bằng `import crypto from "node:crypto"`, nên bất cứ thứ gì một client
+// component cần PHẢI nằm ngoài nó — chỉ một `import` từ trình duyệt là Turbopack kéo cả
+// 445 KB polyfill `node:crypto` xuống. Số đo đầy đủ ở đầu `mat-khau-quy-tac.ts`.
+//
+// Đừng "gom lại cho gọn" bằng một dòng `export * from "./mat-khau-quy-tac"`: chính dòng
+// đó nối hai file lại và kéo polyfill về đúng như cũ.

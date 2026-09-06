@@ -1,6 +1,10 @@
 "use client";
 
 import { AlertCircle, BookOpen, CheckCircle2 } from "lucide-react";
+import {
+  PRIMARY_BUTTON_ON_SURFACE,
+  QUIET_BUTTON_ON_SURFACE,
+} from "@/components/ui/controls";
 import type { ContentQuestion } from "@/lib/content/types";
 
 /**
@@ -170,7 +174,7 @@ export function QuizPanel({
           <button
             type="submit"
             disabled={busy || chuaChon > 0}
-            className="inline-flex items-center justify-center gap-sm rounded-full bg-tertiary-deep px-lg py-sm font-body text-label-md text-on-primary transition duration-200 ease-out hover:brightness-110 active:brightness-90 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+            className={PRIMARY_BUTTON_ON_SURFACE}
           >
             {busy ? "Đang chấm…" : "Nộp bài"}
           </button>
@@ -181,7 +185,7 @@ export function QuizPanel({
             type="button"
             onClick={onBack}
             disabled={busy}
-            className="inline-flex items-center gap-xs rounded-sm font-body text-body-sm text-tertiary-deep underline underline-offset-2 transition duration-200 ease-out hover:decoration-2 active:brightness-90 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+            className={QUIET_BUTTON_ON_SURFACE}
           >
             <BookOpen aria-hidden className="h-4 w-4" />
             Quay lại đọc

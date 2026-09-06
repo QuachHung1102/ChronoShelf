@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint --cache --cache-location node_modules/.cache/eslint",
     "prepare": "git config core.hooksPath .githooks || exit 0",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "node --test \"lib/**/*.test.ts\"",
@@ -20,7 +20,6 @@
     "db:mutation": "node --env-file-if-exists=.env.local scripts/db-mutation-check.mjs"
   },
   "dependencies": {
-    "@google/design.md": "^0.4.0",
     "lucide-react": "^1.31.0",
     "next": "16.3.0",
     "pg": "^8.23.0",
@@ -30,6 +29,7 @@
     "sequelize": "^6.37.8"
   },
   "devDependencies": {
+    "@google/design.md": "^0.4.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

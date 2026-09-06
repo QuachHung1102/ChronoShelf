@@ -12,7 +12,7 @@ EXISTS` trước khi tạo).
 |---|---|---|
 | `00-roles.sql` | Ba role và quan hệ thành viên giữa chúng | ✅ |
 | `01-app-context.sql` | Schema `app`, hàm `app.current_user_id()` | |
-| `02-users.sql` | `users` — tài khoản. (Cũng từng tạo `login_codes` cho luồng OTP; `15-mat-khau.sql` DROP bảng đó, nên file này giữ nguyên chỉ để chạy được trên database trắng.) | |
+| `02-users.sql` | `users` — tài khoản. Chỉ phần lõi; cột mật khẩu + sáu hàm đăng nhập ở `15-mat-khau.sql`. | |
 | `03-user-roles.sql` | `user_roles`, `is_admin()` | |
 | `04-content-tables.sql` | `shelves`, `items`, `books`, `pages` | |
 | `05-content-rls.sql` | RLS + policy + grant cho bốn bảng nội dung | |

@@ -20,10 +20,21 @@ BEGIN
   END IF;
 
   -- Role kết nối phải trống rỗng: mọi quyền chỉ đến sau khi SET LOCAL ROLE.
-  FOREACH t IN ARRAY ARRAY['users','user_roles','shelves','items','books','pages',
-                           'user_book_progress','user_items','user_activity',
-                           'community_posts','community_comments','documents','lessons'] LOOP
-    IF has_table_privilege('chronoshelf_app', 'public.' || t, 'SELECT') THEN
+  --
+  -- QUÉT pg_tables chứ KHÔNG viết tay danh sách. Danh sách viết tay đã lỡ nhịp HAI lần —
+  -- `media` (chặng D) và `book_questions` (2026-09) đều không được thêm vào — và mỗi lần
+  -- lỡ là một bảng không ai canh mà không có gì báo. Quét thì bảng mới tự động được canh;
+  -- bảng nào cố ý muốn `chronoshelf_app` đọc được sẽ phải khai ngoại lệ tường minh ngay
+  -- tại đây, và đó đúng là thứ nên bắt người ta viết ra.
+  --
+  -- `has_any_column_privilege` chứ KHÔNG `has_table_privilege`: hàm sau chỉ thấy GRANT
+  -- MỨC BẢNG và mù hoàn toàn với GRANT theo cột. Mà `book_questions.correct_index` được
+  -- bảo vệ CHÍNH BẰNG GRANT theo cột, nên `GRANT SELECT (correct_index) … TO
+  -- chronoshelf_app` sẽ lọt qua `has_table_privilege` trong im lặng. Khối E ở dưới đã
+  -- dùng đúng hàm này rồi; đây chỉ là áp lại bài học đó cho khối A.
+  -- (Hàm này chỉ nhận SELECT/INSERT/UPDATE/REFERENCES — hỏi DELETE thì nổ 22023.)
+  FOR t IN SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename LOOP
+    IF has_any_column_privilege('chronoshelf_app', 'public.' || quote_ident(t), 'SELECT') THEN
       RAISE EXCEPTION 'chronoshelf_app đọc thẳng được % mà không cần SET ROLE', t;
     END IF;
   END LOOP;

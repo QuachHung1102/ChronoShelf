@@ -1,7 +1,7 @@
 import { dangKy, EMAIL_DA_CO } from "@/lib/auth/dang-nhap";
 import { startSession } from "@/lib/auth/session";
 import { DAP_AN_TOI_DA, laMaCauHoi } from "@/lib/auth/cau-hoi-bao-mat";
-import { kiemMatKhau } from "@/lib/auth/mat-khau";
+import { kiemMatKhau } from "@/lib/auth/mat-khau-quy-tac";
 import { fail, ok, readJson, str } from "@/lib/api/respond";
 
 export const dynamic = "force-dynamic";

@@ -2,7 +2,7 @@
 -- vị trí (quyển i mở bằng vật phẩm thưởng của quyển i-1), nên không lưu thì chuỗi mở
 -- khóa không thể đứt. Xem spec §2.2.
 --
--- Ba ràng buộc UNIQUE về vị trí đều DEFERRABLE INITIALLY DEFERRED: đổi chỗ hai quyển
+-- Bốn ràng buộc UNIQUE về vị trí đều DEFERRABLE INITIALLY DEFERRED: đổi chỗ hai quyển
 -- cần một trạng thái trung gian trùng vị trí, hợp lệ bên trong transaction và chỉ bị
 -- kiểm lúc COMMIT. Đây chính là thứ MySQL không có và là một trong những lý do dự án
 -- ở lại với PostgreSQL.

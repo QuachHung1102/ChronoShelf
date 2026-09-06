@@ -3,7 +3,11 @@ import type { Metadata } from "next";
 import { BookOpen, Check, ChevronRight, Lock, Sparkles } from "lucide-react";
 import { Header } from "@/components/Header";
 import { GhiCongAnh } from "@/components/ui/GhiCongAnh";
-import { PRIMARY_BUTTON } from "@/components/ui/controls";
+import {
+  FOCUS_RING_ON_SURFACE,
+  PRIMARY_BUTTON,
+  QUIET_BUTTON_ON_SURFACE,
+} from "@/components/ui/controls";
 import s from "@/components/bag/bag.module.scss";
 import {
   readShelfList,
@@ -46,7 +50,7 @@ function OVatPham({ v }: { v: VatPhamTuiHanhTrang }) {
           `<details>` bên trong vẫn cao đúng bằng nội dung của nó — thiếu dòng này thì hàng
           vẫn rách y như cũ dù đã bỏ `items-start` khỏi `<ul>`. */}
       <details className={`${s.o} h-full rounded-md bg-surface p-md`}>
-        <summary className="flex flex-col items-center gap-sm rounded-sm text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface">
+        <summary className={`flex flex-col items-center gap-sm rounded-sm text-center ${FOCUS_RING_ON_SURFACE}`}>
           <span className="relative grid h-24 w-24 shrink-0 place-items-center rounded-sm bg-surface-locked">
             {v.image ? (
               // eslint-disable-next-line @next/next/no-img-element -- ảnh tĩnh trong public/
@@ -92,7 +96,10 @@ function OVatPham({ v }: { v: VatPhamTuiHanhTrang }) {
           {v.tuQuyen && (
             <Link
               href={`/${v.tuQuyen.shelfSlug}`}
-              className="mt-sm inline-flex items-center gap-xs font-body text-body-sm text-tertiary-deep underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+              // Trước đây là bản chép tay của `QUIET_BUTTON` đã RƠI MẤT `transition`,
+              // `hover:decoration-2` và `active:brightness-90` — nút chữ duy nhất trong
+              // ứng dụng không phản hồi khi rê chuột hay khi bấm.
+              className={`mt-sm ${QUIET_BUTTON_ON_SURFACE}`}
             >
               <BookOpen aria-hidden className="h-4 w-4" />
               {v.daCo ? `Từ quyển “${v.tuQuyen.title}”` : `Đọc “${v.tuQuyen.title}” để nhận`}

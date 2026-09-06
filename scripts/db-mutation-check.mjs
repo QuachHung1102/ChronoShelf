@@ -43,6 +43,21 @@ if (!url) {
 const MUTATIONS = [
   ["chronoshelf_app được INHERIT", "ALTER ROLE chronoshelf_app INHERIT", "đang INHERIT"],
   [
+    // Khối A quét `pg_tables` nên bảng nào cũng được canh; hai đột biến dưới đây chứng
+    // minh điều đó cho đúng hai bảng mà danh sách viết tay cũ đã bỏ sót.
+    "chronoshelf_app đọc thẳng được media",
+    "GRANT SELECT ON public.media TO chronoshelf_app",
+    "đọc thẳng được media",
+  ],
+  [
+    // Đột biến QUAN TRỌNG NHẤT của cặp này: nó là phép chứng minh cho việc đổi
+    // `has_table_privilege` → `has_any_column_privilege`. Với hàm cũ, câu GRANT theo cột
+    // này lọt qua trong im lặng và 90-verify VẪN XANH.
+    "chronoshelf_app đọc thẳng được đáp án theo CỘT",
+    "GRANT SELECT (correct_index) ON public.book_questions TO chronoshelf_app",
+    "đọc thẳng được book_questions",
+  ],
+  [
     "người chưa đăng nhập đọc được user_roles",
     "GRANT SELECT ON public.user_roles TO chronoshelf_anon",
     "người chưa đăng nhập đọc được",

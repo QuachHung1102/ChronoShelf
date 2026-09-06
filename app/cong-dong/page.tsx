@@ -6,6 +6,7 @@ import { ActionForm, SubmitButton } from "@/components/admin/ActionForm";
 import { FIELD, LABEL, PRIMARY_BUTTON, QUIET_BUTTON } from "@/components/ui/controls";
 import { dangBai, dangBinhLuan } from "@/lib/community/actions";
 import { readBangTin } from "@/lib/community/read";
+import { BAI_TOI_DA, BINH_LUAN_TOI_DA } from "@/lib/community/validation";
 import { readShelfList } from "@/lib/content/read";
 
 export const dynamic = "force-dynamic";
@@ -192,12 +193,12 @@ export default async function CongDongPage() {
                                     name="body"
                                     required
                                     rows={3}
-                                    maxLength={500}
+                                    maxLength={BINH_LUAN_TOI_DA}
                                     className={FIELD}
                                     placeholder="Viết câu trả lời hoặc góp thêm một ý…"
                                   />
                                   <p className="font-body text-caption text-secondary">
-                                    Tối đa 500 ký tự.
+                                    Tối đa {BINH_LUAN_TOI_DA.toLocaleString("vi-VN")} ký tự.
                                   </p>
                                   <SubmitButton
                                     className={`${QUIET_BUTTON} self-start py-sm`}
@@ -245,11 +246,11 @@ export default async function CongDongPage() {
                         name="body"
                         required
                         rows={6}
-                        maxLength={1000}
+                        maxLength={BAI_TOI_DA}
                         className={`${FIELD} mt-xs`}
                         placeholder="Điều gì trong lịch sử khiến bạn tò mò?"
                       />
-                      <p className="mt-xs font-body text-caption text-secondary">Tối đa 1.000 ký tự.</p>
+                      <p className="mt-xs font-body text-caption text-secondary">Tối đa {BAI_TOI_DA.toLocaleString("vi-VN")} ký tự.</p>
                     </div>
 
                     <SubmitButton className={PRIMARY_BUTTON} pendingLabel="Đang đăng…">

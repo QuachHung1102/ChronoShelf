@@ -9,6 +9,13 @@
 > `auth.users`, MCP `run-raw-sql`, SDK hay storage của BaaS đều đã bị thay. Nguồn sự thật
 > cho hạ tầng bây giờ là `CLAUDE.md` mục "Backend — PostgreSQL cục bộ" và
 > `db/schema/README.md`.
+>
+> **Mọi ĐƯỜNG DẪN FILE trong spec này là của cây thư mục CŨ** (bổ sung 2026-09-07 sau khi đo
+> lại từng cái). Cụ thể: `scripts/content-sync.mjs` cùng hai lệnh `content:check` /
+> `content:sync` đã bị xóa — đúng như chính §4 của spec này đề xuất; schema nay là
+> `db/schema/NN-*.sql` theo *một mối quan tâm một file*, không phải một file đặt tên theo
+> ngày; và hai plan được trỏ tới ở đầu file đã bị xóa (git history vẫn giữ). Đừng đi tìm
+> chúng — đọc `CLAUDE.md` và `db/schema/README.md`.
 
 
 Ngày: 2026-08-24

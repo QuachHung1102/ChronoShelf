@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, KeyRound, LogIn, UserPlus } from "lucide-react";
 import { dangKy, dangNhap, khoiPhuc, layCauHoi } from "@/lib/api/auth";
 import { CAU_HOI_BAO_MAT, timCauHoi } from "@/lib/auth/cau-hoi-bao-mat";
-import { MAT_KHAU_TOI_THIEU } from "@/lib/auth/mat-khau";
+import { MAT_KHAU_TOI_THIEU } from "@/lib/auth/mat-khau-quy-tac";
 import { FIELD, LABEL, PRIMARY_BUTTON, QUIET_BUTTON } from "@/components/ui/controls";
 
 /**

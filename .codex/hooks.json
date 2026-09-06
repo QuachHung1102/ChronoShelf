@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node 'E:\\code\\AS-Projects\\ChronoShelf\\.codex\\hooks\\guard-pen-dev.mjs'"
+            "command": "node .claude/hooks/guard-pen-dev.mjs"
           }
         ]
       }

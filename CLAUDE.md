@@ -6,8 +6,11 @@ quyển thì nhận được một vật phẩm, và chính vật phẩm đó m�
 
 **Trả lời người dùng bằng tiếng Việt.**
 
-> ⚠️ **Mọi kiến thức về dự án thuộc về file này.** Đừng tạo lại `AGENTS.md` — nó từng tồn tại
-> nhưng chỉ chứa tài liệu SDK của một backend không còn dùng, và đã bị xóa ngày 2026-08-28.
+> ⚠️ **Mọi kiến thức về dự án thuộc về file này.** `AGENTS.md` là một **con trỏ cố ý** trỏ về
+> đây — đừng xóa nó, và đừng biến nó thành một bản chép. Codex đọc `AGENTS.md` chứ không đọc
+> `CLAUDE.md`, và `next dev` tự dựng lại một stub khi CẢ HAI file cùng vắng mặt. Bản chép cũ
+> (tài liệu SDK của một backend không còn dùng) đã bị xóa 2026-08-28; bản con trỏ hiện tại
+> dựng ở `31efffb`.
 
 ## Nguồn sự thật — đọc trước khi làm
 
@@ -17,9 +20,10 @@ quyển thì nhận được một vật phẩm, và chính vật phẩm đó m�
 | `docs/superpowers/specs/2026-08-24-noi-dung-dong-va-quan-tri-design.md` | **Đọc khi mở phiên mới**: kiến trúc nội dung — nội dung nằm trong database, vai trò admin/user, đọc thẳng `books`/`pages`. Phần *sản phẩm* còn đúng; phần *hạ tầng* viết theo backend cũ, xem banner ở đầu file. |
 | `DESIGN.md` | Hệ thiết kế (format `design.md` của Google Labs): toàn bộ color/typography/spacing token + lý do. Nguồn sự thật về *trông như thế nào*. |
 | `db/schema/README.md` | Thứ tự chạy schema, ba role và lý do. **Đọc trước khi đụng SQL.** |
-| `docs/superpowers/specs/` | Spec đã được duyệt, mỗi subsystem một file. |
+| `docs/superpowers/specs/` | Spec đã được duyệt, mỗi subsystem một file. Spec thì Ở LẠI kể cả khi việc đã xong — nó giữ *vì sao*, không phải *làm thế nào*. |
 | `docs/superpowers/plans/2026-09-07-ban-giao-phien-sau.md` | **Đọc đầu tiên khi mở phiên mới**: đã làm gì, cổng đang ở đâu, việc kế tiếp là gì và thứ đang chặn nó. Ảnh chụp một thời điểm — xóa khi các mục "còn lại" xong hết. |
-| `docs/superpowers/plans/` | Kế hoạch triển khai từng bước. Chặng C đã hoàn tất; các plan cũ bị xóa ngày 2026-08-28 vì hướng dẫn theo backend cũ — git history vẫn giữ. |
+| `docs/agents/bay-da-gap.md` | 27 bẫy đã vấp thật, mỗi cái kèm phép đo. Bốn cái đắt nhất còn nằm trong file này. |
+| `docs/superpowers/plans/` | Chỉ còn đúng bản bàn giao. Plan xong việc thì **XÓA** — nó là danh sách bước, không giữ quyết định nào; git history vẫn còn. Đã xóa: các plan backend cũ (2026-08-28), chặng C và bảng tin (2026-09-07). |
 | `pen.dev/design.pen` | File thiết kế Pencil — mockup UI đã duyệt. |
 | `db/schema/` | SQL schema, nguồn sự thật cho cấu trúc DB. |
 
@@ -71,10 +75,11 @@ spec → plan → code riêng: **kệ sách + đọc sách** (cơ chế lõi), t
   phẩm mà không chấm bài. **Và đừng hứa quá phạm vi**: đây là hàng rào SƯ PHẠM, không phải hàng
   rào bảo mật — sách vốn công khai, mỗi bài 2–3 câu, đáp án đoán được bằng cách thử. Chi tiết ở
   `docs/superpowers/specs/2026-09-07-bai-trac-nghiem-cuoi-sach-design.md`.
-- **Bí mật không vào git.** `.env.local` giữ `DATABASE_URL` và `SESSION_SECRET`; nó đã bị dòng
-  `.env*` trong `.gitignore` chặn. Đừng chép giá trị thật sang `.env.example` hay bất kỳ file
-  được commit nào. Mật khẩu superuser của Postgres **không nằm trong dự án** — truyền qua
-  `PGADMIN_URL` theo từng lệnh khi cần.
+- **Bí mật không vào git.** `.env.local` giữ `DATABASE_URL` và `SESSION_SECRET`, `.env.pgadmin`
+  giữ `PGADMIN_URL` (chuỗi kết nối superuser). Cả hai đã bị dòng `.env*` trong `.gitignore`
+  chặn — đã xác nhận bằng `git check-ignore`. Đừng chép giá trị thật sang `.env.example` hay
+  bất kỳ file được commit nào. Xem mục **Lệnh** để biết cách nạp `.env.pgadmin`: `npm run`
+  KHÔNG nạp được nó.
 
 ## Thiết kế — DESIGN.md là nguồn duy nhất
 
@@ -144,9 +149,13 @@ PGPASSWORD=... "/c/Program Files/PostgreSQL/18/bin/psql.exe" -U postgres -h 127.
 
 **PostgreSQL 18 cục bộ + Sequelize + Next.js Route Handlers.** Không có server Express riêng —
 app đã là Next.js nên thêm một process nữa chỉ tốn CORS, hai chỗ deploy và logic phiên viết hai
-lần. Đã cân nhắc MySQL và loại: repo có 14 policy RLS (MySQL không có RLS), 3 ràng buộc
-`DEFERRABLE INITIALLY DEFERRED` mà RPC đổi thứ tự được thiết kế quanh nó (MySQL không có), và
-cột `summary text[]`.
+lần. Đã cân nhắc MySQL và loại: repo có **hàng chục policy RLS** (MySQL không có RLS), **bốn**
+ràng buộc `DEFERRABLE INITIALLY DEFERRED` mà RPC đổi thứ tự được thiết kế quanh nó (MySQL không
+có), và cột `text[]` ở cả `pages.summary` lẫn `book_questions.choices`.
+
+> Không viết số policy ra đây nữa: nó tăng theo mỗi subsystem, không cổng nào canh, và bản cũ
+> đã lệch từ 14 lên 27 mà không ai thấy. Đếm khi cần:
+> `SELECT count(*) FROM pg_policies WHERE schemaname='public'`.
 
 Trước 2026-08-28 dự án chạy trên một BaaS ngoài. Nó đã bị gỡ bỏ hoàn toàn — nếu còn thấy dấu vết
 nào ở đâu thì đó là sót, xóa đi.
@@ -172,10 +181,17 @@ mở một transaction rồi `SET LOCAL ROLE` sang `chronoshelf_anon` hoặc `ch
 3. `npm run db:check` (hàng rào nhìn từ ứng dụng) **và** `npm run db:mutation` (chứng minh
    `90-verify.sql` biết kêu).
 
-Logic đặc quyền vẫn đi qua hàm Postgres `SECURITY DEFINER` — `complete_book`, `is_admin`,
+Logic đặc quyền vẫn đi qua hàm Postgres `SECURITY DEFINER` — **11 hàm**, liệt kê được bằng
+`SELECT proname FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+WHERE n.nspname IN ('public','app') AND p.prosecdef`: `complete_book`, `_complete_book_for`,
+`is_admin`, `admin_book_questions`, `record_activity`, và sáu hàm đăng nhập/khôi phục
 `app.dang_ky`, `app.bat_dau_dang_nhap`, `app.ket_thuc_dang_nhap`, `app.cau_hoi_khoi_phuc`,
 `app.bat_dau_khoi_phuc`, `app.ket_thuc_khoi_phuc`. Nguồn danh tính là `SET LOCAL app.user_id`,
 do middleware đặt sau khi xác thực ở tầng Node.
+
+Đối chứng phải giữ: **`reorder_books` / `reorder_pages` / `reorder_shelves` CỐ Ý là SECURITY
+INVOKER** — chạy bằng quyền người gọi thì policy `admin write` mới áp được lên UPDATE bên
+trong. `90-verify.sql` khối C nổ nếu ai đó "sửa" chúng thành DEFINER.
 
 ### Đăng nhập
 
@@ -212,74 +228,18 @@ phải JWT**: định dạng này không có trường `alg`, nên không có g�
 
 ## Bẫy đã gặp
 
-- **`sequelize` KHÔNG nằm trong danh sách Next tự loại khỏi bundle, `pg` thì có.** Sequelize
-  nạp dialect bằng `require()` động nên bundler không lần ra. Thiếu
-  `serverExternalPackages: ["sequelize"]` trong `next.config.ts` là hỏng lúc chạy, không phải
-  lúc build.
-- **Thư mục có tiền tố `_` trong `app/` là private folder — Next bỏ qua hoàn toàn.** Đã mất một
-  lượt vì đặt route thử ở `app/api/_probe/`: `next build` vẫn xanh, route không hề tồn tại, và
-  phép thử rỗng nghĩa mà trông y như đạt. Nhìn bảng Route sau khi build để biết route có thật.
-- **`next start`/`next dev` không chết theo `TaskStop`.** Tiến trình cũ còn giữ cổng, nên lần
-  chạy sau nhận `EADDRINUSE` và mọi request bắn vào **server cũ với bản build cũ** — triệu chứng
-  là "route mới trả 404" trong khi nó có trong bảng Route. Kiểm bằng
-  `Get-NetTCPConnection -LocalPort <cổng>` rồi `Stop-Process`.
-- **`Model.upsert()` của Sequelize ghi LẠI MỌI CỘT.** `chronoshelf_auth` chỉ có
-  `GRANT UPDATE (current_page)` trên `user_book_progress`, nên upsert sẽ đâm vào quyền cột. Dùng
-  `INSERT … ON CONFLICT DO UPDATE SET current_page` viết tay (`app/api/me/progress/route.ts`).
-- **`has_function_privilege('role', 'schema.fn()', …)` phải phân giải tên, việc đó đòi USAGE
-  trên schema.** Hỏi về một role không có USAGE thì chính phép kiểm nổ thay vì trả lời. Tra OID
-  trong `pg_proc` khi cần hỏi về `chronoshelf_app`.
-- **`Promise.all` trên hai truy vấn cùng một transaction Sequelize sẽ hỏng** — chúng chồng lên
-  nhau trên một connection. Trong `withRole` thì chạy tuần tự.
-- **Không bao giờ gọi `sequelize.sync()`.** Nó không biết gì về RLS, policy, ràng buộc
-  DEFERRABLE hay hàm SECURITY DEFINER — bảng nó tạo ra là bảng không có hàng rào nào.
-- **Trong file có `"use server"`, MỌI export đều là một endpoint POST công khai** — kể cả hàm
-  chỉ đọc. Vì vậy `lib/admin/shelves.ts` (đọc) tách khỏi `lib/admin/actions.ts` (ghi), và mọi
-  action bắt đầu bằng `requireAdmin()`. Tài liệu Next: *"the route is reachable to anyone who
-  can send the same POST. Treat every action as an untrusted entry point."*
-- **Không truyền được function làm `children` từ Server Component xuống Client Component.**
-  React báo `Functions are not valid as a child of Client Components`. Trạng thái `pending` của
-  form lấy bằng `useFormStatus` trong một nút con, không phải bằng render prop.
-- **Vào dev server bằng `127.0.0.1` thay vì `localhost` làm React không hydrate xong.** Next 16
-  chặn tài nguyên dev cross-origin, WebSocket HMR hỏng, và form submit kiểu native — triệu chứng
-  nhìn y như một bug của app (URL mất sạch query param). Dùng `localhost`, hoặc thêm
-  `allowedDevOrigins` vào `next.config.ts`.
-- **`designmd export` ĐÁNH RƠI `lineHeight`.** Nó xuất `fontWeight` và `letterSpacing` vào tuple
-  `fontSize` nhưng không xuất `lineHeight`, nên mọi chữ chạy 1.5 mặc định của Tailwind thay vì
-  1.15–1.75 như DESIGN.md. Không cổng nào bắt được: `design:lint` chỉ đọc DESIGN.md (nơi giá trị
-  vẫn đúng). `scripts/design-line-height.mjs` vá lại và tự nó là một cổng — thiếu lineHeight cho
-  bất kỳ token nào thì nó thoát mã 1.
-- **Phân loại lỗi Postgres bằng SQLSTATE, đừng bằng văn xuôi.** Đã vấp: `/violates foreign key/`
-  không khớp `violates RESTRICT setting of foreign key constraint` (có chữ chen vào giữa), và
-  sqlstate là `23001` chứ không phải `23503`. Văn xuôi đổi theo phiên bản và theo `lc_messages`;
-  sqlstate thì không. Sequelize bọc lỗi gốc vào `.parent` nên `e.code` ở tầng ngoài luôn
-  `undefined` — xem `pgInfo()` ở `lib/admin/actions.ts`.
-- **Đoạn tĩnh thắng đoạn động trong App Router.** `/quan-tri/vat-pham` che `/quan-tri/[shelf]`,
-  nên một kệ đặt tên "Vật phẩm" (slug `vat-pham`) sẽ mất màn quản trị. `createShelf` coi slug đó
-  như đã dùng. **Thêm route TĨNH nào ở gốc URL thì phải thêm slug đó vào `RESERVED_SLUGS`
-  (`lib/admin/actions.ts`) trong cùng lượt.** Đã quên hai lần: `cong-dong` và `media` lọt ra
-  ngoài danh sách cho tới 2026-09-04 — một kệ đặt tên "Cộng đồng" sẽ vào `/cong-dong` ra bảng
-  tin, và màn quản trị của kệ đó biến mất.
-- **Kho địa chỉ hóa theo nội dung phải trả về TÊN ĐÃ LƯU, không vọng lại tên vừa gửi.** Cùng
-  byte = cùng dòng, nên `ON CONFLICT DO NOTHING` giữ tên của lần tải đầu; trả tên mới về cho
-  form là để người dùng thấy một tên rồi tải về ra tên khác. Đã đo thật trong trình duyệt trên
-  `/api/quan-tri/tai-lieu`. Sửa bằng một câu `SELECT` đọc lại sau khi ghi.
-- **Tên tệp đi vào `Content-Disposition` phải có bản chỉ-ASCII.** Giá trị header đi qua undici,
-  và một ký tự ngoài Latin-1 làm chính `new Response()` NÉM — route chết, không phải tải về sai
-  tên. Tên bài giảng tiếng Việt gần như chắc chắn có dấu. Dùng `filename=` bản ASCII đã lọc +
-  `filename*=UTF-8''…` bản đủ dấu.
-- **Hai nhánh của một điều kiện mà cùng mở đầu bằng `<input>` thì React TÁI DÙNG phần tử đó.**
-  Ô file (uncontrolled) biến thành ô hidden (controlled) và console cảnh báo đúng thế. Xảy ra ở
-  `SlideField`; `ImageField` thoát vì nhánh sau của nó mở đầu bằng `<div>`. Cho hai nhánh hai
-  `key` khác nhau để React tháo ra dựng lại.
-- **Ghi file vào `public/` LÚC CHẠY không phục vụ được.** `next start` trả 404, `next dev` trả
-  200 — bẫy "chạy tốt trên máy tôi" chỉ nổ ở production. File commit sẵn thì vẫn bình thường. Đó
-  là lý do ảnh nằm trong bảng `media` (bytea) chứ không nằm trên đĩa.
+**Danh sách đầy đủ 27 bẫy ở `docs/agents/bay-da-gap.md`.** Nó là nhật ký chỉ-thêm và sẽ còn
+dài ra; để nguyên ở đây thì nó chiếm gần một phần tư file mà mọi phiên đều phải đọc trọn.
+
+Bốn cái dưới đây ở lại vì chúng đắt nhất — mỗi cái từng làm một hàng rào bảo mật hoặc một
+cổng kiểm tra trở nên VÔ NGHĨA trong khi mọi thứ vẫn báo xanh:
+
 - **`sequelize.query()` không truyền `type` trả `[rows, pg.Result]` — phần tử thứ hai là OBJECT,
   không phải số dòng.** Mười phép `affected === 0` trong `lib/admin/actions.ts` vì thế là mã chết
   suốt một thời gian dài: ép kiểu `as [unknown, number]` che mất điều đó lúc biên dịch, nên khi RLS
   chặn một UPDATE thì giao diện vẫn báo "Đã lưu." Dùng `rowsAffected()` ở `lib/db/rows-affected.ts`,
   và `db:check` có một phép chạy UPDATE trúng 0 dòng để bắt khi Sequelize đổi hình dạng trả về.
+
 - **`RAISE EXCEPTION` trong hàm SECURITY DEFINER hủy CẢ transaction của request — kể cả câu UPDATE
   ngay phía trên nó.** Giới hạn 5 lần thử mã OTP từng hoàn toàn vô hiệu vì đúng chuyện này:
   `UPDATE login_codes SET attempts = attempts + 1` bị roll back cùng exception, nên bộ đếm vĩnh viễn
@@ -288,41 +248,16 @@ phải JWT**: định dạng này không có trường `alg`, nên không có g�
   rồi để tầng Node ném lỗi SAU khi transaction đã commit. Luồng OTP đó nay đã bị gỡ, nhưng LUẬT thì
   còn nguyên và đang áp cho `app.ket_thuc_dang_nhap` / `app.ket_thuc_khoi_phuc` — xem
   `lib/auth/dang-nhap.ts`, chỗ `throw` bắt buộc nằm NGOÀI `withRole()`.
+
 - **Phép kiểm khóa ngoại của Postgres BỎ QUA row-level security** (tài liệu PG, mục Row Security
   Policies). Một INSERT tham chiếu tới dòng mà RLS đang giấu vẫn thành công, nên route nào phân biệt
   "khóa ngoại hỏng" với "ok" thì thành máy dò slug sách nháp. Cho câu lệnh tự đi qua RLS
   (`INSERT … SELECT … FROM public.books WHERE slug = $2`) thay vì để khóa ngoại trả lời.
-- **`crypto.timingSafeEqual` so BYTE, còn `String.length` đếm KÝ TỰ.** Chốt chặn độ dài viết theo ký
-  tự để lọt một chữ ký 43 ký tự nhưng 44 byte, và hàm ném `RangeError` thay vì trả `null`.
-  `getSessionUserId()` được gọi ở `/`, `/[shelf]`, `/dang-nhap`, `/quan-tri`, nên đó là 500 toàn site
-  gây ra bởi một cookie méo. Dựng `Buffer` trước rồi so `.length` của buffer.
-- **`empty:hidden` trên một vùng `aria-live` giết chính vùng đó.** `display: none` gỡ phần tử khỏi
-  cây trợ năng, nên khi Server Action trả kết quả thì nội dung VÀ việc hiện lại xảy ra trong cùng một
-  lần cập nhật DOM — trình đọc màn hình coi đó là vùng live vừa được THÊM chứ không phải một thay
-  đổi, và thường không đọc. Vùng live phải có mặt sẵn: rỗng nhưng vẫn hiện.
-- **`design:lint` KHÔNG tự chặn lỗi tương phản.** Rule `contrast-ratio` có severity `warning`, mà CLI
-  đặt `exitCode = errors > 0` — cảnh báo in ra rồi thoát 0. Đó là lý do ô nhập quản trị chạy ở 1.00:1
-  cho tới lúc có người mở trình duyệt ra đo. Nay `design:lint` đi qua `scripts/design-lint-gate.mjs`,
-  thoát 1 khi có BẤT KỲ error hoặc warning nào; và `design:verify` (trong `check`) chặn `DESIGN.md`
-  trôi lệch khỏi `tailwind.theme.json`.
-- **Agent nền chết vì hết hạn mức thì trả `null`, và script nào gộp `null` với "đã bị bác bỏ" sẽ báo
-  cáo NGƯỢC sự thật.** Một đợt review đối kháng từng mất 101/120 agent phản biện đúng kiểu đó:
-  workflow vẫn kết thúc `status: completed`, tổng kết ghi "33 phát hiện bị bác" trong khi 32 cái chưa
-  từng được ai xem — và cả 25 cái sau đó được xác nhận là lỗi thật. Luôn tách BA trạng thái —
-  sống-sót, bị-bác, CHƯA-XỬ — rồi chạy lại nhóm cuối. Đừng để phiếu trắng đếm thành phiếu chống.
-- **`array_length('{}'::text[], 1)` trả NULL, và CHECK chỉ TỪ CHỐI khi biểu thức ra FALSE.** NULL
-  thì cho qua. Nên `CHECK (array_length(a,1) BETWEEN 2 AND 4)` nhận thẳng một mảng rỗng — đúng thứ
-  nó tuyên bố là chặn. Đã đo thật 2026-09-07 trên `book_questions`: `('{}'::text[], 7)` ghi được,
-  qua cả hai ràng buộc. Mọi CHECK trên `text[]` phải bọc `coalesce(array_length(a, 1), 0)`.
-- **`ON CONFLICT` KHÔNG dùng được với ràng buộc UNIQUE `DEFERRABLE`** — Postgres từ chối dùng nó
-  làm trọng tài, sqlstate `55000`. Ba bảng nội dung đều có ràng buộc vị trí deferrable, nên upsert
-  theo `(book_slug, position)` là không viết được; dùng `DELETE` rồi `INSERT`, hoặc
-  `INSERT … SELECT … WHERE NOT EXISTS`. Đây là lý do thật sự đằng sau cách `seed-content.mjs` xóa
-  sạch trang rồi chèn lại.
-- **`CREATE TABLE IF NOT EXISTS` KHÔNG sửa được bảng đã tồn tại.** Ràng buộc viết trong thân
-  `CREATE TABLE` chỉ có hiệu lực với database chưa có bảng đó — sửa nó trên máy đã migrate là
-  không có gì xảy ra, âm thầm. Ràng buộc nào còn phải sửa thì đặt riêng bằng
-  `ALTER TABLE … DROP CONSTRAINT IF EXISTS` + `ADD CONSTRAINT`.
+
+- **`array_length({}::text[], 1)` trả NULL, và CHECK chỉ TỪ CHỐI khi biểu thức ra FALSE.**
+  NULL thì cho qua, nên `CHECK (array_length(a,1) BETWEEN 2 AND 4)` nhận thẳng một mảng rỗng —
+  đúng thứ nó tuyên bố là chặn. Đo thật 2026-09-07 trên `book_questions`. Mọi CHECK trên
+  `text[]` phải bọc `coalesce(array_length(a, 1), 0)`.
 
 ## Lệnh
 
@@ -338,11 +273,20 @@ npm run design:build   # sinh lại tailwind.theme.json từ DESIGN.md
 
 Ba lệnh cần `PGADMIN_URL` (chuỗi kết nối superuser) vì chúng tạo role, đổi schema và sửa policy.
 **Ứng dụng không bao giờ dùng nó** — `.env.local` chỉ có `DATABASE_URL` (role `chronoshelf_app`)
-và `SESSION_SECRET`. Truyền theo từng lệnh, đừng cất trong file:
+và `SESSION_SECRET`.
+
+Chuỗi superuser nằm ở **`.env.pgadmin`** (đã gitignore). **`npm run db:migrate` KHÔNG nạp được
+file đó** — script `npm run` chỉ nạp `.env.local` — nên ba lệnh này phải **gọi thẳng script**:
 
 ```bash
-PGADMIN_URL=postgres://postgres:...@127.0.0.1:5432/chronoshelf npm run db:migrate
+node --env-file-if-exists=.env.local --env-file=.env.pgadmin scripts/db-migrate.mjs
+node --env-file-if-exists=.env.local --env-file=.env.pgadmin scripts/db-mutation-check.mjs
+node --env-file=.env.pgadmin scripts/seed-content.mjs
 ```
+
+Xác thực của PostgreSQL 18 trên máy này là `scram-sha-256` cho cả `local` lẫn `127.0.0.1` —
+không có `trust`, không có `.pgpass` — nên không có đường nào chạy ba lệnh đó mà không có mật
+khẩu. `npm run db:check` thì dùng `npm run` được, vì nó chỉ cần `DATABASE_URL`.
 
 `npm run check` cần `.env.local` có mặt (xem `.env.example`) — KHÔNG chạy "ngoại tuyến hoàn
 toàn" được. `next build` (bước cuối của `check`) nạp `lib/db/sequelize.ts`, file đó `throw`
@@ -353,7 +297,9 @@ ngay lúc nạp module nếu thiếu `DATABASE_URL`. Đã kiểm thực nghiệm
 
 `DATABASE_URL` **không cần trỏ tới database đang sống** để build qua; chỉ cần CÓ MẶT — đã kiểm
 2026-08-28 bằng cách trỏ nó vào `127.0.0.1:59999/khong-co-that`, `next build` vẫn thoát mã 0.
-Không route nào gọi database lúc build vì tất cả đều `force-dynamic`. Nhưng `npm run db:check`,
+Không route nào gọi database lúc build: 22 file khai `force-dynamic` tường minh, còn
+`/[shelf]` (segment động, không `generateStaticParams`) và `/dang-nhap` (đọc `searchParams`)
+dynamic theo mặc định của App Router. Nhưng `npm run db:check`,
 `db:migrate`, `db:mutation` và `seed:content` thì cần database thật.
 
 `npm run check` cũng chạy tự động ở **pre-commit**: `.githooks/pre-commit`, được nối vào bằng
@@ -452,11 +398,16 @@ báo hỏng — nhưng schema đúng, khuôn mới sai.)
 | `.githooks/pre-commit` | Chạy `npm run check` trước mỗi commit. Nối bằng `npm run prepare`. |
 | `scripts/db-check.mjs` | Self-check ranh giới bảo mật tầng DB (`npm run db:check`). |
 | `scripts/design-lint-gate.mjs` | Biến `designmd lint` thành cổng thật — cảnh báo tương phản cũng thoát 1. |
+| `scripts/design-line-height.mjs` | Vá `lineHeight` mà `designmd export` đánh rơi. **Tự nó là một cổng**: thiếu lineHeight cho bất kỳ token nào thì thoát 1. |
+| `scripts/seed-content.mjs` | Bootstrap MỘT CHIỀU `db/seed/*.json` → bảng nội dung. Cũng tạo ba dòng mồi nhử mà `db:check` phụ thuộc. |
+| `scripts/build-world-map.mjs` | Sinh `public/world-countries.json` từ world-atlas cho bản đồ chọn quốc gia. Chạy **một lần**, KHÔNG nằm trong `check`, và cần `npm i --no-save d3-geo topojson-client`. |
 | `lib/db/rows-affected.ts` | Đọc số dòng UPDATE/DELETE chạm tới, chịu được cả hai hình dạng Sequelize trả về. |
-| `docs/agents/` | Quy ước cho skill: `issue-tracker.md`, `domain.md`. |
+| `docs/agents/` | `bay-da-gap.md` (27 bẫy), `issue-tracker.md`, `domain.md`. |
 | `.scratch/<feature>/` | Issue tracker (repo chưa có remote nên không dùng GitHub Issues). |
 | `docs/superpowers/specs/` + `plans/` | Spec và kế hoạch dài theo cả subsystem. |
 | `lib/**/*.test.ts` | Test `node --test`, xem mục Test ở trên. |
+| `.codex/hooks.json` | Cấu hình hook cho Codex. Dùng CHUNG `.claude/hooks/guard-pen-dev.mjs` — đừng chép file hook sang đây, bản chép sẽ trôi lệch. |
+| `.agents/skills/` + `skills-lock.json` | Skill của bên thứ ba do trình cài skill quản lý. **KHÔNG phải nguồn của dự án và KHÔNG ghi đè `DESIGN.md`** — vài skill trong đó ra luật thiết kế ngược hẳn (cấm Lucide, đổi font, luật mobile). Khi mâu thuẫn, `DESIGN.md` và file này thắng. |
 
 Sửa `.claude/settings.json` hay file hook thì **phải mở phiên mới** mới có hiệu lực — Claude
 Code nạp chúng lúc khởi động phiên.

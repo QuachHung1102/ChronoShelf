@@ -22,6 +22,21 @@ export const FOCUS_RING_ON_DARK =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-on-dark " +
   "focus-visible:ring-offset-2 focus-visible:ring-offset-primary rounded-sm";
 
+/**
+ * Vòng focus khi thứ bấm được nằm trên nền `surface` — tức bên trong một thẻ, chứ không
+ * phải trên nền trang `neutral`. Khác `FOCUS_RING` đúng một token: `ring-offset-surface`.
+ *
+ * Biến thể này từng bị chép tay 11 chỗ. Ba hằng `*_ON_SURFACE` dưới đây gom chúng lại.
+ *
+ * VÌ SAO VIẾT TRẢI RA CHỨ KHÔNG SINH BẰNG `.replace()`: JIT của Tailwind quét MÃ NGUỒN
+ * tìm chuỗi class. Một class chỉ tồn tại sau khi JavaScript chạy thì Tailwind không thấy
+ * và không sinh CSS cho nó — vòng focus sẽ biến mất trong im lặng, đúng loại lỗi không
+ * cổng nào bắt được. Đó cũng là lý do `FOCUS_RING_ON_DARK` ngay trên đây viết trải ra.
+ */
+export const FOCUS_RING_ON_SURFACE =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
+  "focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
+
 export const LABEL = "font-body text-label-md text-primary-dark";
 
 /**
@@ -114,6 +129,27 @@ export const DANGER_BUTTON =
   "inline-flex items-center gap-xs rounded-sm font-body text-body-sm text-destructive " +
   "underline underline-offset-2 transition duration-200 ease-out hover:decoration-2 " +
   `active:brightness-90 disabled:opacity-60 ${FOCUS_RING}`;
+
+/**
+ * Hai nút trên, nhưng đặt TRÊN NỀN `surface` — bên trong một thẻ, một tấm giấy da, một
+ * hộp thoại. Chỉ khác token offset của vòng focus.
+ *
+ * Chúng tồn tại vì lần trước không có: `QuizPanel` chép nguyên văn cả hai (so bằng máy,
+ * khớp từng ký tự sau khi đổi token offset), và `app/tui-hanh-trang/page.tsx` chép
+ * `QUIET_BUTTON` rồi ĐỂ RƠI `rounded-sm`, `transition`, `duration-200`, `ease-out`,
+ * `hover:decoration-2`, `active:brightness-90`, `disabled:opacity-60` — tức là một nút
+ * chữ không có hover, không có phản hồi khi bấm, trong khi mọi nút chữ khác đều có.
+ * Đó là bằng chứng đủ rằng chép tay ở đây không giữ được đồng bộ.
+ */
+export const PRIMARY_BUTTON_ON_SURFACE =
+  "inline-flex items-center justify-center gap-sm rounded-full bg-tertiary-deep px-lg py-sm " +
+  "font-body text-label-md text-on-primary transition duration-200 ease-out hover:brightness-110 " +
+  `active:brightness-90 disabled:opacity-60 ${FOCUS_RING_ON_SURFACE}`;
+
+export const QUIET_BUTTON_ON_SURFACE =
+  "inline-flex items-center gap-xs rounded-sm font-body text-body-sm text-tertiary-deep " +
+  "underline underline-offset-2 transition duration-200 ease-out hover:decoration-2 " +
+  `active:brightness-90 disabled:opacity-60 ${FOCUS_RING_ON_SURFACE}`;
 
 /**
  * Khung xương cho `loading.tsx`. Repo chỉ có MỘT layout (`app/layout.tsx`) và nó không dựng

@@ -130,6 +130,76 @@ Màn quản trị: ca khó nhất đã thử thật — bỏ trống ô 1 và ô
 `choices` 2 phần tử với `correct_index = 1`, đúng như thiết kế. Đánh dấu đáp án vào một ô để
 TRỐNG thì bị chặn kèm câu giải thích, không tạo dòng nào.
 
+---
+
+## Đợt dọn rác + viết lại tài liệu + tối ưu (cùng ngày)
+
+Một workflow 7 góc nhìn độc lập soi toàn bộ repo, mỗi phát hiện về tối ưu đi qua hai người
+phản biện. **24 phát hiện về tối ưu thì 21 bị bác** — phần lớn là "đúng về kỹ thuật nhưng
+không đáng làm ở quy mô này". Ba cái sống sót đều đo được, và đã làm cả ba.
+
+### Rác đã dọn
+
+| | Trước | Sau |
+|---|---|---|
+| Cây làm việc (không kể `node_modules`/`.next`/`.git`) | 18 MB | **7 MB** |
+| Ảnh PNG sót ở gốc repo | 21 file | 0 |
+| Tài khoản trong DB dev | 65 | **3** |
+| `db/schema/02-users.sql` | 168 dòng | **41** |
+| `CLAUDE.md` | 502 dòng | **436** |
+
+**`02-users.sql` là mục đáng kể nhất**: 146/168 dòng dựng bảng `login_codes` cùng hai hàm OTP
+mà `15-mat-khau.sql` DROP ngay trong cùng một lượt migrate. Chúng chưa bao giờ sống quá một
+lượt chạy — `90-verify.sql` khối A nổ nếu chúng còn. Tệ hơn: trong khoảng giữa file 02 và file
+15, `app.consume_login_code` tồn tại thật với `GRANT EXECUTE TO chronoshelf_anon`, mang đúng
+lỗi bộ-đếm-vĩnh-viễn-bằng-0. Đã kiểm bằng phép đo quyết định: **migrate lên một database
+TRẮNG** (`chronoshelf_thu`, tạo rồi xóa) và lên database thật — cả hai xanh.
+
+`db:check` **tự tạo 5 tài khoản mỗi lần chạy và không thể tự dọn** — role ứng dụng cố tình
+không có `DELETE` trên `users`, chính hàng rào `90-verify.sql` canh. Đó là lý do 62 cái tích
+lại. Dọn định kỳ bằng SQL ở mục "Việc còn lại" bên dưới; **giữ `__moi-nhu-vai-tro@` và
+`ui-audit@`**.
+
+### Ba tối ưu sống sót
+
+1. **`/dang-nhap`: 491.543 → 71.831 byte client JS (−85,4%).** `LoginForm` import
+   `MAT_KHAU_TOI_THIEU` từ `lib/auth/mat-khau.ts`, mà file đó mở đầu bằng
+   `import crypto from "node:crypto"` — nên Turbopack kéo cả 445 KB polyfill `node:crypto`
+   xuống trình duyệt **chỉ để lấy hằng số `8`**. Và nó là mã chết trọn vẹn: crypto-browserify
+   không có `scrypt`, đúng hàm duy nhất file đó gọi. Đã tách phần thuần ra
+   `lib/auth/mat-khau-quy-tac.ts`. Đo lại trên artifact `.next`: chunk polyfill **biến mất**,
+   không còn chunk nào chạm `crypto-browserify`/`pbkdf2`.
+2. **`npm run lint`: 5,6s → 3,2s.** Bật `--cache` với
+   `--cache-location node_modules/.cache/eslint` — theo đúng tiền lệ `design:verify` đã ghi
+   file sinh ra vào `node_modules/`, nên **không phải đụng `.gitignore`** và không có file lạ
+   nào nằm ở gốc repo.
+3. **Khối A của `90-verify.sql` bỏ sót đúng hai bảng, và dùng sai hàm.** Danh sách 13 bảng viết
+   tay đã lỡ nhịp hai lần (`media`, rồi `book_questions`). Nay **quét `pg_tables`** nên bảng
+   mới tự động được canh. Quan trọng hơn: đổi `has_table_privilege` →
+   `has_any_column_privilege` — hàm cũ **mù với GRANT theo cột**, tức
+   `GRANT SELECT (correct_index) … TO chronoshelf_app` lọt qua trong im lặng. `db:mutation` có
+   hai đột biến mới chứng minh cả hai vế.
+
+### Tài liệu đã viết lại
+
+- **`README.md`**: từ bản mặc định `create-next-app` (sai font, sai trình quản lý gói, sai
+  cách chạy, không nhắc `.env.local`) thành 65 dòng nói đúng về ChronoShelf.
+- **`app/icon.svg`** thay `favicon.ico` mặc định — tab trình duyệt không còn là logo Vercel.
+- **`content.md` §8 §9 §4.3**: §8 từng nói render tĩnh / đăng nhập Google / object storage /
+  responsive — cả bốn đều ngược thực tế. §9 khai một cột "vật phẩm yêu cầu để mở" mà dự án
+  bảo đảm KHÔNG tồn tại.
+- **`CLAUDE.md`**: bốn con số đã lệch, sửa theo catalog (14→27 policy, 3→4 ràng buộc
+  DEFERRABLE, 8→11 hàm SECURITY DEFINER, "mọi route force-dynamic"→22 tường minh + 2 mặc
+  định). Mục **Bẫy đã gặp** (27 mục, 23% file) tách sang `docs/agents/bay-da-gap.md`, giữ lại
+  bốn cái đắt nhất.
+- **`DESIGN.md`**: ràng buộc "CHỈ PC, 1024×768" chuyển vào đây — nó là quyết định thiết kế, và
+  DESIGN.md là file duy nhất `design:verify` canh trong `npm run check`. Thêm cặp màu
+  `quiz-wrong` (5.96:1) để `design:lint` gác được cặp duy nhất báo lỗi cho học sinh.
+- **Xóa hai plan đã xong việc** (chặng C, bảng tin). Plan là danh sách bước, không giữ quyết
+  định nào; git history vẫn còn. `docs/superpowers/plans/` nay chỉ còn bản bàn giao này.
+
+---
+
 ## Việc còn lại
 
 ### 1. Ảnh — thứ DUY NHẤT đang chặn thật (chờ người dùng)
@@ -163,18 +233,21 @@ vậy nó cũng chỉ có 2 câu hỏi thay vì 3.
 Không đổi. `laGoiZip()` hiện chỉ khẳng định "là một gói ZIP"; thêm phép so `[Content_Types].xml`
 ở offset 30 khi có file thật commit vào repo.
 
-### 4. Dọn tài khoản test trong database dev
+### 4. Dọn tài khoản test trong database dev — việc ĐỊNH KỲ
 
-Mỗi lần `npm run db:check` chạy là commit thêm 5 tài khoản `*@example.invalid`. Phiên 09-06 đã
-thử dọn và **classifier của Claude Code chặn** cả lệnh xóa lẫn lệnh đếm.
+Đã dọn 62 cái ngày 2026-09-07 (65 → 3), nhưng **nó sẽ tích lại**: `npm run db:check` tạo 5 tài
+khoản mới mỗi lần chạy và không thể tự dọn — role ứng dụng cố tình không có `DELETE` trên
+`users`, chính hàng rào `90-verify.sql` canh. Chạy lại khi thấy chướng:
 
 ```sql
 DELETE FROM public.users
-WHERE email LIKE '%@example.invalid' AND email <> '__moi-nhu-vai-tro@example.invalid';
+WHERE email LIKE '%@example.invalid'
+  AND email NOT IN ('__moi-nhu-vai-tro@example.invalid', 'ui-audit@example.invalid');
 ```
 
-**Đừng xóa dòng mồi nhử**, và **đừng xóa `ui-audit@example.invalid`** nếu còn muốn dùng nó để
-soi giao diện (mật khẩu `chauchuotgiaodien2026`, có quyền admin).
+**Giữ hai cái đó.** `__moi-nhu-vai-tro@` là mồi nhử của `db:check`; `ui-audit@` là tài khoản
+admin dùng để soi giao diện (mật khẩu `chauchuotgiaodien2026`) và nó giữ bài đăng cộng đồng —
+xóa nó là mất luôn bảng tin. Xóa xong nhớ chạy lại `npm run db:check` để chắc vẫn 102/0.
 
 ### 5. Nhánh chưa bao giờ merge, và không có remote
 

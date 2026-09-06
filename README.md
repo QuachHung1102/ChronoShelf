@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ChronoShelf — "Cửa Sổ Lịch Sử"
 
-## Getting Started
+Nền tảng học lịch sử trực quan cho học sinh Việt Nam. Người dùng khám phá một thư viện cổ:
+mỗi chuyên mục là một **kệ sách**, mỗi bài học là một **quyển sách** lật từng trang. Đọc hết
+một quyển và trả lời đúng bài kiểm tra cuối sách thì nhận được một **vật phẩm**, và chính vật
+phẩm đó mở khóa quyển tiếp theo trên kệ.
 
-First, run the development server:
+Next.js 16 (App Router) · React 19 · PostgreSQL 18 cục bộ + Sequelize · Tailwind CSS 3.4 ·
+TypeScript. Chỉ nhắm **màn hình PC**, ngưỡng thấp nhất là 1024×768.
+
+## Đọc file nào
+
+| File | Trả lời câu hỏi |
+|---|---|
+| **`CLAUDE.md`** | **Bắt đầu từ đây.** Toàn bộ kiến thức dự án: kiến trúc, quy tắc bắt buộc, bẫy đã gặp, lệnh. |
+| `content.md` | Sản phẩm *là gì* — sitemap, cơ chế, nội dung từng trang. |
+| `DESIGN.md` | Trông *như thế nào* — toàn bộ design token và lý do từng con số. |
+| `db/schema/README.md` | Thứ tự chạy schema, ba role và vì sao có ba. Đọc trước khi đụng SQL. |
+| `docs/superpowers/specs/` | Spec đã duyệt, mỗi subsystem một file. |
+
+## Bắt đầu
+
+Cần **Node 24+** và **PostgreSQL 18 chạy cục bộ**.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local     # rồi điền DATABASE_URL và SESSION_SECRET
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`DATABASE_URL` phải trỏ role **`chronoshelf_app`**, không phải `postgres` — superuser bỏ qua
+toàn bộ RLS và mọi policy sẽ ngừng tác dụng trong im lặng. Lý do đầy đủ ở `.env.example`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Dựng database. Ba lệnh này cần chuỗi kết nối superuser; để nó ở `.env.pgadmin` (đã gitignore)
+và gọi thẳng script, vì `npm run` không nạp được file env đó:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+node --env-file-if-exists=.env.local --env-file=.env.pgadmin scripts/db-migrate.mjs
+node --env-file=.env.pgadmin scripts/seed-content.mjs
+npm run dev
+```
 
-## Learn More
+Mở `http://localhost:3000` — dùng `localhost`, **không phải `127.0.0.1`**: Next 16 chặn tài
+nguyên dev cross-origin và React sẽ không hydrate xong.
 
-To learn more about Next.js, take a look at the following resources:
+## Lệnh
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run check          # CỔNG DUY NHẤT cho code — chạy trước khi nói "xong"
+npm run db:check       # hàng rào bảo mật nhìn từ ứng dụng, nối bằng đúng role ứng dụng
+npm run dev            # dev server
+npm run design:build   # sinh lại tailwind.theme.json từ DESIGN.md
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`npm run check` cũng chạy tự động ở pre-commit (`.githooks/pre-commit`, nối bằng `npm run
+prepare`). Sau mỗi lần đụng `db/schema/` thì chạy thêm `db:check` **và**
+`scripts/db-mutation-check.mjs`.
 
-## Deploy on Vercel
+## Vài điều dễ vấp
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Sửa màu/chữ/spacing thì sửa **`DESIGN.md`** rồi `npm run design:build`. Đừng sửa
+  `tailwind.theme.json` bằng tay, và đừng hardcode mã hex trong component.
+- Sửa **nội dung bài học** thì vào màn quản trị `/quan-tri`, không sửa file. `db/seed/*.json`
+  là bootstrap một chiều — sửa nó không làm đổi nội dung đang chạy.
+- `npm run check` cần `.env.local` có mặt. `DATABASE_URL` không cần trỏ tới database sống,
+  nhưng phải tồn tại — `next build` nạp `lib/db/sequelize.ts` và file đó throw nếu thiếu.
