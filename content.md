@@ -140,7 +140,7 @@ Mỗi chuyên mục có một bộ vật phẩm riêng, gắn với nội dung b
 
 * **Đếm chuỗi:** Biểu tượng ngọn lửa cam kèm số ngày liên tục, hiển thị trên header.
 * **Nhiệm vụ giữ chuỗi mỗi ngày:** đọc xong ít nhất một trang sách, hoặc đăng một bài viết ngắn / một câu hỏi thảo luận lên bảng tin cộng đồng.
-* **Bảng tin cộng đồng:** nơi người dùng đăng bài ngắn, đặt câu hỏi, bình luận và thảo luận về lịch sử.
+* **Bảng tin cộng đồng:** nơi người dùng đăng bài ngắn, đặt câu hỏi, bình luận và thảo luận về lịch sử. Tác giả gỡ được bài và bình luận của chính mình; admin gỡ được của bất kỳ ai (kiểm duyệt). **Không sửa được bài đã đăng** — sửa một bài đã có bình luận bên dưới làm những bình luận đó nói về một văn bản không còn tồn tại; muốn mở thì phải kèm dấu "đã sửa lúc…" hiển thị ra, và đó là một việc riêng. Gỡ bài không rút lại ngày giữ lửa đã ghi: hôm đó người ta có hoạt động thật.
 * **Phần thưởng:** đạt mốc 7 ngày, 30 ngày… mở khóa danh hiệu *Sử gia tập sự*, *Nhà thông thái*, *Học giả uyên bác*. Có thể gắn thêm phần thưởng là vật phẩm hiếm cho túi hành trang.
 
 ---

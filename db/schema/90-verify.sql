@@ -583,9 +583,19 @@ BEGIN
     IF has_any_column_privilege('chronoshelf_anon', 'public.' || t, 'INSERT') THEN
       RAISE EXCEPTION 'người chưa đăng nhập ghi được %', t;
     END IF;
-    IF has_any_column_privilege('chronoshelf_auth', 'public.' || t, 'UPDATE')
-    OR has_table_privilege('chronoshelf_auth', 'public.' || t, 'DELETE') THEN
-      RAISE EXCEPTION 'chronoshelf_auth sửa/xóa được % — bảng tin bản đầu chỉ-ghi-thêm', t;
+    -- XÓA thì ĐƯỢC, từ file 17: tác giả tự gỡ bài của mình, admin gỡ bài của người
+    -- khác. Hàng rào là POLICY chứ không phải GRANT — nên ở đây khẳng định GRANT phải
+    -- CÓ, và khối riêng bên dưới khẳng định policy còn đủ hai vế.
+    IF NOT has_table_privilege('chronoshelf_auth', 'public.' || t, 'DELETE') THEN
+      RAISE EXCEPTION '% mất GRANT DELETE — không ai gỡ được bài, kể cả admin', t;
+    END IF;
+    IF has_table_privilege('chronoshelf_anon', 'public.' || t, 'DELETE') THEN
+      RAISE EXCEPTION 'người chưa đăng nhập xóa được %', t;
+    END IF;
+    -- SỬA thì KHÔNG. Sửa một bài đã có bình luận bên dưới làm các bình luận đó nói về
+    -- một văn bản không còn tồn tại; muốn mở thì phải kèm `edited_at`, xem đầu file 17.
+    IF has_any_column_privilege('chronoshelf_auth', 'public.' || t, 'UPDATE') THEN
+      RAISE EXCEPTION 'chronoshelf_auth sửa được % — bảng tin cố ý không cho UPDATE', t;
     END IF;
     FOREACH c IN ARRAY ARRAY['id', 'created_at'] LOOP
       IF has_column_privilege('chronoshelf_auth', 'public.' || t, c, 'INSERT') THEN
@@ -622,10 +632,12 @@ BEGIN
     RAISE EXCEPTION 'một policy bảng tin thiếu hoặc không còn đúng biểu thức';
   END IF;
 
+  -- SÁU: đọc + chèn + xóa, mỗi thứ hai bảng. Con số này lên 6 từ file 17; nếu nó lên
+  -- nữa thì có người vừa mở thêm một cửa mà bốn phép khớp biểu thức ở trên không thấy.
   SELECT count(*) INTO n FROM pg_policies
    WHERE schemaname='public' AND tablename IN ('community_posts','community_comments');
-  IF n <> 4 THEN
-    RAISE EXCEPTION 'có % policy trên hai bảng cộng đồng, chờ đúng 4 — ai đó vừa thêm một cửa', n;
+  IF n <> 6 THEN
+    RAISE EXCEPTION 'có % policy trên hai bảng cộng đồng, chờ đúng 6 — ai đó vừa thêm một cửa', n;
   END IF;
 
   -- Neo vào đúng bảng và đúng định nghĩa do PostgreSQL deparse. Chỉ kiểm tên sẽ để lọt
@@ -674,6 +686,16 @@ BEGIN
        AND ns.nspname='public' AND fn.proname='record_community_post_activity'
   ) THEN
     RAISE EXCEPTION 'trigger giữ lửa của bài cộng đồng thiếu, tắt hoặc trỏ sai hàm';
+  END IF;
+
+  -- Policy DELETE phải còn ĐỦ HAI VẾ. Rơi vế `is_admin()` thì kiểm duyệt chết câm; rơi
+  -- vế tác giả thì người dùng không gỡ được bài của chính mình. Cả hai đều hỏng TRONG IM
+  -- LẶNG — nút vẫn còn trên giao diện, bấm vào chỉ không có gì xảy ra.
+  IF (SELECT count(*) FROM pg_policies
+       WHERE schemaname='public' AND tablename IN ('community_posts','community_comments')
+         AND cmd='DELETE'
+         AND qual LIKE '%current_user_id%' AND qual LIKE '%is_admin%') <> 2 THEN
+    RAISE EXCEPTION 'chờ đúng 2 policy DELETE của bảng tin còn đủ hai vế tác giả + admin';
   END IF;
 
   RAISE NOTICE 'G. bảng tin cộng đồng OK';

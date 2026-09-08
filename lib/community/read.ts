@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { cache } from "react";
 import { Op } from "sequelize";
+import { getAdminUserId } from "@/lib/admin/gate";
 import { getSessionUserId } from "@/lib/auth/session";
 import { CommunityComment, CommunityPost, UserActivity } from "@/lib/db/models";
 import { withRole } from "@/lib/db/tx";
@@ -18,6 +19,12 @@ export interface BinhLuanCongDong {
   tacGia: string;
   body: string;
   createdAt: Date;
+  /**
+   * Của chính người đang xem. Suy ra Ở ĐÂY rồi vứt `authorId` đi — bảng tin dùng bí danh
+   * (`Bạn đọc #A1B2`), nên đẩy `authorId` xuống client là phá luôn lớp ẩn danh đó: ai
+   * cũng nối được id thật với bí danh chỉ bằng cách xem mã nguồn trang.
+   */
+  cuaToi: boolean;
 }
 
 export interface BaiCongDong {
@@ -26,11 +33,19 @@ export interface BaiCongDong {
   tacGia: string;
   body: string;
   createdAt: Date;
+  /** Xem chú thích ở `BinhLuanCongDong.cuaToi`. */
+  cuaToi: boolean;
   binhLuan: BinhLuanCongDong[];
 }
 
 export interface BangTinCongDong {
   daDangNhap: boolean;
+  /**
+   * Người đang xem là admin — chỉ để quyết định có VẼ nút gỡ hay không. Không phải hàng
+   * rào: policy `delete own or admin post` mới là thứ chặn, và nó chặn cả người gọi
+   * thẳng Server Action mà chưa từng nhìn thấy cái nút.
+   */
+  laAdmin: boolean;
   daGiuLuaHomNay: boolean;
   streak: number;
   streakDaiNhat: number;
@@ -83,6 +98,10 @@ export const readBangTin = cache(async function readBangTin(): Promise<BangTinCo
     return { posts, comments, activities };
   });
 
+  // Hỏi SAU khi transaction ở trên đã đóng: `getAdminUserId()` tự mở transaction của nó,
+  // và hai transaction lồng nhau trên cùng một connection Sequelize sẽ chồng lệnh.
+  const laAdmin = userId ? (await getAdminUserId()) !== null : false;
+
   const theoBai = new Map<string, BinhLuanCongDong[]>();
   for (const comment of [...comments].reverse()) {
     const list = theoBai.get(comment.postId) ?? [];
@@ -91,6 +110,7 @@ export const readBangTin = cache(async function readBangTin(): Promise<BangTinCo
       tacGia: biDanh(comment.authorId),
       body: comment.body,
       createdAt: comment.createdAt,
+      cuaToi: comment.authorId === userId,
     });
     theoBai.set(comment.postId, list);
   }
@@ -101,6 +121,7 @@ export const readBangTin = cache(async function readBangTin(): Promise<BangTinCo
 
   return {
     daDangNhap: Boolean(userId),
+    laAdmin,
     daGiuLuaHomNay: cacNgay.includes(homNay),
     streak: tinhStreak(cacNgay, homNay),
     streakDaiNhat,
@@ -111,6 +132,7 @@ export const readBangTin = cache(async function readBangTin(): Promise<BangTinCo
       tacGia: biDanh(post.authorId),
       body: post.body,
       createdAt: post.createdAt,
+      cuaToi: post.authorId === userId,
       binhLuan: theoBai.get(post.id) ?? [],
     })),
   };

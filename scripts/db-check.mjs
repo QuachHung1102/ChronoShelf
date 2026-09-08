@@ -963,6 +963,96 @@ await deniedByPolicy(
   }
 }
 
+// --- Gỡ bài và bình luận (db/schema/17) ---
+//
+// Hàng rào ở đây có HAI TẦNG KHÁC LOẠI, và mỗi tầng phải được khẳng định theo đúng cơ
+// chế của chính nó — đúng bài học số 3 ở CLAUDE.md:
+//   * người CHƯA đăng nhập: chặn bằng GRANT   ⇒ chờ `permission denied for table`
+//   * người đã đăng nhập xóa bài NGƯỜI KHÁC: chặn bằng POLICY ⇒ KHÔNG có lỗi nào cả,
+//     câu lệnh chạy ngon lành và trúng 0 DÒNG. Đây là chỗ dễ sai nhất: nếu phép kiểm chỉ
+//     hỏi "có ném lỗi không" thì nó luôn báo đạt, kể cả khi policy đã bị gỡ sạch.
+await denied(
+  "người chưa đăng nhập không gỡ được bài",
+  "chronoshelf_anon",
+  "DELETE FROM public.community_posts WHERE id = gen_random_uuid()",
+  "permission denied for table community_posts",
+);
+await denied(
+  "người chưa đăng nhập không gỡ được bình luận",
+  "chronoshelf_anon",
+  "DELETE FROM public.community_comments WHERE id = gen_random_uuid()",
+  "permission denied for table community_comments",
+);
+
+for (const [name, ai, chờ] of [
+  ["người thường KHÔNG gỡ được bài của người khác — policy chặn, trúng 0 dòng", () => userB, 0],
+  ["đối chứng: tác giả gỡ được bài của chính mình", () => userA, 1],
+  ["đối chứng: admin gỡ được bài của người khác (kiểm duyệt)", () => ADMIN_DECOY, 1],
+]) {
+  await c.query("BEGIN");
+  try {
+    await c.query("SET LOCAL ROLE chronoshelf_auth");
+    await c.query("SELECT set_config('app.user_id', $1, true)", [userA]);
+    const post = await c.query(
+      `INSERT INTO public.community_posts (author_id,kind,body)
+       VALUES ($1,'chia-se','bài mồi để thử gỡ') RETURNING id`,
+      [userA],
+    );
+    await c.query("SELECT set_config('app.user_id', $1, true)", [ai()]);
+    const r = await c.query("DELETE FROM public.community_posts WHERE id = $1", [post.rows[0].id]);
+    check(r.rowCount === chờ, name, `xóa trúng ${r.rowCount} dòng, chờ ${chờ}`);
+  } catch (e) {
+    bad(name, `ném lỗi ${e.code} "${e.message}" — ở đây policy phải chặn im lặng, không phải nổ`);
+  } finally {
+    await c.query("ROLLBACK").catch(() => {});
+  }
+}
+
+{
+  // Gỡ một bài phải kéo theo bình luận CỦA NGƯỜI KHÁC dưới nó. Việc đó do khóa ngoại
+  // ON DELETE CASCADE làm, mà khóa ngoại chạy bằng quyền chủ bảng và BỎ QUA RLS — ở đây
+  // đúng là thứ ta muốn. Không có phép này thì một bài bị gỡ vẫn để lại bình luận mồ côi.
+  const name = "gỡ bài kéo theo cả bình luận của người khác";
+  await c.query("BEGIN");
+  try {
+    await c.query("SET LOCAL ROLE chronoshelf_auth");
+    await c.query("SELECT set_config('app.user_id', $1, true)", [userA]);
+    const post = await c.query(
+      `INSERT INTO public.community_posts (author_id,kind,body)
+       VALUES ($1,'chia-se','bài mồi') RETURNING id`,
+      [userA],
+    );
+    await c.query("SELECT set_config('app.user_id', $1, true)", [userB]);
+    await c.query(
+      `INSERT INTO public.community_comments (post_id,author_id,body) VALUES ($1,$2,'của B')`,
+      [post.rows[0].id, userB],
+    );
+    await c.query("SELECT set_config('app.user_id', $1, true)", [userA]);
+    await c.query("DELETE FROM public.community_posts WHERE id = $1", [post.rows[0].id]);
+    const con = await c.query(
+      "SELECT count(*)::int AS n FROM public.community_comments WHERE post_id = $1",
+      [post.rows[0].id],
+    );
+    check(con.rows[0].n === 0, name, `còn ${con.rows[0].n} bình luận mồ côi, chờ 0`);
+  } finally {
+    await c.query("ROLLBACK").catch(() => {});
+  }
+}
+
+// SỬA bài thì vẫn phải đóng — quyết định ở đầu db/schema/17, và đây là phép giữ nó.
+await denied(
+  "không ai sửa được bài đã đăng — bảng tin cố ý không có UPDATE",
+  "chronoshelf_auth",
+  "UPDATE public.community_posts SET body = 'sửa trộm'",
+  "permission denied for table community_posts",
+);
+await denied(
+  "không ai sửa được bình luận đã đăng",
+  "chronoshelf_auth",
+  "UPDATE public.community_comments SET body = 'sửa trộm'",
+  "permission denied for table community_comments",
+);
+
 for (const [name, constraint, sql] of [
   [
     "bài chỉ có khoảng trắng bị ràng buộc DB chặn",

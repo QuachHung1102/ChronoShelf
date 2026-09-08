@@ -156,6 +156,15 @@ PGPASSWORD=... "/c/Program Files/PostgreSQL/18/bin/psql.exe" -U postgres -h 127.
       ON CONFLICT (user_id) DO UPDATE SET role = 'admin'"
 ```
 
+- **Bảng tin cộng đồng cho XÓA nhưng KHÔNG cho SỬA.** `db/schema/17` mở DELETE với policy hai
+  vế — `app.current_user_id() = author_id OR public.is_admin()` — nên tác giả tự gỡ bài của
+  mình và admin gỡ được bài của bất kỳ ai. UPDATE thì vẫn đóng ở tầng GRANT, và `90-verify.sql`
+  khối G nổ nếu ai đó mở. Lý do đầy đủ ở đầu file 17; tóm tắt: sửa một bài đã có bình luận bên
+  dưới làm những bình luận ấy nói về một văn bản không còn tồn tại.
+  **Ở đây policy chặn TRONG IM LẶNG** — xóa nhầm bài người khác không ném lỗi, nó trúng 0 dòng.
+  Nên mọi đường xóa phải đi qua `rowsAffected()`, đúng như mười phép `affected === 0` ở
+  `lib/admin/actions.ts`; thiếu nó thì giao diện báo "Đã gỡ bài" trong khi bài còn nguyên.
+
 ## Backend — PostgreSQL cục bộ
 
 **PostgreSQL 18 cục bộ + Sequelize + Next.js Route Handlers.** Không có server Express riêng —

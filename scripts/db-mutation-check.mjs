@@ -255,7 +255,35 @@ const MUTATIONS = [
   [
     "chronoshelf_auth được GRANT UPDATE trên community_posts",
     "GRANT UPDATE ON public.community_posts TO chronoshelf_auth",
-    "chỉ-ghi-thêm",
+    "cố ý không cho UPDATE",
+  ],
+  [
+    // Mất GRANT DELETE thì KHÔNG có gì nổ ở phía ứng dụng: nút vẫn còn, bấm vào chỉ
+    // không có gì xảy ra. Đây là phép chứng minh 90-verify biết kêu thay cho nó.
+    "community_posts mất GRANT DELETE — không ai gỡ được bài nữa",
+    "REVOKE DELETE ON public.community_posts FROM chronoshelf_auth",
+    "mất GRANT DELETE",
+  ],
+  [
+    "người chưa đăng nhập được cấp quyền xóa bài",
+    "GRANT DELETE ON public.community_posts TO chronoshelf_anon",
+    "người chưa đăng nhập xóa được",
+  ],
+  [
+    // Rơi vế is_admin() là kiểm duyệt chết câm — admin bấm nút gỡ, trúng 0 dòng, và
+    // không thông báo nào nói tại sao. Phép khớp biểu thức phải bắt được.
+    'policy DELETE của community_posts rơi mất vế is_admin()',
+    `DROP POLICY "delete own or admin post" ON public.community_posts;
+     CREATE POLICY "delete own or admin post" ON public.community_posts
+       FOR DELETE USING (app.current_user_id() = author_id)`,
+    "hai vế tác giả + admin",
+  ],
+  [
+    'policy DELETE của community_comments rơi mất vế tác giả',
+    `DROP POLICY "delete own or admin comment" ON public.community_comments;
+     CREATE POLICY "delete own or admin comment" ON public.community_comments
+       FOR DELETE USING (public.is_admin())`,
+    "hai vế tác giả + admin",
   ],
   [
     'policy "own community post insert" nới thành WITH CHECK (true)',
@@ -267,7 +295,7 @@ const MUTATIONS = [
   [
     "community_comments mọc thêm policy SELECT",
     `CREATE POLICY "leak" ON public.community_comments FOR SELECT USING (true)`,
-    "chờ đúng 4",
+    "chờ đúng 6",
   ],
   [
     "community_posts đổi ràng buộc nội dung thành CHECK luôn đúng",

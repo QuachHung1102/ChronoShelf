@@ -70,9 +70,9 @@ văn bản đã seed. `db/seed/*.json` có thêm khóa `questions`, và `seed-co
 
 ```
 npm run check        → exit 0
-npm run db:check     → 102 đạt / 0 hỏng
-npm run db:mutation  → 49 đạt / 0 hỏng      (đo 2026-09-09, gồm +2 đột biến của file 16)
-npm run db:migrate   → 18 file schema
+npm run db:check     → 110 đạt / 0 hỏng     (đo 2026-09-09)
+npm run db:mutation  → 53 đạt / 0 hỏng      (đo 2026-09-09)
+npm run db:migrate   → 19 file schema
 ```
 
 Trong 17 phép mới, quan trọng nhất là phép chạy `complete_book` THẬT với đáp án sai rồi đòi
@@ -218,8 +218,12 @@ Tất cả sửa qua `/quan-tri`, **không đụng một dòng mã nào**. Hai b
 ảnh trong `public/timeline/` — thấy rõ ở `/bai-giang`, bài "Chiến thắng Bạch Đằng năm 938" mang
 ảnh gia đình thời tiền sử.
 
-`kim-tu-thap-ai-cap` mới có **2 trang** trong khi 12 quyển kia đều 4 — quyển đó viết dở, và vì
-vậy nó cũng chỉ có 2 câu hỏi thay vì 3.
+`kim-tu-thap-ai-cap` **đã viết xong ngày 2026-09-09**: 4 trang + 3 câu hỏi như 12 quyển kia.
+Hai trang mới là "Ai đã xây, và xây bằng gì" (làng thợ ở Giza, dụng cụ, con số của Herodotus so
+với con số khảo cổ) và "Vì sao lại là hình tháp" (mastaba → kim tự tháp bậc thang của Djoser →
+Meidum và kim tự tháp gãy thời Sneferu). Nhân đó sửa một lỗi sự thật có sẵn trong seed: Kheops
+giữ kỷ lục **gần** bốn nghìn năm, không phải "hơn" — nó bị một nhà thờ ở châu Âu vượt qua vào
+đầu thế kỷ XIV. Phân bố đáp án sau khi thêm: 10/10/11/8.
 
 ### 2. Ba mảnh của `content.md` — ĐÃ DỰNG HẾT ngày 2026-09-09
 
@@ -242,6 +246,32 @@ còn nội dung thưởng thì bị chặn kèm câu giải thích.
 
 **Ảnh tranh ghép vẫn để trống trên cả ba kệ** — nó thuộc mục 1 phía trên. Đã soi giao diện
 bằng một tấm ảnh mượn tạm rồi gỡ ngay; không dòng dữ liệu nào còn giữ nó.
+
+### 2b. Soát CRUD phía admin — xong 2026-09-09, tìm được ĐÚNG MỘT lỗ
+
+Đối chiếu ba tầng (server action ↔ GRANT + policy ↔ nút trên giao diện) cho từng thực thể.
+Nội dung bài học **đủ cả**: kệ, sách, trang, câu hỏi, vật phẩm, bài giảng đều có tạo/sửa/xóa,
+cộng publish và đổi thứ tự ở nơi cần. 24/24 server action đều có ít nhất một component gọi tới
+— không có action mồ côi.
+
+Hai chỗ **cố ý** không có D, đừng "sửa": `media` và `documents` là bảng chỉ-ghi-thêm, chính
+cấu tạo đó khiến `Cache-Control: immutable` ở route phục vụ đúng theo cấu tạo chứ không theo
+lời hứa. Đánh đổi: ảnh mồ côi tích lại và không có đường gỡ trong ứng dụng.
+
+**Lỗ thật, đã vá:** bảng tin cộng đồng chỉ có SELECT + INSERT — *không ai* gỡ được bài hay bình
+luận, kể cả admin; cách duy nhất là mở psql dưới quyền superuser. Nay `db/schema/17` mở DELETE
+với policy hai vế (tác giả HOẶC admin), giao diện `/cong-dong` có nút gỡ ngay tại bài và tại
+từng bình luận, và `lib/community/actions.ts` đọc `rowsAffected()` vì **policy ở đây chặn
+trong im lặng** — trúng 0 dòng chứ không ném lỗi.
+
+UPDATE thì cố ý vẫn đóng, và có phép kiểm giữ nó đóng. Lý do ở đầu file 17.
+
+Đo thật ở 1024×768 bằng tài khoản `ui-audit`, console sạch: đăng một bài thử → gỡ → còn 2 bài;
+thêm một bình luận thử → gỡ → bình luận cũ của bài vẫn nguyên; nạp `/cong-dong` không kèm
+cookie thì HTML **không có** chữ "Gỡ bài" nào. Nhánh "Gỡ (quản trị)" (admin gỡ bài người khác)
+chưa bấm được trong trình duyệt vì DB dev chỉ có một tài khoản từng đăng bài — nhưng
+`db:check` gọi thẳng DELETE dưới danh tính admin trên bài của người khác và đòi trúng đúng 1
+dòng, cộng một phép đối chứng đòi người thường trúng 0 dòng.
 
 ### 3. Siết `sniffPptx` khi có `.pptx` thật để đối chứng
 

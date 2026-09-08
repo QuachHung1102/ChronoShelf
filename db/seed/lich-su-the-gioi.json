@@ -52,17 +52,30 @@
           "heading": "Người khổng lồ bằng đá",
           "image": null,
           "caption": null,
-          "body": "Kim tự tháp Kheops cao 146 mét, giữ kỷ lục công trình cao nhất thế giới suốt hơn bốn nghìn năm. Người Ai Cập cổ xếp khoảng 2,3 triệu khối đá vôi, mỗi khối nặng trung bình 2,5 tấn."
+          "body": "Kim tự tháp Kheops ở Giza cao 146 mét khi vừa xây xong, và giữ kỷ lục công trình cao nhất thế giới suốt gần bốn nghìn năm — mãi tới đầu thế kỷ XIV mới có một nhà thờ ở châu Âu vượt qua. Người Ai Cập cổ đã xếp khoảng 2,3 triệu khối đá vôi, mỗi khối nặng trung bình 2,5 tấn. Điều khó tin không nằm ở khối lượng: bốn cạnh đáy dài bằng nhau tới từng centimet, và bốn mặt quay gần như đúng bốn hướng chính."
         },
         {
-          "heading": "Tổng kết",
+          "heading": "Ai đã xây, và xây bằng gì",
           "image": null,
           "caption": null,
-          "body": "Kim tự tháp không phải do nô lệ xây như phim ảnh thường kể. Các ngôi làng thợ tìm thấy gần Giza cho thấy đó là những đội thợ được trả công, có khẩu phần bánh mì và bia hẳn hoi.",
+          "body": "Herodotus chép rằng một trăm nghìn người bị bắt đi làm khổ sai suốt hai mươi năm. Khảo cổ học nói khác. Ngay cạnh Giza, người ta đào được cả một ngôi làng thợ với lò bánh mì, xưởng bia, kho cá và xương bò — dấu vết của những đội thợ được nuôi ăn và trả công, chừng hai đến ba vạn người thay phiên nhau. Dụng cụ của họ chỉ là đục đồng, búa đá và xe trượt gỗ; muốn kéo khối đá đi trên cát thì đổ nước xuống trước cho cát chặt lại."
+        },
+        {
+          "heading": "Vì sao lại là hình tháp",
+          "image": null,
+          "caption": null,
+          "body": "Hình tháp không có sẵn từ đầu — nó là kết quả của gần một trăm năm thử và sai. Ban đầu vua Ai Cập được chôn dưới một khối hộp thấp gọi là mastaba. Khoảng năm 2670 trước Công nguyên, Imhotep chồng sáu khối mastaba nhỏ dần lên nhau cho vua Djoser, thành kim tự tháp bậc thang đầu tiên. Tới đời vua Sneferu, thợ Ai Cập thử làm bốn mặt phẳng: công trình ở Meidum đổ, cái ở Dahshur phải đổi độ dốc giữa chừng nên đến nay vẫn mang tên \"kim tự tháp gãy\". Cái thứ ba mới đứng vững."
+        },
+        {
+          "heading": "Thứ còn lại sau bốn nghìn năm",
+          "image": null,
+          "caption": null,
+          "body": "Kim tự tháp ta thấy hôm nay chỉ là bộ khung trần. Ngày mới xong, Kheops được bọc một lớp đá vôi trắng mài nhẵn chở từ bờ bên kia sông Nin, sáng lóa dưới nắng; lớp áo ấy bị bóc gần hết vào thời Trung cổ để lấy đá xây thành Cairo. Quanh nó là cả một quần thể: hai kim tự tháp lớn của Khafre và Menkaure, những kim tự tháp nhỏ dành cho hoàng hậu, các đền thờ, và tượng Nhân sư mình sư tử đầu người tạc thẳng vào nền đá vôi tại chỗ.",
           "summary": [
-            "Kim tự tháp Kheops cao 146 m, giữ kỷ lục cao nhất thế giới hơn bốn nghìn năm.",
+            "Kheops cao 146 m, giữ kỷ lục công trình cao nhất thế giới gần bốn nghìn năm.",
             "Khoảng 2,3 triệu khối đá vôi, mỗi khối nặng trung bình 2,5 tấn.",
-            "Người xây là thợ được trả công, không phải nô lệ."
+            "Người xây là hai đến ba vạn thợ được nuôi ăn và trả công, không phải nô lệ.",
+            "Hình tháp đi từ mastaba, qua kim tự tháp bậc thang của Djoser, tới bốn mặt phẳng thời Sneferu."
           ]
         }
       ],
@@ -86,6 +99,16 @@
             "Họ là dân bị bắt đi lao dịch không công"
           ],
           "correct": 2
+        },
+        {
+          "prompt": "Hình kim tự tháp bốn mặt phẳng ra đời như thế nào?",
+          "choices": [
+            "Người Ai Cập xây đúng hình đó ngay từ ngôi mộ vua đầu tiên",
+            "Do người Hy Lạp mang kiểu kiến trúc này tới Ai Cập",
+            "Đó vốn là một ngọn núi tự nhiên được gọt lại cho vuông vức",
+            "Đi từ mastaba, qua kim tự tháp bậc thang của vua Djoser, rồi mới tới bốn mặt phẳng thời vua Sneferu"
+          ],
+          "correct": 3
         }
       ]
     },

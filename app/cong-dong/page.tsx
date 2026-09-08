@@ -1,10 +1,10 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Award, Flame, HelpCircle, MessageSquare, PenLine, Send } from "lucide-react";
+import { Award, Flame, HelpCircle, MessageSquare, PenLine, Send, Trash2 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { ActionForm, SubmitButton } from "@/components/admin/ActionForm";
-import { FIELD, LABEL, PRIMARY_BUTTON, QUIET_BUTTON } from "@/components/ui/controls";
-import { dangBai, dangBinhLuan } from "@/lib/community/actions";
+import { DANGER_BUTTON, FIELD, LABEL, PRIMARY_BUTTON, QUIET_BUTTON } from "@/components/ui/controls";
+import { dangBai, dangBinhLuan, xoaBai, xoaBinhLuan } from "@/lib/community/actions";
 import { readBangTin } from "@/lib/community/read";
 import { BAI_TOI_DA, BINH_LUAN_TOI_DA } from "@/lib/community/validation";
 import { readShelfList } from "@/lib/content/read";
@@ -76,6 +76,10 @@ export default async function CongDongPage() {
                   {bangTin.bai.map((bai) => {
                     const action = dangBinhLuan.bind(null, bai.id);
                     const laCauHoi = bai.kind === "cau-hoi";
+                    // Nút gỡ chỉ VẼ RA cho người có quyền; thứ CHẶN là policy
+                    // `delete own or admin post` ở db/schema/17. Server Action là endpoint
+                    // POST công khai nên điều kiện ở đây không bao giờ được là hàng rào duy nhất.
+                    const goDuocBai = bai.cuaToi || bangTin.laAdmin;
 
                     return (
                       <li key={bai.id}>
@@ -118,6 +122,22 @@ export default async function CongDongPage() {
                                 </time>
                               </div>
                             </div>
+
+                            {goDuocBai && (
+                              <ActionForm
+                                action={xoaBai.bind(null, bai.id)}
+                                confirmText={
+                                  bai.cuaToi
+                                    ? "Gỡ bài này? Mọi bình luận bên dưới cũng mất theo, và không hoàn tác được."
+                                    : "Gỡ bài của người khác? Mọi bình luận bên dưới cũng mất theo, và không hoàn tác được."
+                                }
+                              >
+                                <SubmitButton className={DANGER_BUTTON} pendingLabel="Đang gỡ…">
+                                  <Trash2 aria-hidden className="h-4 w-4" />
+                                  {bai.cuaToi ? "Gỡ bài" : "Gỡ (quản trị)"}
+                                </SubmitButton>
+                              </ActionForm>
+                            )}
                           </header>
 
                           {/* `body-book` 16px/1.75 là thang chữ dành cho văn xuôi đọc dài,
@@ -146,12 +166,30 @@ export default async function CongDongPage() {
                                       <span className="font-body text-label-md text-primary-dark">
                                         {binhLuan.tacGia}
                                       </span>
-                                      <time
-                                        dateTime={binhLuan.createdAt.toISOString()}
-                                        className="font-body text-caption text-secondary"
-                                      >
-                                        {dinhDangThoiGian.format(binhLuan.createdAt)}
-                                      </time>
+                                      <span className="flex items-center gap-md">
+                                        <time
+                                          dateTime={binhLuan.createdAt.toISOString()}
+                                          className="font-body text-caption text-secondary"
+                                        >
+                                          {dinhDangThoiGian.format(binhLuan.createdAt)}
+                                        </time>
+                                        {(binhLuan.cuaToi || bangTin.laAdmin) && (
+                                          <ActionForm
+                                            action={xoaBinhLuan.bind(null, binhLuan.id)}
+                                            confirmText="Gỡ bình luận này? Không hoàn tác được."
+                                          >
+                                            <SubmitButton
+                                              className={DANGER_BUTTON}
+                                              pendingLabel="Đang gỡ…"
+                                            >
+                                              <Trash2 aria-hidden className="h-4 w-4" />
+                                              <span className="sr-only">
+                                                Gỡ bình luận của {binhLuan.tacGia}
+                                              </span>
+                                            </SubmitButton>
+                                          </ActionForm>
+                                        )}
+                                      </span>
                                     </div>
                                     <p className="mt-xs max-w-measure whitespace-pre-wrap break-words font-body text-body-sm text-secondary">
                                       {binhLuan.body}
