@@ -45,6 +45,8 @@ spec → plan → code riêng: **kệ sách + đọc sách** (cơ chế lõi), t
   `PreToolUse(Bash)` ở `.claude/hooks/guard-pen-dev.mjs`: mọi lệnh shell có chuỗi `pen.dev` đều
   bị chặn, vì mọi lệnh đều đi qua đúng một cửa đó. Vẫn là hàng rào chống lỡ tay, không phải
   ranh giới bảo mật — ghép chuỗi là lách được.
+  **Phía Codex hàng rào này chỉ có hiệu lực SAU khi được duyệt tin cậy một lần** — xem dòng
+  `.codex/hooks.json` ở bảng cuối file.
 - **Sửa `.pen` xong phải kiểm tra `git status` trước khi commit.** Mutation qua Pencil MCP
   không ghi xuống đĩa ngay — `Get`/`GetVariables` đọc trạng thái trong bộ nhớ editor nên vẫn
   trả về giá trị mới trong khi file trên đĩa còn y nguyên. Đã suýt commit hụt một loạt thay
@@ -130,6 +132,14 @@ Thiếu mồi nhử thì các phép kiểm vẫn chạy, vẫn báo đạt, như
 xuất bản nên phép đọc-sách-nháp luôn thấy 0 dòng, mọi câu hỏi thật cũng thuộc sách đã xuất bản
 nên phép đọc-câu-hỏi-của-sách-nháp cũng vậy, và `user_roles` không còn dòng "của người khác"
 nào nên phép đọc-trộm-vai-trò cũng luôn thấy 0 dòng, kể cả khi RLS hỏng hoàn toàn.
+
+**Phần thưởng trọn bộ bị cắt ở tầng ĐỌC, không ở tầng hiển thị.** `shelves.reward_title` +
+`reward_body` (content.md §4.5) chỉ rời khỏi `readTuiHanhTrang()` khi người xem đã có ĐỦ vật
+phẩm của kệ; chưa đủ thì hàm trả `null` và trang không có gì để lỡ tay in ra. Nhưng đây là
+hàng rào **sư phạm**, không phải bảo mật: `shelves` đọc công khai và RLS lọc DÒNG chứ không
+lọc cột — đừng để bí mật thật vào hai cột đó. Bức tranh ghép (§4.4) dùng chung cơ chế:
+`mosaic_url` cắt thành dải dọc theo `lib/tranh-ghep.ts`, mảnh thứ *k* ứng với vật phẩm thứ
+*k* **theo thứ tự đọc** — xáo thứ tự đó là xáo luôn bức tranh.
 
 **Không có cột "vật phẩm cần để mở".** Quyển `i` mở bằng vật phẩm thưởng của quyển `i-1`,
 suy ra từ vị trí chứ không lưu — nên chuỗi mở khóa không thể đứt. Đánh đổi và đường nâng cấp
@@ -407,7 +417,7 @@ báo hỏng — nhưng schema đúng, khuôn mới sai.)
 | `.scratch/<feature>/` | Issue tracker (repo chưa có remote nên không dùng GitHub Issues). |
 | `docs/superpowers/specs/` + `plans/` | Spec và kế hoạch dài theo cả subsystem. |
 | `lib/**/*.test.ts` | Test `node --test`, xem mục Test ở trên. |
-| `.codex/hooks.json` | Cấu hình hook cho Codex. Dùng CHUNG `.claude/hooks/guard-pen-dev.mjs` — đừng chép file hook sang đây, bản chép sẽ trôi lệch. |
+| `.codex/hooks.json` | Cấu hình hook cho Codex. Dùng CHUNG `.claude/hooks/guard-pen-dev.mjs` — đừng chép file hook sang đây, bản chép sẽ trôi lệch. **Hook của repo mặc định KHÔNG chạy**: Codex có nạp file (nó cảnh báo nếu bạn khai hook ở cả đây lẫn `.codex/config.toml`) nhưng để trạng thái *chưa tin cậy* cho tới khi được duyệt một lần trong TUI (`codex` rồi chấp nhận màn "startup hooks review"). `codex exec` bỏ qua hook chưa duyệt trong im lặng — `--dangerously-bypass-hook-trust` cho chạy đúng một lượt để thử. Duyệt xong sẽ có dòng `[hooks.state."…hooks.json:pre_tool_use:0:0"]` trong `~/.codex/config.toml`. Giao thức thì khớp: Codex gọi shell tool của nó là `tool_name = "Bash"`, gửi `tool_input.command`, và tôn trọng exit 2 + stderr. Đo 2026-09-08. |
 | `.agents/skills/` + `skills-lock.json` | Skill của bên thứ ba do trình cài skill quản lý. **KHÔNG phải nguồn của dự án và KHÔNG ghi đè `DESIGN.md`** — vài skill trong đó ra luật thiết kế ngược hẳn (cấm Lucide, đổi font, luật mobile). Khi mâu thuẫn, `DESIGN.md` và file này thắng. |
 
 Sửa `.claude/settings.json` hay file hook thì **phải mở phiên mới** mới có hiệu lực — Claude

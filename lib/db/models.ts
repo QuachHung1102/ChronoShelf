@@ -52,6 +52,14 @@ export class Shelf extends Model<InferAttributes<Shelf>, InferCreationAttributes
   declare coverUrl: string | null;
   declare coverSource: string | null;
   declare coverCredit: string | null;
+  /** Danh hiệu + nội dung thưởng khi sưu tầm trọn bộ kệ này (content.md §4.5).
+   *  Chuỗi RỖNG nghĩa là admin chưa soạn — không dùng null, theo tiền lệ `blurb`. */
+  declare rewardTitle: CreationOptional<string>;
+  declare rewardBody: CreationOptional<string>;
+  /** Bức tranh toàn cảnh mà các mảnh ghép lại thành (content.md §4.4). */
+  declare mosaicUrl: string | null;
+  declare mosaicSource: string | null;
+  declare mosaicCredit: string | null;
   declare published: CreationOptional<boolean>;
   declare books?: NonAttribute<Book[]>;
 }
@@ -65,6 +73,11 @@ Shelf.init(
     coverUrl: { type: DataTypes.TEXT },
     coverSource: { type: DataTypes.TEXT },
     coverCredit: { type: DataTypes.TEXT },
+    rewardTitle: { type: DataTypes.TEXT, allowNull: false, defaultValue: "" },
+    rewardBody: { type: DataTypes.TEXT, allowNull: false, defaultValue: "" },
+    mosaicUrl: { type: DataTypes.TEXT },
+    mosaicSource: { type: DataTypes.TEXT },
+    mosaicCredit: { type: DataTypes.TEXT },
     published: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
   },
   { ...base, tableName: "shelves" },

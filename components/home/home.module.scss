@@ -118,7 +118,7 @@
 // tắt khi người dùng tắt chuyển động.
 //
 // Bọc trong `@supports` là bắt buộc: trình duyệt chưa hỗ trợ sẽ bỏ qua cả khối, và trạng
-// thái MẶC ĐỊNH (đã hiện, không dịch chuyển) là trạng thái đúng. Không có bước nào làm nội
+// thái MẶC ĐỊNH (đã hiện) là trạng thái đúng. Không có bước nào làm nội
 // dung biến mất nếu tính năng thiếu.
 // ---------------------------------------------------------------------------
 
@@ -134,13 +134,12 @@
 }
 
 @keyframes hien-dan {
+  // Chỉ đổi opacity: transform làm vị trí neo mục lục lệch khi trình duyệt cuộn tới.
   from {
     opacity: 0;
-    transform: translateY(2rem);
   }
   to {
     opacity: 1;
-    transform: none;
   }
 }
 

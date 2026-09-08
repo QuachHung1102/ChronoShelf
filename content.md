@@ -55,7 +55,7 @@ Khi click vào một quyển đã mở khóa:
 
 1. Sách được rút ra khỏi kệ, phóng to vào giữa màn hình và **mở bìa ra** bằng chuyển động 3D.
 2. Nội dung bài học được chia thành **các trang giấy da**, không cuộn dọc dài lê thê. Người dùng lật trang bằng cách click mép trang, kéo góc trang, dùng phím mũi tên hoặc vuốt trên điện thoại.
-3. Mỗi lần lật là một chuyển động cong của tờ giấy kèm đổ bóng và âm thanh sột soạt nhẹ (có nút tắt tiếng).
+3. Mỗi lần lật là một chuyển động cong của tờ giấy kèm đổ bóng và âm thanh sột soạt nhẹ (có nút tắt tiếng). **ĐÃ DỰNG.** Tiếng lật được *sinh ra* bằng Web Audio chứ không phải một file ghi âm — 0 byte tải về, 0 giấy phép phải ghi công, và mỗi cú lật kêu khác nhau một chút. Nút tắt tiếng nằm cạnh nút đóng sách và nhớ lựa chọn qua `localStorage`. Nó KHÔNG gắn với `prefers-reduced-motion`: đó là lựa chọn về chuyển động, không phải về âm thanh.
 4. Bố cục trang xen kẽ chữ và hình minh họa, bản đồ, mốc thời gian — mỗi trang là một ý trọn vẹn, dễ nhớ.
 5. Có thanh chỉ báo tiến độ dạng dải ruy băng đánh dấu trang: *"Trang 4 / 12"*. Người dùng thoát ra giữa chừng thì lần sau quay lại đúng trang đang đọc.
 
@@ -80,12 +80,14 @@ Mỗi chuyên mục có một bộ vật phẩm riêng, gắn với nội dung b
 * **Lịch sử Thế giới:** Chìa khóa đồng Ai Cập → Đồng xu La Mã → La bàn hàng hải → Bánh răng máy hơi nước.
 * **Lịch sử quanh cuộc sống:** Mỗi quyển thả ra một mảnh ghép; sưu tầm đủ sẽ ghép thành một bức tranh toàn cảnh của chuyên mục.
 
+**Mảnh ghép — ĐÃ DỰNG, và dựng cho MỌI kệ chứ không riêng kệ này.** Kệ nào admin gắn ảnh `mosaic_url` thì kệ đó có bức tranh; vật phẩm thứ *k* của kệ (theo thứ tự đọc) là dải dọc thứ *k* của bức tranh, và dải chỉ hiện ra khi đã sưu tầm được vật phẩm đó. Cắt theo **dải dọc**, không theo lưới ô vuông: số vật phẩm mỗi kệ do admin quyết lúc chạy, mà kệ 5 quyển thì không có lưới nào chia vừa. Hình học ở `lib/tranh-ghep.ts`, có test riêng.
+
 ### 4.5. Túi hành trang (Inventory)
 
 * Trang riêng trưng bày toàn bộ vật phẩm đã sưu tầm, dạng tủ kính bảo tàng.
 * Ô trống hiện bóng mờ của vật phẩm chưa có — tạo động lực hoàn thành bộ sưu tập.
 * Click vào từng vật phẩm để xem mô tả lịch sử ngắn và liên kết về bài học đã sinh ra nó.
-* Sưu tầm trọn một bộ sẽ mở khóa danh hiệu và một nội dung thưởng (bài viết mở rộng hoặc bộ slide đặc biệt).
+* Sưu tầm trọn một bộ sẽ mở khóa danh hiệu và một nội dung thưởng (bài viết mở rộng hoặc bộ slide đặc biệt). **ĐÃ DỰNG** dưới dạng bài viết mở rộng: hai cột `shelves.reward_title` + `shelves.reward_body`, admin soạn ở `/quan-tri`. Nội dung thưởng bị cắt ngay ở tầng ĐỌC (`readTuiHanhTrang()` trả `null` khi chưa đủ), nên không lượt render nào in ra được chữ chưa kiếm được. Đây là hàng rào **sư phạm**, không phải bảo mật — `shelves` là bảng đọc công khai và RLS lọc dòng chứ không lọc cột, nên đừng để bí mật thật vào hai cột đó.
 
 ---
 

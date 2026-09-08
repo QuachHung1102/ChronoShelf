@@ -2,6 +2,10 @@
   "slug": "lich-su-viet-nam",
   "name": "Lịch sử Việt Nam",
   "order": 1,
+  "reward": {
+    "title": "Người giữ hồn nước",
+    "body": "Năm vật phẩm bạn vừa gom đủ không phải năm món đồ rời nhau. Trống đồng là tiếng nói của một dân tộc vừa biết mình là ai; cọc gỗ Bạch Đằng là lần đầu tiếng nói ấy tự bảo vệ được mình; ấn tín Đông A là lúc nó biết tổ chức thành sức mạnh; áo bào Quang Trung là lúc nó đi nhanh hơn mọi đội quân đến đánh nó; và lá cờ Quyết Chiến Quyết Thắng là lúc cả thế giới phải nghe.\n\nHai nghìn năm nằm giữa món đầu và món cuối. Thứ không đổi suốt hai nghìn năm ấy mới là điều đáng nhớ: mỗi thế hệ đều nhận lấy một đất nước chưa xong, và đều trao lại một đất nước còn đó."
+  },
   "items": [
     {
       "slug": "trong-dong",

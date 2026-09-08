@@ -200,6 +200,19 @@ export async function updateShelf(_prev: ActionState, fd: FormData): Promise<Act
     const bia = readImageFields(fd, "cover");
     if ("error" in bia) return { error: bia.error };
 
+    // Bức tranh toàn cảnh ghép từ các mảnh (content.md §4.4) — cùng luật credit, cùng
+    // ràng buộc `shelves_mosaic_credit_ck` ở db/schema/16.
+    const tranh = readImageFields(fd, "mosaic");
+    if ("error" in tranh) return { error: tranh.error };
+
+    // Phần thưởng trọn bộ (content.md §4.5). Chặn ở đây cho lỗi dễ hiểu; ràng buộc
+    // `shelves_reward_ck` mới là luật, và nó không quên gọi được.
+    const rewardTitle = field(fd, "rewardTitle");
+    const rewardBody = field(fd, "rewardBody");
+    if (rewardBody && !rewardTitle) {
+      return { error: "Có nội dung thưởng thì phải đặt tên danh hiệu — nếu không học sinh không biết vì sao mình đọc được nó." };
+    }
+
     // Policy chặn thì UPDATE trúng 0 dòng mà KHÔNG báo lỗi. Không có phép so này thì
     // giao diện báo "đã lưu" trong khi database không đổi gì. Phải qua `rowsAffected`
     // chứ không ép kiểu phần tử thứ hai thành số — nó là một đối tượng `pg.Result`, và
@@ -209,10 +222,17 @@ export async function updateShelf(_prev: ActionState, fd: FormData): Promise<Act
         sequelize.query(
           `UPDATE public.shelves
               SET name = $2, blurb = $3, country_code = $4,
-                  cover_url = $5, cover_source = $6, cover_credit = $7
+                  cover_url = $5, cover_source = $6, cover_credit = $7,
+                  reward_title = $8, reward_body = $9,
+                  mosaic_url = $10, mosaic_source = $11, mosaic_credit = $12
             WHERE slug = $1`,
           {
-            bind: [slug, name, blurb, countryCode || null, bia.url, bia.source, bia.credit],
+            bind: [
+              slug, name, blurb, countryCode || null,
+              bia.url, bia.source, bia.credit,
+              rewardTitle, rewardBody,
+              tranh.url, tranh.source, tranh.credit,
+            ],
             transaction: t,
           },
         ),

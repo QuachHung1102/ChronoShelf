@@ -187,6 +187,12 @@ BEGIN
     RAISE EXCEPTION 'policy "read published" trên books không còn đòi kệ cha published';
   END IF;
 
+  -- Nội dung thưởng trọn bộ không được tồn tại mà không có danh hiệu đi kèm (file 16).
+  -- Mất ràng buộc này thì học sinh sưu tầm đủ sẽ thấy một khối chữ không đầu không đuôi.
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'shelves_reward_ck') THEN
+    RAISE EXCEPTION 'thiếu ràng buộc shelves_reward_ck — nội dung thưởng ghi được mà không cần danh hiệu';
+  END IF;
+
   RAISE NOTICE 'B. bảng nội dung OK';
 END $$;
 
@@ -390,11 +396,14 @@ BEGIN
     RAISE EXCEPTION 'policy "read media" thiếu, hoặc không còn là SELECT USING (true) — ảnh sẽ vỡ hết';
   END IF;
 
-  -- Ba ràng buộc ảnh-phải-có-credit (điều kiện CC BY-SA, spec §6).
+  -- Năm ràng buộc ảnh-phải-có-credit (điều kiện CC BY-SA, spec §6). Danh sách này đã lỡ
+  -- nhịp một lần rồi: chú thích cũ nói "ba" trong khi thân nó liệt kê bốn, vì file 12 thêm
+  -- bìa kệ mà không sửa chú thích. Đếm lại mỗi lần thêm dòng.
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'items_image_credit_ck')
   OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'books_cover_credit_ck')
   OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'pages_image_credit_ck')
-  OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'shelves_cover_credit_ck') THEN
+  OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'shelves_cover_credit_ck')
+  OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'shelves_mosaic_credit_ck') THEN
     RAISE EXCEPTION 'thiếu ràng buộc ảnh-phải-có-nguồn-và-tác-giả trên items/books/pages/shelves';
   END IF;
 

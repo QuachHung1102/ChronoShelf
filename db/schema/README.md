@@ -26,6 +26,7 @@ EXISTS` trước khi tạo).
 | `13-community.sql` | `community_posts` + `community_comments` — đọc công khai, người đăng nhập chỉ INSERT dưới đúng danh tính | |
 | `14-learning-hub.sql` | `documents` (byte của bộ slide `.pptx`, khóa chính là sha256, chỉ-ghi-thêm như `media`) + `lessons` (bài giảng theo lớp 10/11/12) | |
 | `15-mat-khau.sql` | Đăng nhập bằng email + mật khẩu (scrypt băm ở Node) + khôi phục bằng câu hỏi bảo mật; XÓA tài khoản không mật khẩu và gỡ hẳn luồng OTP | |
+| `16-bo-suu-tap-tron-bo.sql` | Năm cột trên `shelves`: danh hiệu + nội dung thưởng khi sưu tầm trọn bộ (content.md §4.5), và bức tranh toàn cảnh ghép từ các mảnh (§4.4) | |
 | `90-verify.sql` | Khẳng định cấu trúc — nổ nếu hàng rào bị nới | |
 
 ## Ba role, không phải một

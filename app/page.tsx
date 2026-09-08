@@ -1,4 +1,6 @@
 import { Header } from "@/components/Header";
+import { ArrowDown, ArrowRight } from "lucide-react";
+import { FOCUS_RING_ON_SURFACE, PRIMARY_BUTTON } from "@/components/ui/controls";
 import { CompareSlider } from "@/components/home/CompareSlider";
 import { KHOI_SO_SANH } from "@/components/home/noi-dung";
 import { ShelfProgress } from "@/components/home/ShelfProgress";
@@ -16,11 +18,7 @@ export const dynamic = "force-dynamic";
  * Dòng thời gian cuộn dọc, mỗi chủ đề là một khối so sánh "Ngày ấy – Bây giờ" kéo được
  * vạch giữa hai ảnh. Cuối trang là ba lối vào kệ kèm chỉ báo tiến độ.
  *
- * NHỊP DỌC — ba cấp, ba giá trị khác nhau, đúng thang DESIGN.md § Layout:
- * `3xl` (64px) giữa các CHƯƠNG (hero → dòng thời gian → "Bắt đầu đọc"), `2xl` (48px)
- * giữa các KHỐI trong dòng thời gian, `xl` trở xuống bên trong một khối. Trước đây cả ba
- * cấp dùng chung `xl` 32px, nên trang đọc ra thành một cột dài đều đều: ranh giới giữa hai
- * chương bằng đúng ranh giới giữa một tiêu đề và đoạn văn của nó.
+ * Lời dẫn và ảnh nằm cạnh nhau để mỗi chủ đề đọc được trong một khung nhìn PC.
  */
 export default async function Home() {
   // MỘT truy vấn, không phải hai: `ShelfChain` đã bao gồm nguyên `ShelfSummary` mà Header
@@ -36,25 +34,47 @@ export default async function Home() {
         {/* `max-w-5xl` (1024px) là bề rộng cột nội dung dùng chung với /cong-dong và
             /bai-giang. Trước đây trang này dùng `max-w-4xl` nên lề trái của <h1> nhảy
             ~56px mỗi lần bấm qua lại giữa hai màn nằm cạnh nhau trên cùng thanh nav. */}
-        <section className="mx-auto max-w-5xl">
-          <p className="font-body text-label-caps uppercase text-tertiary-deep">Cửa sổ lịch sử</p>
-          <h1 className="mt-sm font-heading text-headline-lg text-primary-dark">
-            Mọi thứ quanh bạn đều từng khác hẳn
-          </h1>
-          {/* `max-w-measure` = 456px ≈ 65 ký tự ở `body-md` 14px. `max-w-2xl` cũ là con số
-              hợp với chữ 16px, ở đây nó cho dòng dài 95–102 ký tự. */}
-          <p className="mt-md max-w-measure font-body text-body-md text-secondary">
-            Bữa ăn, bộ quần áo, mái nhà, cái điện thoại trong túi — mỗi thứ là kết quả của
-            hàng nghìn năm. Kéo vạch giữa hai tấm ảnh để thấy khoảng cách đó bằng mắt, rồi
-            mở một quyển sách để biết chuyện gì đã xảy ra ở giữa.
-          </p>
+        <section className="mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)_18rem] items-end gap-2xl border-b border-primary/20 pb-2xl pt-md">
+          <div>
+            <p className="font-body text-label-caps uppercase text-tertiary-deep">Cửa sổ lịch sử</p>
+            <h1 className="mt-md max-w-measure text-balance font-heading text-headline-lg text-primary-dark">
+              Mọi thứ quanh bạn đều từng khác hẳn
+            </h1>
+            <p className="mt-md max-w-measure font-body text-body-md text-secondary">
+              Bữa ăn, bộ quần áo, mái nhà, cái điện thoại trong túi — mỗi thứ là kết quả của
+              hàng nghìn năm. Kéo vạch giữa hai tấm ảnh để thấy khoảng cách đó bằng mắt, rồi
+              mở một quyển sách để biết chuyện gì đã xảy ra ở giữa.
+            </p>
+            <a href="#vao-ke" className={`mt-lg ${PRIMARY_BUTTON}`}>
+              Khám phá kệ sách <ArrowRight aria-hidden className="h-4 w-4" />
+            </a>
+          </div>
+          <nav aria-label="Chủ đề ngày ấy và bây giờ" className="rounded-lg bg-surface p-lg">
+            <p className="font-body text-label-caps uppercase text-tertiary-deep">Ngày ấy — Bây giờ</p>
+            <p className="mb-md mt-sm font-body text-body-sm text-secondary">
+              Chọn một điều quen thuộc, nhìn lại từ đầu.
+            </p>
+            <ul className="divide-y divide-primary/15">
+              {KHOI_SO_SANH.map((khoi) => (
+                <li key={khoi.key}>
+                  <a
+                    href={`#khoi-${khoi.key}`}
+                    className={`flex items-center justify-between gap-md rounded-sm py-sm font-body text-label-md text-primary-dark transition-colors duration-200 hover:text-tertiary-deep ${FOCUS_RING_ON_SURFACE}`}
+                  >
+                    {khoi.chuDe}
+                    <ArrowDown aria-hidden className="h-4 w-4 shrink-0 text-tertiary-deep" />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </section>
 
         <div className={`${s.day} mx-auto mt-3xl max-w-5xl pl-lg`}>
           {KHOI_SO_SANH.map((khoi) => (
             <section
               key={khoi.key}
-              className={`${s.moc} ${s.hienDan} relative mb-2xl pl-lg last:mb-0`}
+              className={`${s.moc} ${s.hienDan} relative mb-3xl grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] items-start gap-xl pl-lg last:mb-0`}
               aria-labelledby={`khoi-${khoi.key}`}
             >
               {/* CHỦ ĐỀ dẫn, khoảng thời gian lùi xuống làm nhãn phụ.
@@ -67,30 +87,34 @@ export default async function Home() {
                   thời gian lên đầu mỗi mốc là mời người đọc hiểu bốn mốc như bốn chặng kế
                   tiếp. Cho chủ đề dẫn thì sợi dây đọc ra đúng thứ nó là: mạch nối bốn
                   chương của cùng một trang, không phải dòng chảy thời gian. */}
-              <h2
-                id={`khoi-${khoi.key}`}
-                className="font-heading text-headline-md text-primary-dark"
-              >
-                {khoi.chuDe}
-              </h2>
-              {/* Viên thuốc viền thay vì dòng nhãn viết hoa: nó là một khoảng, không phải
-                  một cái tên chương. `tertiary-deep` trên `neutral` đạt 5.04:1. */}
-              <p className="mt-sm inline-flex rounded-full border border-tertiary-deep px-sm py-xs font-body text-caption text-tertiary-deep">
-                {khoi.moc}
-              </p>
-              <p className="mb-md mt-sm max-w-measure font-body text-body-md text-secondary">
-                {khoi.dan}
-              </p>
+              <div>
+                <h2
+                  id={`khoi-${khoi.key}`}
+                  className="scroll-mt-lg text-balance font-heading text-headline-md text-primary-dark"
+                >
+                  {khoi.chuDe}
+                </h2>
+                <p className="mt-md font-body text-body-sm text-tertiary-deep">
+                  {khoi.moc}
+                </p>
+                <p className="mt-md max-w-measure text-pretty font-body text-body-md text-secondary">
+                  {khoi.dan}
+                </p>
+                <p className="mt-lg flex items-center gap-sm font-body text-caption text-secondary">
+                  <ArrowRight aria-hidden className="h-4 w-4 shrink-0" />
+                  Kéo vạch trên ảnh để so sánh
+                </p>
+              </div>
               <CompareSlider xua={khoi.xua} nay={khoi.nay} chuDe={khoi.chuDe} />
             </section>
           ))}
         </div>
 
-        <section className="mx-auto mt-3xl max-w-5xl" aria-labelledby="vao-ke">
+        <section className="mx-auto mt-3xl max-w-5xl border-t border-primary/20 pb-xl pt-2xl" aria-labelledby="vao-ke">
           {/* Nhãn phụ để chương thứ ba mở đầu cùng một khuôn với hero và từng mốc thời
               gian — nếu không, nó là tiêu đề duy nhất trên trang không có nhãn dẫn. */}
           <p className="font-body text-label-caps uppercase text-tertiary-deep">Kệ sách</p>
-          <h2 id="vao-ke" className="mt-sm font-heading text-headline-md text-primary-dark">
+          <h2 id="vao-ke" className="mt-sm scroll-mt-lg font-heading text-headline-md text-primary-dark">
             Bắt đầu đọc
           </h2>
           <p className="mb-lg mt-sm max-w-measure font-body text-body-md text-secondary">

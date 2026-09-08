@@ -70,3 +70,36 @@
   background: linear-gradient(to right, theme('colors.tertiary-deep'), theme('colors.tertiary'));
   border-radius: theme('borderRadius.full');
 }
+
+// --- Bức tranh toàn cảnh ghép từ các mảnh (content.md §4.4) -------------------
+//
+// Ở SCSS vì cả ba thứ đều nằm ngoài thứ Tailwind diễn đạt gọn: chiều cao 132px (ngoài
+// thang spacing), khe 2px giữa các mảnh (ngoài thang, và cố ý mảnh — nó là đường nối
+// của bức tranh, không phải khoảng cách giữa hai thẻ), và cái khung gỗ quanh tranh.
+.tranh {
+  display: grid;
+  height: 132px;
+  gap: 2px;
+  overflow: hidden;
+  border-radius: theme('borderRadius.sm');
+  background: theme('colors.surface-room');
+  box-shadow: inset 0 0 0 2px theme('colors.primary-dark / 60%');
+}
+
+// Một mảnh đã sưu tầm: nền là chính bức tranh, phóng và trượt theo `lib/tranh-ghep.ts`.
+// `background-repeat: no-repeat` là bắt buộc — thiếu nó, ảnh phóng 400% sẽ lặp lại và mỗi
+// mảnh hiện ra một bức tranh thu nhỏ thay vì một dải của bức tranh lớn.
+.manh {
+  background-repeat: no-repeat;
+}
+
+// Mảnh chưa có: một ô tối có vân giấy, cùng ngôn ngữ với bìa sách đang khóa ở màn kệ.
+.manhChua {
+  display: grid;
+  place-items: center;
+  background: repeating-linear-gradient(
+    -45deg,
+    theme('colors.surface-locked') 0 6px,
+    theme('colors.surface-room') 6px 12px
+  );
+}

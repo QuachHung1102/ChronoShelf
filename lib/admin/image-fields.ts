@@ -31,10 +31,10 @@ export type ImageFieldsResult =
   | { error: string }
   | { url: string | null; source: string | null; credit: string | null };
 
-/** Bốn tiền tố ảnh có thật trong schema: `image_*` (items, pages), `cover_*` (books,
- *  shelves), `preview_*` và `mindmap_*` (lessons). Union chứ không phải `string` để gõ
- *  sai là hỏng lúc biên dịch chứ không phải lúc chạy. */
-export type ImagePrefix = "image" | "cover" | "preview" | "mindmap";
+/** Năm tiền tố ảnh có thật trong schema: `image_*` (items, pages), `cover_*` (books,
+ *  shelves), `mosaic_*` (shelves, bức tranh ghép), `preview_*` và `mindmap_*` (lessons).
+ *  Union chứ không phải `string` để gõ sai là hỏng lúc biên dịch chứ không phải lúc chạy. */
+export type ImagePrefix = "image" | "cover" | "mosaic" | "preview" | "mindmap";
 
 export function readImageFields(fd: FormData, prefix: ImagePrefix): ImageFieldsResult {
   const get = (suffix: string): string => String(fd.get(prefix + suffix) ?? "").trim();

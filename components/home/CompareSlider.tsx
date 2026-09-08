@@ -135,7 +135,7 @@ export function CompareSlider({ xua, nay, chuDe }: Props) {
           giá trị `image_source` trong database là chuỗi mô tả có khoảng trắng nên bọc vào
           `<a>` ra link chết, còn tám tấm này là URL trang mô tả Commons hợp lệ — đã kiểm
           từng cái trả 200. `Ghi()` vẫn tự phòng: chỉ link khi thật sự là https. */}
-      <figcaption className="font-body text-caption text-secondary">
+      <figcaption className="space-y-xs text-pretty font-body text-caption text-secondary">
         <Ghi nhan="Ngày ấy" anh={xua} />
         <Ghi nhan="Bây giờ" anh={nay} />
       </figcaption>

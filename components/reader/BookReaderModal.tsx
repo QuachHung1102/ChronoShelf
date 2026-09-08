@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Volume2, VolumeX, X } from "lucide-react";
 import { Room } from "@/components/Room";
 import { findBook } from "@/lib/content/find";
 import { completeBook, setCurrentPage } from "@/lib/api/shelf";
@@ -11,6 +11,7 @@ import type { CompleteBookResult } from "@/lib/api/types";
 import { BookPage } from "./BookPage";
 import { ItemDropOverlay } from "./ItemDropOverlay";
 import { QuizPanel } from "./QuizPanel";
+import { dangTatTieng, ghiTatTieng, phatTiengLat } from "./tieng-lat-trang";
 import s from "./reader.module.scss";
 
 const ROUND_BUTTON =
@@ -168,6 +169,11 @@ export function BookReaderModal({
   // nói về câu trả lời hiện tại và dấu nào đã cũ.
   const [daNop, setDaNop] = useState<number[]>([]);
 
+  // Tiếng lật trang (content.md §4.2). Đọc thẳng `localStorage` trong initializer được
+  // vì hộp thoại này chỉ dựng SAU khi người dùng bấm vào một quyển sách — nó không bao
+  // giờ chạy trong lượt render trên máy chủ, nên không có hydration nào để lệch.
+  const [tatTieng, setTatTieng] = useState(dangTatTieng);
+
   const reduced = useReducedMotion();
   const currentPage = pagesSeen(faces, flipped);
   const atLastPage = currentPage >= pageCount;
@@ -182,8 +188,15 @@ export function BookReaderModal({
       // phát `transitionend`, và khi đó `flying` sẽ kẹt lại vĩnh viễn ở tờ cuối cùng.
       if (!reduced) setFlying(Math.min(flipped, next));
       setFlipped(next);
+      // Tiếng đi kèm CÚ LẬT, không đi kèm nút bấm: nhờ vậy phím mũi tên, nút mép trang và
+      // nút "Mở sách" đều kêu, mà không chỗ nào phải nhớ gọi thêm một hàm.
+      //
+      // KHÔNG gắn với `prefers-reduced-motion`: đó là lựa chọn về CHUYỂN ĐỘNG (tiền đình,
+      // say chuyển động), không phải về âm thanh. Gộp hai thứ là tự ý tắt một thứ mà người
+      // dùng chưa hề xin tắt. Ai muốn im lặng thì có nút riêng, và nó nhớ lựa chọn đó.
+      if (!tatTieng) phatTiengLat();
     },
-    [flipped, reduced, sheets],
+    [flipped, reduced, sheets, tatTieng],
   );
 
   // Tiến độ chỉ quyết định lần sau mở lại vào trang nào — hỏng thì vẫn đọc tiếp được.
@@ -323,9 +336,34 @@ export function BookReaderModal({
       <Room className="flex h-full flex-col">
         <div className="flex items-center justify-between px-page-margin py-md">
           <p className="font-heading text-headline-sm text-on-primary">{book.title}</p>
-          <button type="button" onClick={close} aria-label="Đóng sách" className={ROUND_BUTTON}>
-            <X aria-hidden className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-sm">
+            {/* `aria-pressed` chứ không phải đổi nhãn theo trạng thái: nút này là một công
+                tắc, và công tắc thì phải nói được CẢ hai chuyện — nó làm gì, và nó đang
+                bật hay tắt. Nhãn giữ nguyên nghĩa "tiếng lật trang" ở cả hai trạng thái. */}
+            <button
+              type="button"
+              onClick={() => {
+                const moi = !tatTieng;
+                setTatTieng(moi);
+                ghiTatTieng(moi);
+                // Bật tiếng thì kêu ngay một cái để người dùng nghe thử mình vừa bật gì.
+                if (!moi) phatTiengLat();
+              }}
+              aria-pressed={!tatTieng}
+              aria-label="Tiếng lật trang"
+              title={tatTieng ? "Bật tiếng lật trang" : "Tắt tiếng lật trang"}
+              className={ROUND_BUTTON}
+            >
+              {tatTieng ? (
+                <VolumeX aria-hidden className="h-5 w-5" />
+              ) : (
+                <Volume2 aria-hidden className="h-5 w-5" />
+              )}
+            </button>
+            <button type="button" onClick={close} aria-label="Đóng sách" className={ROUND_BUTTON}>
+              <X aria-hidden className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         {result ? (

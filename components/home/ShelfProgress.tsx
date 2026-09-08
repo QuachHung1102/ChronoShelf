@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, BookOpen } from "lucide-react";
 import { getUserShelfState } from "@/lib/api/shelf";
 import { resolveState } from "@/lib/api/unlock";
 import { FOCUS_RING } from "@/components/ui/controls";
@@ -71,9 +71,12 @@ export function ShelfProgress({ shelves }: { shelves: ShelfChain[] }) {
               // Hover sáng lên một bậc (`primary-dark` → `primary`) chứ không đổi viền: cả
               // thẻ là mặt gỗ, nên tín hiệu đúng là gỗ bắt sáng thêm. Vòng focus vẫn dùng
               // `ring` trên nền `neutral` vì nó vẽ NGOÀI thẻ, trên nền trang.
-              className={`group flex h-full flex-col justify-between gap-lg rounded-lg bg-primary-dark p-lg transition duration-200 ease-out hover:bg-primary ${FOCUS_RING}`}
+              className={`group flex h-full flex-col justify-between gap-xl rounded-lg bg-primary-dark p-lg transition-colors duration-200 ease-out hover:bg-primary active:bg-surface-shelf ${FOCUS_RING}`}
             >
-              <span className="font-heading text-headline-sm text-on-primary">{shelf.name}</span>
+              <span className="flex flex-col gap-md">
+                <BookOpen aria-hidden className="h-lg w-lg text-secondary-light" />
+                <span className="text-balance font-heading text-headline-sm text-on-primary">{shelf.name}</span>
+              </span>
 
               <span className="flex flex-col gap-sm">
                 {/* Thước đo chỉ vẽ khi đã biết trạng thái. `aria-hidden` vì đúng con số

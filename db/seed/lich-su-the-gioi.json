@@ -2,6 +2,10 @@
   "slug": "lich-su-the-gioi",
   "name": "Lịch sử Thế giới",
   "order": 2,
+  "reward": {
+    "title": "Người đi qua bốn nền văn minh",
+    "body": "Viên đá Giza, huy hiệu quân đoàn La Mã, la bàn hàng hải, mô hình đầu máy hơi nước — bốn món, bốn câu trả lời cho cùng một câu hỏi: con người dùng gì để vượt qua giới hạn của chính mình?\n\nNgười Ai Cập dùng tổ chức lao động, người La Mã dùng luật pháp và đường sá, người châu Âu thế kỷ XV dùng kim chỉ nam để dám đi khuất tầm mắt, và thế kỷ XVIII dùng hơi nước để không còn phụ thuộc vào sức cơ bắp. Mỗi lần vượt qua một giới hạn, loài người lại phát hiện ra giới hạn kế tiếp. Đó là lý do lịch sử chưa bao giờ có chương cuối."
+  },
   "items": [
     {
       "slug": "vien-da-giza",

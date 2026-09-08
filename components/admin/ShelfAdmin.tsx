@@ -205,6 +205,49 @@ export function ShelfAdmin({ shelves }: { shelves: AdminShelfRow[] }) {
                   />
                 </span>
                 <span className="sm:col-span-2">
+                  <ImageField
+                    prefix="mosaic"
+                    label="Bức tranh toàn cảnh (ghép từ các mảnh)"
+                    hint="Mỗi vật phẩm của kệ là một dải dọc của bức tranh này; học sinh sưu tầm đủ thì tranh liền lại. Ảnh NGANG cho đẹp. Bỏ trống thì kệ không có tranh ghép."
+                    defaultUrl={shelf.mosaicUrl}
+                    defaultSource={shelf.mosaicSource}
+                    defaultCredit={shelf.mosaicCredit}
+                  />
+                </span>
+                {/* Phần thưởng trọn bộ (content.md §4.5). Hai ô này CHỈ hiện ra với học
+                    sinh khi họ đã có đủ mọi vật phẩm của kệ — `readTuiHanhTrang()` cắt ở
+                    tầng đọc, nên đừng viết vào đây thứ gì không chịu được việc bị đoán. */}
+                <span className="flex flex-col gap-xs sm:col-span-2">
+                  <label className={LABEL} htmlFor={`dh-${shelf.slug}`}>
+                    Danh hiệu khi sưu tầm trọn bộ
+                  </label>
+                  <input
+                    id={`dh-${shelf.slug}`}
+                    name="rewardTitle"
+                    defaultValue={shelf.rewardTitle}
+                    maxLength={120}
+                    placeholder="Người giữ ký ức Đại Việt"
+                    className={FIELD}
+                  />
+                </span>
+                <span className="flex flex-col gap-xs sm:col-span-2">
+                  <label className={LABEL} htmlFor={`nt-${shelf.slug}`}>
+                    Nội dung thưởng
+                  </label>
+                  <textarea
+                    id={`nt-${shelf.slug}`}
+                    name="rewardBody"
+                    defaultValue={shelf.rewardBody}
+                    rows={4}
+                    maxLength={2000}
+                    className={FIELD}
+                  />
+                  <span className="font-body text-caption text-secondary">
+                    Bài viết mở rộng hiện ra cùng danh hiệu. Để trống cũng được — khi đó
+                    phần thưởng chỉ là danh hiệu. Có nội dung thì bắt buộc có danh hiệu.
+                  </span>
+                </span>
+                <span className="sm:col-span-2">
                   <SubmitButton className={PRIMARY_BUTTON} pendingLabel="Đang lưu…">
                     Lưu
                   </SubmitButton>

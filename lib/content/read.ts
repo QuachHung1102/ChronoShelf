@@ -228,29 +228,82 @@ export interface VatPhamTuiHanhTrang {
 }
 
 /**
+ * Một BỘ vật phẩm — tất cả vật phẩm do các quyển của cùng một kệ thưởng ra (content.md §4.4).
+ */
+export interface BoSuuTapKe {
+  slug: string;
+  name: string;
+  /**
+   * Theo đúng THỨ TỰ ĐỌC (`books.position`), không phải A→Z theo slug. Thứ tự này là hợp
+   * đồng với bức tranh ghép: vật phẩm thứ k ứng với dải thứ k của tranh, nên xáo thứ tự ở
+   * đây là xáo luôn bức tranh.
+   */
+  vatPham: VatPhamTuiHanhTrang[];
+  /** Bức tranh toàn cảnh các mảnh ghép lại thành. `null` khi admin chưa tải ảnh lên. */
+  tranh: { url: string; source: string | null; credit: string | null } | null;
+  tronBo: boolean;
+  /**
+   * Kệ này CÓ phần thưởng do admin soạn hay chưa — biết được cả khi chưa trọn bộ.
+   * Tách khỏi `phanThuong` để trang mời gọi được ("còn 2 vật phẩm nữa") mà vẫn không
+   * chạm được vào nội dung thưởng; nói lời mời đó cho một kệ chưa soạn phần thưởng thì
+   * là hứa suông.
+   */
+  coPhanThuong: boolean;
+  /**
+   * Danh hiệu + nội dung thưởng (content.md §4.5). `null` khi CHƯA trọn bộ, hoặc khi admin
+   * chưa soạn danh hiệu cho kệ này.
+   *
+   * Cắt ngay tại đây chứ không để trang tự lọc: hàm này là chỗ DUY NHẤT biết người xem có
+   * đủ vật phẩm hay chưa, nên chặn ở đây là chặn bằng cấu trúc — không có đường nào để một
+   * lượt render sau này lỡ tay in nội dung thưởng ra HTML của người chưa sưu tầm đủ.
+   * Đây là hàng rào SƯ PHẠM, không phải hàng rào bảo mật: `shelves` là bảng đọc công khai
+   * và RLS lọc DÒNG chứ không lọc cột, nên đừng bao giờ để bí mật thật vào hai cột này.
+   */
+  phanThuong: { danhHieu: string; noiDung: string } | null;
+}
+
+/**
  * Toàn bộ vật phẩm của sản phẩm, kèm cờ "đã có hay chưa" (content.md §4.5).
  *
  * Trả về CẢ vật phẩm chưa sở hữu, cố ý: tủ kính phải có ô trống hiện bóng mờ thì mới tạo
  * được động lực sưu tầm. Đây không phải rò rỉ — `items` vốn là bảng công khai, ai chưa
  * đăng nhập cũng đọc được; thứ riêng tư là `user_items`, và nó chỉ được hỏi khi có phiên.
  *
- * Hai truy vấn chạy TUẦN TỰ trong cùng một transaction, không `Promise.all`: hai truy vấn
+ * Bốn truy vấn chạy TUẦN TỰ trong cùng một transaction, không `Promise.all`: hai truy vấn
  * Sequelize song song trên cùng một connection sẽ chồng lên nhau (bẫy đã ghi ở CLAUDE.md).
  */
 export const readTuiHanhTrang = cache(async function readTuiHanhTrang(): Promise<{
+  /** Phẳng, mọi vật phẩm — dùng cho hai con số tổng ở đầu trang. */
   vatPham: VatPhamTuiHanhTrang[];
+  boSuuTap: BoSuuTapKe[];
+  /** Vật phẩm chưa quyển nào thưởng ra, hoặc thuộc kệ mà RLS đang giấu. */
+  chuaGanKe: VatPhamTuiHanhTrang[];
   daDangNhap: boolean;
 }> {
   const userId = await getSessionUserId();
 
-  const { items, books, owned } = await withRole(userId, async (t) => {
+  const { shelves, items, books, owned } = await withRole(userId, async (t) => {
+    const shelves = await Shelf.findAll({
+      attributes: [
+        "slug",
+        "name",
+        "position",
+        "rewardTitle",
+        "rewardBody",
+        "mosaicUrl",
+        "mosaicSource",
+        "mosaicCredit",
+      ],
+      order: [["position", "ASC"]],
+      transaction: t,
+    });
     const items = await Item.findAll({
       attributes: ["slug", "name", "description", "imageUrl", "imageSource", "imageCredit"],
       order: [["slug", "ASC"]],
       transaction: t,
     });
     const books = await Book.findAll({
-      attributes: ["slug", "title", "shelfSlug", "rewardItemSlug"],
+      attributes: ["slug", "title", "shelfSlug", "position", "rewardItemSlug"],
       transaction: t,
     });
     // `user_items` chỉ hỏi khi đã đăng nhập: chưa đăng nhập thì `chronoshelf_anon` không có
@@ -258,7 +311,7 @@ export const readTuiHanhTrang = cache(async function readTuiHanhTrang(): Promise
     const owned = userId
       ? await UserItem.findAll({ attributes: ["itemSlug"], transaction: t })
       : [];
-    return { items, books, owned };
+    return { shelves, items, books, owned };
   });
 
   const quyenTheoVatPham = new Map(
@@ -266,20 +319,56 @@ export const readTuiHanhTrang = cache(async function readTuiHanhTrang(): Promise
   );
   const daCo = new Set(owned.map((o) => o.itemSlug));
 
+  const vatPham: VatPhamTuiHanhTrang[] = items.map((i) => {
+    const b = quyenTheoVatPham.get(i.slug);
+    return {
+      slug: i.slug,
+      name: i.name,
+      description: i.description,
+      image: i.imageUrl,
+      imageSource: i.imageSource,
+      imageCredit: i.imageCredit,
+      tuQuyen: b ? { slug: b.slug, title: b.title, shelfSlug: b.shelfSlug } : null,
+      daCo: daCo.has(i.slug),
+    };
+  });
+
+  // Vị trí quyển thưởng ra vật phẩm — khóa sắp xếp của mỗi bộ.
+  const viTri = new Map(
+    books.filter((b) => b.rewardItemSlug).map((b) => [b.rewardItemSlug as string, b.position]),
+  );
+
+  const boSuuTap: BoSuuTapKe[] = shelves
+    .map((ke) => {
+      const ds = vatPham
+        .filter((v) => v.tuQuyen?.shelfSlug === ke.slug)
+        .sort((a, b) => (viTri.get(a.slug) ?? 0) - (viTri.get(b.slug) ?? 0));
+      // Kệ RỖNG không phải là kệ đã sưu tầm trọn bộ. `every` trên mảng rỗng trả true, nên
+      // thiếu vế `ds.length > 0` thì mọi kệ chưa có quyển nào đều trao danh hiệu ngay.
+      const tronBo = ds.length > 0 && ds.every((v) => v.daCo);
+      return {
+        slug: ke.slug,
+        name: ke.name,
+        vatPham: ds,
+        tranh: ke.mosaicUrl
+          ? { url: ke.mosaicUrl, source: ke.mosaicSource, credit: ke.mosaicCredit }
+          : null,
+        tronBo,
+        coPhanThuong: Boolean(ke.rewardTitle),
+        phanThuong:
+          tronBo && ke.rewardTitle
+            ? { danhHieu: ke.rewardTitle, noiDung: ke.rewardBody }
+            : null,
+      };
+    })
+    .filter((n) => n.vatPham.length > 0);
+
+  const daGom = new Set(boSuuTap.flatMap((n) => n.vatPham.map((v) => v.slug)));
+
   return {
     daDangNhap: Boolean(userId),
-    vatPham: items.map((i) => {
-      const b = quyenTheoVatPham.get(i.slug);
-      return {
-        slug: i.slug,
-        name: i.name,
-        description: i.description,
-        image: i.imageUrl,
-        imageSource: i.imageSource,
-        imageCredit: i.imageCredit,
-        tuQuyen: b ? { slug: b.slug, title: b.title, shelfSlug: b.shelfSlug } : null,
-        daCo: daCo.has(i.slug),
-      };
-    }),
+    vatPham,
+    boSuuTap,
+    chuaGanKe: vatPham.filter((v) => !daGom.has(v.slug)),
   };
 });

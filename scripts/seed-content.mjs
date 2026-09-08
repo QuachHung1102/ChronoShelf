@@ -44,9 +44,16 @@ const out = [];
 
 for (const shelf of shelves) {
   out.push(
-    `INSERT INTO public.shelves (slug, name, position, country_code, blurb, published) VALUES\n` +
+    // `blurb`, `reward_title` và `reward_body` chỉ ghi lúc CHÈN MỚI, và cố ý vắng mặt
+    // trong `DO UPDATE`: ba cột đó là chỗ admin soạn qua `/quan-tri`, còn seed là bootstrap
+    // MỘT CHIỀU. Đưa chúng vào DO UPDATE là biến mỗi lần chạy `seed:content` thành một
+    // lần xóa trắng công biên tập của admin.
+    `INSERT INTO public.shelves\n` +
+      `  (slug, name, position, country_code, blurb, reward_title, reward_body, published)\n` +
+      `VALUES\n` +
       `  (${q(shelf.slug)}, ${q(shelf.name)}, ${shelf.order}, ` +
-      `${q(COUNTRY_CODE[shelf.slug] ?? null)}, '', true)\n` +
+      `${q(COUNTRY_CODE[shelf.slug] ?? null)}, '', ` +
+      `${q(shelf.reward?.title ?? "")}, ${q(shelf.reward?.body ?? "")}, true)\n` +
       `ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name, position = EXCLUDED.position,\n` +
       `  country_code = EXCLUDED.country_code, published = EXCLUDED.published;`,
   );

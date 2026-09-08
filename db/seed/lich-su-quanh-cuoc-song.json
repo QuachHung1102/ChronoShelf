@@ -2,6 +2,10 @@
   "slug": "lich-su-quanh-cuoc-song",
   "name": "Lịch sử quanh cuộc sống",
   "order": 3,
+  "reward": {
+    "title": "Người đọc được đồ vật",
+    "body": "Đồng xu, quả bóng, tà áo dài, bóng đèn. Bốn thứ tầm thường đến mức không ai nhìn kỹ — và đó chính là điều làm chúng quý.\n\nLịch sử trong sách giáo khoa là những cái tên lớn và những cái mốc lớn. Nhưng lịch sử thật thì nằm trong túi áo, trên sân chơi, trong tủ quần áo và trên trần nhà bạn. Từ hôm nay, bạn có một thói quen mới: cầm một món đồ lên và hỏi nó ra đời thế nào. Bức tranh vừa ghép xong không phải phần thưởng cuối cùng — nó là cái nhìn bạn mang theo ra khỏi trang này."
+  },
   "items": [
     {
       "slug": "dong-xu-co",

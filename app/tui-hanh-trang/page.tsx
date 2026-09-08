@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { BookOpen, Check, ChevronRight, Lock, Sparkles } from "lucide-react";
+import { Award, BookOpen, Check, ChevronRight, Lock, Sparkles } from "lucide-react";
 import { Header } from "@/components/Header";
 import { GhiCongAnh } from "@/components/ui/GhiCongAnh";
 import {
@@ -9,9 +9,11 @@ import {
   QUIET_BUTTON_ON_SURFACE,
 } from "@/components/ui/controls";
 import s from "@/components/bag/bag.module.scss";
+import { manhGhep } from "@/lib/tranh-ghep";
 import {
   readShelfList,
   readTuiHanhTrang,
+  type BoSuuTapKe,
   type VatPhamTuiHanhTrang,
 } from "@/lib/content/read";
 
@@ -121,43 +123,116 @@ function OVatPham({ v }: { v: VatPhamTuiHanhTrang }) {
 }
 
 /**
- * Túi hành trang — tủ kính trưng bày toàn bộ vật phẩm đã sưu tầm (content.md §4.5).
+ * Bức tranh toàn cảnh của một kệ, ghép từ các mảnh (content.md §4.4).
+ *
+ * Hé lộ DẦN chứ không chỉ hiện khi đã đủ: đó mới là thứ tạo động lực sưu tầm. Mảnh thứ k
+ * lấy đúng dải dọc thứ k của bức tranh — hình học nằm ở `lib/tranh-ghep.ts` và có test
+ * riêng, vì mẫu số `tong - 1` là chỗ dễ viết sai mà nhìn ảnh thì không thấy ngay.
+ *
+ * Cả dải ảnh là TRANG TRÍ (`aria-hidden`): thông tin thật nằm ở `<figcaption>` ngay dưới,
+ * viết bằng chữ. Một trình đọc màn hình không có gì để nói về bốn ô nền CSS.
+ */
+function TranhGhep({ bo }: { bo: BoSuuTapKe }) {
+  const tranh = bo.tranh;
+  if (!tranh) return null;
+
+  const tong = bo.vatPham.length;
+  const daMo = bo.vatPham.filter((v) => v.daCo).length;
+
+  return (
+    <figure className="mt-md">
+      <div
+        aria-hidden
+        className={s.tranh}
+        style={{ gridTemplateColumns: `repeat(${tong}, minmax(0, 1fr))` }}
+      >
+        {bo.vatPham.map((v, k) =>
+          v.daCo ? (
+            <div
+              key={v.slug}
+              className={s.manh}
+              // `tranh.url` đã qua `readImageFields()` nên luôn khớp `/media/<sha256>` —
+              // không có ký tự nào thoát được ra khỏi cặp ngoặc kép của `url()`.
+              style={{ ...manhGhep(k, tong), backgroundImage: `url("${tranh.url}")` }}
+            />
+          ) : (
+            <div key={v.slug} className={s.manhChua}>
+              <Lock className="h-4 w-4 text-secondary-light" />
+            </div>
+          ),
+        )}
+      </div>
+
+      <figcaption className="mt-sm font-body text-caption text-secondary-light">
+        {bo.tronBo
+          ? "Bức tranh toàn cảnh đã liền lại — bạn giữ đủ mọi mảnh của kệ này."
+          : `Bức tranh toàn cảnh: đã ghép ${daMo}/${tong} mảnh. Mỗi quyển đọc xong thả ra một mảnh.`}
+        <GhiCongAnh credit={tranh.credit} nguon={tranh.source} className="mt-xs block" />
+      </figcaption>
+    </figure>
+  );
+}
+
+/**
+ * Phần thưởng khi sưu tầm trọn một bộ (content.md §4.5).
+ *
+ * Nội dung thưởng KHÔNG đi qua đây khi chưa đủ: `readTuiHanhTrang()` để `phanThuong` là
+ * null cho tới lúc đủ, nên component này không có nhánh nào in ra chữ chưa kiếm được.
+ * Lời mời gọi thì đọc `coPhanThuong` — nó biết CÓ phần thưởng, không biết nó là gì.
+ */
+function PhanThuongTronBo({ bo }: { bo: BoSuuTapKe }) {
+  if (!bo.coPhanThuong) return null;
+
+  if (!bo.phanThuong) {
+    const conThieu = bo.vatPham.filter((v) => !v.daCo).length;
+    return (
+      <p className="mt-md flex items-center gap-sm rounded-md bg-surface px-md py-sm font-body text-body-sm text-secondary">
+        <Lock aria-hidden className="h-4 w-4 shrink-0 text-secondary-light" />
+        Còn {conThieu} vật phẩm nữa là mở khóa danh hiệu của kệ này.
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-md rounded-md bg-surface p-md">
+      <p className="flex items-center gap-sm font-body text-label-caps uppercase text-tertiary-deep">
+        <Award aria-hidden className="h-4 w-4 shrink-0" />
+        Danh hiệu đã mở khóa
+      </p>
+      <p className="mt-xs font-heading text-headline-sm text-primary-dark">
+        {bo.phanThuong.danhHieu}
+      </p>
+      {bo.phanThuong.noiDung && (
+        // `whitespace-pre-line`: admin gõ nội dung thưởng trong một `<textarea>`, nên chỗ
+        // họ xuống dòng phải xuống dòng thật chứ không bị gộp thành một khối chữ liền.
+        <p className="mt-sm max-w-measure whitespace-pre-line font-body text-body-md text-secondary">
+          {bo.phanThuong.noiDung}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Túi hành trang — tủ kính bảo tàng trưng bày toàn bộ vật phẩm đã sưu tầm (content.md §4.5).
  *
  * Ô của vật phẩm CHƯA có vẫn hiện, dưới dạng bóng mờ: đó là cả điểm của trang này. Một tủ
  * chỉ hiện thứ mình đã có thì không nói được còn bao nhiêu thứ đang chờ.
  *
  * Phần "bấm để xem mô tả" dùng `<details>` chứ không phải state React: đóng/mở, thao tác
  * bàn phím và ngữ nghĩa cho trình đọc màn hình đều có sẵn trong thẻ, 0 dòng JS.
+ *
+ * Việc gom vật phẩm theo BỘ nằm ở `readTuiHanhTrang()` chứ không ở đây: một bộ không chỉ
+ * là một nhóm hiển thị nữa, nó còn quyết định đã trọn bộ hay chưa — và câu trả lời đó là
+ * thứ khóa nội dung thưởng lại. Để nó ở tầng đọc thì trang này không có đường nào in ra
+ * phần thưởng chưa kiếm được, kể cả khi ai đó viết nhầm.
  */
 export default async function TuiHanhTrang() {
   // Hai lời gọi TUẦN TỰ, không `Promise.all` — cả hai đều mở transaction Sequelize.
   const shelves = await readShelfList();
-  const { vatPham, daDangNhap } = await readTuiHanhTrang();
+  const { vatPham, boSuuTap, chuaGanKe, daDangNhap } = await readTuiHanhTrang();
 
   const soDaCo = vatPham.filter((v) => v.daCo).length;
-
-  // Gom theo KỆ, không để nguyên thứ tự slug A→Z mà `readTuiHanhTrang()` trả về.
-  // content.md §4.4 quy định mỗi chuyên mục có một BỘ vật phẩm riêng và §4.5 hứa "sưu tầm
-  // trọn một bộ sẽ mở khóa danh hiệu" — nhưng ở thứ tự A→Z, vật phẩm ba kệ trộn lẫn hoàn
-  // toàn nên không nhìn ra bộ nào, và câu hỏi cơ bản nhất của một tủ sưu tầm ("còn thiếu
-  // mấy món của kệ Việt Nam?") không trả lời được.
-  //
-  // Gom ở TẦNG HIỂN THỊ, không sửa hàm đọc: `readShelfList()` đã trả về kệ theo đúng
-  // `position`, và mỗi vật phẩm đã mang sẵn `tuQuyen.shelfSlug`. Không cần truy vấn thêm.
-  // Vòng lặp lồng nhau O(kệ × vật phẩm) chấp nhận được — cả hai đều vài chục dòng.
-  const nhom = shelves
-    .map((ke) => ({
-      key: ke.slug,
-      ten: ke.name,
-      ds: vatPham.filter((v) => v.tuQuyen?.shelfSlug === ke.slug),
-    }))
-    .filter((n) => n.ds.length > 0);
-
-  // Vật phẩm chưa quyển nào thưởng ra, hoặc thưởng bởi quyển thuộc kệ mà RLS đang giấu.
-  // Vẫn phải hiện: nếu bỏ, tổng "x/13" ở trên không khớp số ô đếm được bên dưới.
-  const daGom = new Set(nhom.flatMap((n) => n.ds.map((v) => v.slug)));
-  const conLai = vatPham.filter((v) => !daGom.has(v.slug));
-  if (conLai.length > 0) nhom.push({ key: "__khac", ten: "Chưa gắn kệ nào", ds: conLai });
 
   return (
     <>
@@ -202,33 +277,61 @@ export default async function TuiHanhTrang() {
             </p>
           ) : (
             <div className={`${s.tu} mt-lg rounded-md bg-surface-shelf p-lg`}>
-              {nhom.map((n, i) => (
+              {boSuuTap.map((bo, i) => (
                 <section
-                  key={n.key}
+                  key={bo.slug}
                   className={i > 0 ? "mt-xl" : undefined}
-                  aria-labelledby={`nhom-${n.key}`}
+                  aria-labelledby={`nhom-${bo.slug}`}
                 >
                   <div className="flex flex-wrap items-baseline justify-between gap-md">
                     <h2
-                      id={`nhom-${n.key}`}
+                      id={`nhom-${bo.slug}`}
                       className="font-heading text-headline-sm text-on-primary"
                     >
-                      {n.ten}
+                      {bo.name}
                     </h2>
                     <p className="font-body text-body-sm text-secondary-light">
-                      {n.ds.filter((v) => v.daCo).length}/{n.ds.length} vật phẩm
+                      {bo.vatPham.filter((v) => v.daCo).length}/{bo.vatPham.length} vật phẩm
                     </p>
                   </div>
+
+                  <TranhGhep bo={bo} />
 
                   {/* Không `items-start`: ô lưới giãn theo hàng, cộng `h-full` trên
                       `<details>` thì mọi ô cùng hàng có chung mép dưới. */}
                   <ul className="mt-md grid gap-md sm:grid-cols-3 lg:grid-cols-4">
-                    {n.ds.map((v) => (
+                    {bo.vatPham.map((v) => (
+                      <OVatPham key={v.slug} v={v} />
+                    ))}
+                  </ul>
+
+                  <PhanThuongTronBo bo={bo} />
+                </section>
+              ))}
+
+              {/* Vật phẩm chưa quyển nào thưởng ra, hoặc thưởng bởi quyển thuộc kệ mà RLS
+                  đang giấu. Vẫn phải hiện: nếu bỏ, tổng "x/13" ở trên không khớp số ô đếm
+                  được bên dưới. */}
+              {chuaGanKe.length > 0 && (
+                <section
+                  className={boSuuTap.length > 0 ? "mt-xl" : undefined}
+                  aria-labelledby="nhom-khac"
+                >
+                  <div className="flex flex-wrap items-baseline justify-between gap-md">
+                    <h2 id="nhom-khac" className="font-heading text-headline-sm text-on-primary">
+                      Chưa gắn kệ nào
+                    </h2>
+                    <p className="font-body text-body-sm text-secondary-light">
+                      {chuaGanKe.filter((v) => v.daCo).length}/{chuaGanKe.length} vật phẩm
+                    </p>
+                  </div>
+                  <ul className="mt-md grid gap-md sm:grid-cols-3 lg:grid-cols-4">
+                    {chuaGanKe.map((v) => (
                       <OVatPham key={v.slug} v={v} />
                     ))}
                   </ul>
                 </section>
-              ))}
+              )}
 
               {/* Hàng chú giải ở đáy tủ, sao khuôn từ màn kệ sách: hai trạng thái được nói
                   bằng CHỮ một lần, để người xem không phải tự suy ra ý nghĩa của dấu triện

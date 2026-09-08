@@ -70,8 +70,9 @@ văn bản đã seed. `db/seed/*.json` có thêm khóa `questions`, và `seed-co
 
 ```
 npm run check        → exit 0
-npm run db:check     → 102 đạt / 0 hỏng     (+17 phép mới ở mục "Bài trắc nghiệm cuối sách")
-npm run db:mutation  → 45 đạt / 0 hỏng      (+5 đột biến mới)
+npm run db:check     → 102 đạt / 0 hỏng
+npm run db:mutation  → 49 đạt / 0 hỏng      (đo 2026-09-09, gồm +2 đột biến của file 16)
+npm run db:migrate   → 18 file schema
 ```
 
 Trong 17 phép mới, quan trọng nhất là phép chạy `complete_book` THẬT với đáp án sai rồi đòi
@@ -220,13 +221,27 @@ Tất cả sửa qua `/quan-tri`, **không đụng một dòng mã nào**. Hai b
 `kim-tu-thap-ai-cap` mới có **2 trang** trong khi 12 quyển kia đều 4 — quyển đó viết dở, và vì
 vậy nó cũng chỉ có 2 câu hỏi thay vì 3.
 
-### 2. Ba mảnh của `content.md` chưa dựng
+### 2. Ba mảnh của `content.md` — ĐÃ DỰNG HẾT ngày 2026-09-09
 
-| Việc | Ở đâu trong content.md |
-|---|---|
-| Âm thanh lật trang + nút tắt tiếng | §4.2 |
-| Sưu tầm trọn bộ → danh hiệu + nội dung thưởng | §4.5 |
-| Mảnh ghép cho kệ "Lịch sử quanh cuộc sống" | §4.4 |
+| Việc | Ở đâu | Dựng thế nào |
+|---|---|---|
+| Âm thanh lật trang + nút tắt tiếng | §4.2 | `components/reader/tieng-lat-trang.ts` — nhiễu trắng qua bandpass, **sinh bằng Web Audio chứ không phải file .mp3**: 0 byte tải về và không có giấy phép âm thanh nào phải ghi công (cả repo đã dựng bốn ràng buộc CHECK chỉ để ảnh không lọt vào mà thiếu credit — một file tiếng tải từ đâu đó là mở lại đúng lỗ ấy ở chỗ không ràng buộc nào canh). Nút tắt tiếng cạnh nút đóng sách, nhớ qua `localStorage`. Tiếng gắn với CÚ LẬT chứ không với nút bấm, nên phím mũi tên và nút "Mở sách" đều kêu. |
+| Sưu tầm trọn bộ → danh hiệu + nội dung thưởng | §4.5 | Hai cột `shelves.reward_title` + `reward_body`, soạn ở `/quan-tri`. Cắt ở tầng ĐỌC: `readTuiHanhTrang()` trả `phanThuong: null` khi chưa đủ. Cờ `coPhanThuong` tách riêng để trang mời gọi được ("còn 1 vật phẩm nữa") mà không chạm được vào nội dung. |
+| Mảnh ghép → bức tranh toàn cảnh | §4.4 | `shelves.mosaic_url` + hai cột credit. Dựng cho MỌI kệ, không hardcode slug nào. Cắt theo **dải dọc** (`lib/tranh-ghep.ts`, có test): lưới ô vuông đòi một cặp hàng×cột tích đúng bằng số vật phẩm, mà số đó do admin quyết lúc chạy — kệ 5 quyển thì không lưới nào vừa. |
+
+Năm cột mới ở `db/schema/16-bo-suu-tap-tron-bo.sql`, hai ràng buộc mới được `90-verify.sql`
+canh và `db:mutation` chứng minh là biết kêu.
+
+**Đã đo thật trong trình duyệt ở 1024×768** (tài khoản `ui-audit`, console sạch 0 lỗi), ba
+trạng thái trong một lượt: kệ Việt Nam 5/5 → tranh liền lại + danh hiệu "Người giữ hồn nước";
+kệ Thế giới 3/4 → ba dải hiện, dải thứ tư gạch chéo có ổ khóa, kèm dòng "Còn 1 vật phẩm nữa";
+kệ Quanh cuộc sống 0/4 → gạch chéo cả bốn. Nút tắt tiếng: 2 cú lật → đúng 1 `AudioContext` và
+2 lần phát; tắt rồi lật 2 lần → 0 lần phát; bật lại → nghe thử đúng 1 tiếng; tải lại trang →
+vẫn nhớ trạng thái tắt. Màn `/quan-tri` lưu round-trip thật, và bỏ trống danh hiệu trong khi
+còn nội dung thưởng thì bị chặn kèm câu giải thích.
+
+**Ảnh tranh ghép vẫn để trống trên cả ba kệ** — nó thuộc mục 1 phía trên. Đã soi giao diện
+bằng một tấm ảnh mượn tạm rồi gỡ ngay; không dòng dữ liệu nào còn giữ nó.
 
 ### 3. Siết `sniffPptx` khi có `.pptx` thật để đối chứng
 

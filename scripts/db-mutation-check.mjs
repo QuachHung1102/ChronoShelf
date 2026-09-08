@@ -96,6 +96,11 @@ const MUTATIONS = [
     "GRANT EXECUTE ON FUNCTION public._complete_book_for(uuid, text, smallint[]) TO chronoshelf_auth",
     "lộ EXECUTE",
   ],
+  [
+    "shelves mất ràng buộc nội-dung-thưởng-phải-có-danh-hiệu",
+    "ALTER TABLE public.shelves DROP CONSTRAINT shelves_reward_ck",
+    "shelves_reward_ck",
+  ],
 
   // --- mục B2: bài trắc nghiệm cuối sách. Đáp án là thứ duy nhất trong nội dung phải
   // giấu, nên cả ba đường làm lộ nó đều phải có một đột biến riêng.
@@ -206,6 +211,11 @@ const MUTATIONS = [
   [
     "shelves mất ràng buộc bìa-phải-có-credit",
     "ALTER TABLE public.shelves DROP CONSTRAINT shelves_cover_credit_ck",
+    "items/books/pages/shelves",
+  ],
+  [
+    "shelves mất ràng buộc tranh-ghép-phải-có-credit",
+    "ALTER TABLE public.shelves DROP CONSTRAINT shelves_mosaic_credit_ck",
     "items/books/pages/shelves",
   ],
   [
