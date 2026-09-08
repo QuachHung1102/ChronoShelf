@@ -131,7 +131,7 @@ function OVatPham({ v }: { v: VatPhamTuiHanhTrang }) {
             <GhiCongAnh
               credit={v.imageCredit}
               nguon={v.imageSource}
-              className="mt-sm font-body text-caption text-secondary"
+              className="mt-sm text-secondary"
             />
           )}
         </div>
@@ -187,7 +187,7 @@ function TranhGhep({ bo }: { bo: BoSuuTapKe }) {
         {bo.tronBo
           ? "Bức tranh toàn cảnh đã liền lại — bạn giữ đủ mọi mảnh của kệ này."
           : `Bức tranh toàn cảnh: đã ghép ${daMo}/${tong} mảnh. Mỗi quyển đọc xong thả ra một mảnh.`}
-        <GhiCongAnh credit={tranh.credit} nguon={tranh.source} className="mt-xs block" />
+        <GhiCongAnh credit={tranh.credit} nguon={tranh.source} nenToi className="mt-xs block text-secondary-light" />
       </figcaption>
     </figure>
   );

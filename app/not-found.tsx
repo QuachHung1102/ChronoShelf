@@ -23,13 +23,13 @@ export default async function NotFound() {
       <Header activeHref="" shelves={shelves} />
       <main
         id="noi-dung"
-        className="mx-auto flex max-w-[42rem] flex-1 flex-col items-center justify-center gap-md px-page-margin py-xl text-center"
+        className="mx-auto flex max-w-2xl flex-1 flex-col items-center justify-center gap-md px-page-margin py-xl text-center"
       >
         <Compass aria-hidden className="h-12 w-12 text-secondary" />
         <h1 className="font-heading text-headline-md text-primary-dark">
           Không tìm thấy trang này
         </h1>
-        <p className="max-w-[36rem] font-body text-body-md text-secondary">
+        <p className="max-w-measure font-body text-body-md text-secondary">
           Có thể kệ sách đã đổi tên, hoặc đường dẫn bị gõ sai. Thử quay lại thư viện và chọn từ đầu.
         </p>
         <Link href="/" className={PRIMARY_BUTTON}>

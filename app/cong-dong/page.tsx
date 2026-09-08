@@ -4,6 +4,7 @@ import { Award, Flame, HelpCircle, MessageSquare, PenLine, Send, Trash2 } from "
 import { Header } from "@/components/Header";
 import { ActionForm, SubmitButton } from "@/components/admin/ActionForm";
 import {
+  CARD,
   DANGER_BUTTON,
   DANGER_BUTTON_ON_SURFACE,
   FIELD,
@@ -91,7 +92,7 @@ export default async function CongDongPage() {
                     return (
                       <li key={bai.id}>
                         <article
-                          className="rounded-md border border-surface-locked bg-surface p-lg"
+                          className={CARD}
                           aria-labelledby={`bai-${bai.id}`}
                         >
                           <header className="flex items-start justify-between gap-md">
@@ -272,7 +273,7 @@ export default async function CongDongPage() {
             </section>
 
             <aside className="space-y-md" aria-label="Đăng bài và thành tích">
-              <section className="rounded-md border border-surface-locked bg-surface p-lg">
+              <section className={CARD}>
                 <h2 className="font-heading text-headline-sm text-primary-dark">Góp một câu chuyện</h2>
 
                 {bangTin.daDangNhap ? (

@@ -85,8 +85,8 @@ export function LoginForm({ next }: { next: string }) {
    * khoản vĩnh viễn. Dùng lại đúng kiểu khối ghi chú của bước khôi phục ở dưới.
    */
   const ghiChuCauHoi = (
-    <p className="rounded-md bg-surface p-md font-body text-body-md text-primary-dark">
-      Đây là cách <strong className="font-semibold">duy nhất</strong> lấy lại tài khoản nếu bạn quên mật khẩu — bọn
+    <p className="rounded-md border border-surface-locked bg-surface p-md font-body text-body-md text-primary-dark">
+      Đây là cách <strong className="font-semibold text-primary-dark">duy nhất</strong> lấy lại tài khoản nếu bạn quên mật khẩu — bọn
       mình không gửi email đặt lại. Hãy chọn câu bạn chắc chắn nhớ.
     </p>
   );
@@ -114,10 +114,10 @@ export function LoginForm({ next }: { next: string }) {
   );
 
   return (
-    <div className="w-full max-w-md rounded-lg bg-neutral p-xl">
+    <div className="w-full max-w-md rounded-md bg-neutral p-xl">
       <p className="font-body text-label-caps uppercase text-tertiary-deep">Cửa sổ lịch sử</p>
       <h1 className="mt-sm font-heading text-headline-md text-primary-dark">{tieuDe}</h1>
-      <p className="mt-sm font-body text-body-sm text-secondary">{moTa}</p>
+      <p className="mt-sm font-body text-body-md text-secondary">{moTa}</p>
 
       {cheDo === "dang-nhap" && (
         <form
@@ -257,7 +257,7 @@ export function LoginForm({ next }: { next: string }) {
 
           {cauHoiCuaToi !== null && (
             <>
-              <p className="rounded-md bg-surface p-md font-body text-body-md text-primary-dark">
+              <p className="rounded-md border border-surface-locked bg-surface p-md font-body text-body-md text-primary-dark">
                 {timCauHoi(cauHoiCuaToi)?.hoi ?? "Câu hỏi bảo mật của bạn"}
               </p>
 

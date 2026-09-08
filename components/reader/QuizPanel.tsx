@@ -160,7 +160,7 @@ export function QuizPanel({
             không đọc (bẫy `empty:hidden` đã ghi ở CLAUDE.md). */}
         <p
           aria-live="polite"
-          className={`flex min-h-[1.5rem] items-center gap-xs font-body text-body-sm ${
+          className={`flex min-h-lg items-center gap-xs font-body text-body-sm ${
             error ? "text-destructive" : "text-secondary"
           }`}
         >

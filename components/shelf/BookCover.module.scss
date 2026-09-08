@@ -321,7 +321,9 @@
   height: 52px;
   border-radius: theme('borderRadius.full');
   font-family: var(--font-heading), serif;
-  font-size: 20px;
+  // Lấy thẳng bậc `headline-sm` của thang chữ thay vì gõ 20px: cùng một giá trị, nhưng
+  // đổi trong DESIGN.md thì chỗ này đi theo.
+  font-size: theme('fontSize.headline-sm[0]');
   font-weight: 700;
   letter-spacing: 0.06em;
   color: theme('colors.tertiary-light / 80%');

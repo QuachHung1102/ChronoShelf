@@ -654,7 +654,8 @@ function CoverFace({
           nhan="Ảnh bìa"
           credit={credit}
           nguon={nguon}
-          className="absolute inset-x-xl bottom-lg font-body text-caption text-secondary-light"
+          nenToi
+          className="absolute inset-x-xl bottom-lg text-secondary-light"
         />
       )}
 

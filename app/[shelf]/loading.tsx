@@ -31,9 +31,12 @@ export default function DangTaiKeSach() {
             </p>
             <div aria-hidden className="mt-sm h-xl w-1/2 max-w-measure rounded-sm bg-surface-locked" />
           </div>
-          {/* Khối tủ. `bg-surface-shelf` là đúng màu thân tủ thật, nên lúc nội dung thay
-              vào chỗ này thì chỉ có sách hiện thêm ra chứ nền không đổi màu. */}
-          <div aria-hidden className="h-[18rem] w-full rounded-md bg-surface-shelf" />
+          {/* Khối tủ. `bg-primary` chứ KHÔNG phải `bg-surface-shelf`:
+              `surface-shelf` là màu TẤM VÁN (`.row`, `.plankLower`), còn thân tủ là
+              gradient `secondary → primary → primary-dark`. Chú thích cũ nói ngược.
+              Chiều cao và bo góc cũng sai: tủ thật ở 1024×768 cao 466.83px và `rounded-lg`,
+              nên khung xương 288px/`rounded-md` làm cú thay chỗ nhảy khoảng 115px. */}
+          <div aria-hidden className="h-[29rem] w-full rounded-lg bg-primary" />
         </div>
       </main>
     </>

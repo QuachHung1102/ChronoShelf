@@ -106,7 +106,8 @@ export function ItemDropOverlay({
               <GhiCongAnh
                 credit={item.imageCredit}
                 nguon={item.imageSource}
-                className="mt-md max-w-xl font-body text-caption text-secondary-light"
+                nenToi
+                className="mt-md max-w-xl text-secondary-light"
               />
             )}
           </div>

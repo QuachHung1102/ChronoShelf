@@ -59,7 +59,8 @@ export function BookShelf({
                 nhan="Ảnh nền"
                 credit={shelf.coverCredit}
                 nguon={shelf.coverSource}
-                className="mt-xs font-body text-caption text-secondary-light"
+                nenToi
+                className="mt-xs text-secondary-light"
               />
             )}
           </div>

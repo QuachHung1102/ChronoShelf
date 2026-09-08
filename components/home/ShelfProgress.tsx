@@ -74,7 +74,7 @@ export function ShelfProgress({ shelves }: { shelves: ShelfChain[] }) {
               className={`group flex h-full flex-col justify-between gap-xl rounded-lg bg-primary-dark p-lg transition-colors duration-200 ease-out hover:bg-primary active:bg-surface-shelf ${FOCUS_RING}`}
             >
               <span className="flex flex-col gap-md">
-                <BookOpen aria-hidden className="h-lg w-lg text-secondary-light" />
+                <BookOpen aria-hidden className="h-6 w-6 text-secondary-light" />
                 <span className="text-balance font-heading text-headline-sm text-on-primary">{shelf.name}</span>
               </span>
 

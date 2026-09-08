@@ -1,0 +1,33 @@
+// Thước tiến độ — MỘT định nghĩa cho cả sản phẩm.
+//
+// Trước đây khối luật này tồn tại BA bản chép: `.thuoc`/`.thuocDay` ở
+// `components/home/home.module.scss`, cùng tên ở `components/bag/bag.module.scss`, và
+// `.meter`/`.meterFill` ở `components/shelf/BookShelf.module.scss` — cùng số đo, khác tên,
+// khác thứ tự thuộc tính. Chú thích ở bản của túi hành trang còn nói "Cùng công thức với
+// thước ở màn kệ sách" và trỏ vào một selector KHÔNG TỒN TẠI ở đó (`.thuoc` vs `.meter`).
+// Biết là trùng, ba lần, vẫn chép.
+//
+// Ở SCSS vì cả ba thứ đều ngoài tầm Tailwind: chiều cao 6px (ngoài thang spacing),
+// `box-shadow: inset`, và gradient.
+
+.thuoc {
+  height: 6px;
+  overflow: hidden;
+  background: theme('colors.surface-room / 75%');
+  border-radius: theme('borderRadius.full');
+  // `secondary-light`, KHÔNG phải `secondary`: rãnh nằm trên nền tối ở cả ba nơi dùng
+  // (thẻ kệ `primary-dark`, tủ `surface-shelf`, phòng đọc `surface-room`), mà `secondary`
+  // trên nền phòng chỉ cho vòng viền 1.59:1 — tức không đọc ra được thước dài tới đâu.
+  // `secondary-light` trên `surface-room` đạt 11.57:1; ở 45% vẫn dư ngưỡng 3:1.
+  box-shadow: inset 0 0 0 1px theme('colors.secondary-light / 45%');
+}
+
+.thuocDay {
+  height: 100%;
+  // Gradient chạy `tertiary` → `tertiary-deep`, tức SÁNG TRƯỚC. Chiều cũ ngược lại, nên
+  // đầu trái — phần LUÔN hiện, và là toàn bộ thanh khi tiến độ còn thấp — mang
+  // `tertiary-deep`, chỉ 2.87:1 so với rãnh trên thẻ kệ và 3.02:1 trên nền phòng. Đảo
+  // chiều đưa phần luôn-hiện lên 5.44:1 mà không đổi một token màu nào.
+  background: linear-gradient(to right, theme('colors.tertiary'), theme('colors.tertiary-deep'));
+  border-radius: theme('borderRadius.full');
+}

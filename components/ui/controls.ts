@@ -227,6 +227,30 @@ export const QUIET_BUTTON_ON_DARK =
  */
 export const CARD = "rounded-md border border-secondary bg-surface p-lg";
 
+/**
+ * Thẻ đứng trên nền TỐI (`surface-shelf`, phòng đọc). Không viền, và đó là chủ ý:
+ * `surface` trên `surface-shelf` đã tách 15.73:1, thêm viền chỉ là nhiễu.
+ */
+export const CARD_ON_DARK = "rounded-md bg-surface p-lg";
+
+/**
+ * Chip trạng thái viết hoa cỡ nhỏ.
+ *
+ * `label-caps` là 12px/700/0.12em — đúng bậc DESIGN.md dựng cho việc này, và 17 chỗ
+ * trong sản phẩm đang dùng nó. Bốn chip trong khu quản trị thì viết tay
+ * `text-caption uppercase tracking-wide`: `caption` là 400 chứ không phải 700, còn
+ * `tracking-wide` là 0.025em của Tailwind — không phải token nào cả. Kết quả là bốn
+ * chip mỏng hơn và chật hơn mọi nhãn viết hoa khác trong sản phẩm.
+ */
+export const CHIP = "rounded-full px-sm py-[0.15rem] font-body text-label-caps uppercase";
+
+/**
+ * Icon 16px đứng cạnh một dòng chữ phải hạ xuống trùng baseline. Trước đây cùng một việc
+ * được viết bằng BA magic number ở hai đơn vị (0.15em, 0.2em, 0.15rem) rải trên 12 chỗ,
+ * không chỗ nào giải thích vì sao khác nhau.
+ */
+export const ICON_BASELINE = "mt-[0.15em]";
+
 export const SKELETON_HEADER =
   "sticky top-0 z-40 flex h-header-height items-center border-b border-primary-dark " +
   "bg-primary px-page-margin";

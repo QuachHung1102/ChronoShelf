@@ -6,6 +6,7 @@ import { ImageField } from "./ImageField";
 import { createPage, deletePage, movePage, updatePage } from "@/lib/admin/actions";
 import type { AdminBookHeader, AdminPageRow } from "@/lib/admin/pages";
 import {
+  CHIP,
   DANGER_BUTTON,
   FIELD,
   LABEL,
@@ -22,9 +23,7 @@ const SUMMARY_HINT =
  * trên thẻ `bg-surface` chỉ đạt 1.16:1, tức viên thuốc không tồn tại về mặt thị giác —
  * đúng lỗi đã sửa cho huy hiệu "Nháp" ở `card.tsx`.
  */
-const PAGE_CHIP =
-  "rounded-full border border-secondary bg-neutral px-sm py-[0.15rem] font-body text-caption " +
-  "uppercase tracking-wide text-primary-dark";
+const PAGE_CHIP = `${CHIP} border border-secondary bg-neutral text-primary-dark`;
 
 export function PageAdmin({ book, pages }: { book: AdminBookHeader; pages: AdminPageRow[] }) {
   const last = pages.length - 1;
@@ -82,7 +81,7 @@ export function PageAdmin({ book, pages }: { book: AdminBookHeader; pages: Admin
                   <h3 className="font-heading text-headline-sm text-primary-dark">{page.heading}</h3>
                   {index === last && <span className={PAGE_CHIP}>Trang cuối</span>}
                   {summaryHidden && (
-                    <span className="rounded-full border border-destructive bg-neutral px-sm py-[0.15rem] font-body text-caption uppercase tracking-wide text-destructive">
+                    <span className={`${CHIP} border border-destructive bg-neutral text-destructive`}>
                       Ý chính bị ẩn
                     </span>
                   )}

@@ -300,7 +300,8 @@ $half: 490px;
   font-family: var(--font-heading), serif;
   font-size: theme('fontSize.drop-cap[0]');
   font-weight: 700;
-  line-height: 0.82;
+  // Cùng lý do như `font-size` ngay trên: nửa lấy token, nửa chép số là chỗ để trôi lệch.
+  line-height: theme('fontSize.drop-cap[1].lineHeight');
   color: theme('colors.tertiary-deep');
 }
 

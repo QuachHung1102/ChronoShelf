@@ -1,4 +1,5 @@
 import { ChevronDown } from "lucide-react";
+import { CHIP } from "@/components/ui/controls";
 
 /**
  * Từ vựng dùng chung của **thẻ quản trị**. Cùng lý do tồn tại với
@@ -23,6 +24,8 @@ import { ChevronDown } from "lucide-react";
  * cho viền ô nhập, nên khung thẻ phải nhạt hơn một bậc. Đường mạnh nhất trên màn hình
  * phải là chỗ gõ chữ, không phải cái hộp bao quanh nó.
  */
+// Alias của `CARD` với padding chật hơn một bậc: màn quản trị xếp hàng chục thẻ
+// trên một trang, `p-lg` ở đó đẩy nội dung xuống quá xa.
 export const ADMIN_CARD = "rounded-md border border-secondary bg-surface p-md";
 
 /**
@@ -46,7 +49,7 @@ export const CARD_DIVIDER = "border-secondary";
 export const ORDER_BUTTON =
   "inline-flex h-8 w-8 items-center justify-center rounded-sm text-secondary transition-colors " +
   "duration-200 ease-out hover:text-tertiary-deep aria-disabled:cursor-not-allowed " +
-  "aria-disabled:opacity-30 aria-disabled:hover:text-secondary " +
+  "aria-disabled:opacity-50 aria-disabled:hover:text-secondary " +
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 " +
   "focus-visible:ring-offset-surface";
 
@@ -70,7 +73,7 @@ export const ORDER_BUTTON =
 export function PublishBadge({ published }: { published: boolean }) {
   return (
     <span
-      className={`rounded-full px-sm py-[0.15rem] font-body text-caption uppercase tracking-wide ${
+      className={`${CHIP} ${
         published
           ? "border border-secondary bg-neutral text-primary-dark"
           : "bg-primary-dark text-on-primary"

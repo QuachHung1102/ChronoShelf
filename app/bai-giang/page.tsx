@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { Download, FileText, Network } from "lucide-react";
 import { Header } from "@/components/Header";
 import { GhiCongAnh } from "@/components/ui/GhiCongAnh";
-import { PRIMARY_BUTTON } from "@/components/ui/controls";
+import { CARD, PRIMARY_BUTTON } from "@/components/ui/controls";
 import { readShelfList } from "@/lib/content/read";
 import { nhomTheoLop, readBaiGiang } from "@/lib/learning/read";
 
@@ -45,7 +45,7 @@ export default async function BaiGiangPage() {
           </p>
 
           {bai.length === 0 && (
-            <div className="mt-xl rounded-md border border-surface-locked bg-surface p-lg">
+            <div className={`mt-xl ${CARD}`}>
               <FileText aria-hidden className="h-8 w-8 text-tertiary-deep" />
               <p className="mt-sm font-heading text-headline-sm text-primary-dark">
                 Thư viện đang được soạn
@@ -107,7 +107,7 @@ export default async function BaiGiangPage() {
                         <GhiCongAnh
                           credit={b.previewCredit}
                           nguon={b.previewSource}
-                          className="mt-xs font-body text-caption text-secondary"
+                          className="mt-xs text-secondary"
                         />
                       </figure>
                     )}
@@ -123,8 +123,18 @@ export default async function BaiGiangPage() {
                       <div className="mt-md">
                         <a href={b.slideUrl} className={PRIMARY_BUTTON}>
                           <Download aria-hidden className="h-4 w-4" />
-                          Tải slide{b.slideFilename ? ` (${b.slideFilename})` : ""}
+                          Tải slide
                         </a>
+                        {/* Tên tệp là METADATA, không phải nhãn nút. Nó từng nằm trong
+                            nhãn (`Tải slide (…)`), mà trần dữ liệu là 200 ký tự — đủ để
+                            một viên thuốc `rounded-full` quấn 2–4 dòng, và đủ để tên trợ
+                            năng của nút thành một chuỗi rác. `break-words` vì tên tệp có
+                            thể không có khoảng trắng nào. */}
+                        {b.slideFilename && (
+                          <p className="mt-xs break-words font-body text-caption text-secondary">
+                            {b.slideFilename}
+                          </p>
+                        )}
                       </div>
                     )}
 
@@ -156,7 +166,7 @@ export default async function BaiGiangPage() {
                             credit={b.mindmapCredit}
                             nguon={b.mindmapSource}
                             nhan="Sơ đồ"
-                            className="mt-xs font-body text-caption text-secondary"
+                            className="mt-xs text-secondary"
                           />
                         </figure>
                       </details>

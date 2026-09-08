@@ -1,6 +1,6 @@
 import { Header } from "@/components/Header";
 import { ArrowDown, ArrowRight } from "lucide-react";
-import { FOCUS_RING_ON_SURFACE, PRIMARY_BUTTON } from "@/components/ui/controls";
+import { CARD, FOCUS_RING_ON_SURFACE, PRIMARY_BUTTON } from "@/components/ui/controls";
 import { CompareSlider } from "@/components/home/CompareSlider";
 import { KHOI_SO_SANH } from "@/components/home/noi-dung";
 import { ShelfProgress } from "@/components/home/ShelfProgress";
@@ -49,7 +49,7 @@ export default async function Home() {
               Khám phá kệ sách <ArrowRight aria-hidden className="h-4 w-4" />
             </a>
           </div>
-          <nav aria-label="Chủ đề ngày ấy và bây giờ" className="rounded-md border border-secondary bg-surface p-lg">
+          <nav aria-label="Chủ đề ngày ấy và bây giờ" className={CARD}>
             <p className="font-body text-label-caps uppercase text-tertiary-deep">Ngày ấy — Bây giờ</p>
             <p className="mb-md mt-sm font-body text-body-sm text-secondary">
               Chọn một điều quen thuộc, nhìn lại từ đầu.

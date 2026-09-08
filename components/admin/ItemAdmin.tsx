@@ -4,7 +4,7 @@ import { ADMIN_CARD, CARD_DIVIDER, CardDisclosure } from "./card";
 import { ImageField } from "./ImageField";
 import { createItem, deleteItem, updateItem } from "@/lib/admin/actions";
 import type { AdminItemRow } from "@/lib/admin/items";
-import { DANGER_BUTTON, FIELD, LABEL, PRIMARY_BUTTON } from "@/components/ui/controls";
+import { CHIP, DANGER_BUTTON, FIELD, LABEL, PRIMARY_BUTTON } from "@/components/ui/controls";
 
 /**
  * Màn `/quan-tri/vat-pham`.
@@ -100,7 +100,7 @@ export function ItemAdmin({ items }: { items: AdminItemRow[] }) {
               {item.usedByBooks.length > 0 && (
                 // Viền `secondary`: `bg-neutral` trên thẻ `bg-surface` chỉ đạt 1.16:1, tức
                 // viên thuốc không tồn tại về mặt thị giác nếu không có ranh giới.
-                <span className="rounded-full border border-secondary bg-neutral px-sm py-[0.15rem] font-body text-caption text-primary-dark">
+                <span className={`${CHIP} border border-secondary bg-neutral text-primary-dark`}>
                   Phần thưởng của {item.usedByBooks.length} quyển
                 </span>
               )}

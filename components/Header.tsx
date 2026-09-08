@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronDown, Settings } from "lucide-react";
 import { AuthMenu } from "@/components/auth/AuthMenu";
+import { MenuKeSach } from "@/components/MenuKeSach";
 import { HeaderStats } from "@/components/HeaderStats";
 import { FOCUS_RING_ON_DARK, navItemClass } from "@/components/ui/controls";
 import { isAdmin } from "@/lib/admin/gate";
@@ -17,10 +18,11 @@ import type { ShelfSummary } from "@/lib/content/read";
  * Gom toàn bộ kệ vào một mục "Kệ sách" là thứ DUY NHẤT chặn được chuyện đó; thu nhỏ khoảng
  * cách hay `whitespace-nowrap` chỉ mua thêm vài chục pixel.
  *
- * Menu dùng `<details>`/`<summary>` gốc chứ không dựng dropdown bằng JS: đóng/mở, thao tác
- * bàn phím và ngữ nghĩa cho trình đọc màn hình đều có sẵn trong thẻ, 0 dòng JS — cùng kỹ
- * thuật đã dùng ở `app/tui-hanh-trang/page.tsx` và `CountryPicker`. Giới hạn đã biết và
- * chấp nhận: nó KHÔNG tự đóng khi bấm ra ngoài hay bấm Escape.
+ * Menu vẫn là `<details>`/`<summary>` gốc — đóng/mở, thao tác bàn phím và ngữ nghĩa cho
+ * trình đọc màn hình đều có sẵn trong thẻ, cùng kỹ thuật đã dùng ở
+ * `app/tui-hanh-trang/page.tsx` và `CountryPicker`. Ba hành vi mà thẻ gốc KHÔNG có (đóng
+ * khi bấm Escape, khi bấm ra ngoài, khi tiêu điểm Tab đi qua) nay do `MenuKeSach` thêm
+ * vào; lý do không dùng `popover="auto"` nằm trong chính file đó.
  *
  * Header là async vì nó hỏi `isAdmin()`. Cả 8 nơi dựng `Header` đều là Server Component
  * async nên không chỗ nào phải sửa. Đi đường này thay vì thêm một cờ `laAdmin` vào
@@ -76,9 +78,12 @@ export async function Header({
             // sau khi bấm một kệ, React tái dùng đúng phần tử đó và menu ở lại trạng thái
             // mở trên trang mới. Đổi key theo trang buộc React tháo ra dựng lại — menu tự
             // đóng sau mỗi lần điều hướng mà không cần một dòng JS nào.
-            <details key={activeHref} className="group relative">
+            <MenuKeSach key={activeHref} className="group relative">
               <summary
-                aria-current={dangODuoiKeSach ? "page" : undefined}
+                // `"true"` chứ không `"page"`: đây là nút mở menu, không phải một trang.
+                // Để `"page"` thì khi đang ở một trang kệ, giá trị đó xuất hiện HAI lần trong
+                // cùng một landmark nav — ở `<summary>` và ở mục kệ ngay bên dưới.
+                aria-current={dangODuoiKeSach ? "true" : undefined}
                 className={`cursor-pointer list-none [&::-webkit-details-marker]:hidden ${navItemClass(
                   dangODuoiKeSach,
                 )}`}
@@ -109,7 +114,7 @@ export async function Header({
                   );
                 })}
               </ul>
-            </details>
+            </MenuKeSach>
           )}
 
           {mucPhang.map((item) => {

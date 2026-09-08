@@ -16,19 +16,30 @@ export function GhiCongAnh({
   credit,
   nguon,
   nhan = "Ảnh",
-  className = "font-body text-caption text-secondary",
+  className = "text-secondary",
+  nenToi = false,
 }: {
   credit: string | null;
   nguon: string | null;
   /** Chữ đứng đầu dòng, ví dụ "Ảnh nền" hay "Ảnh bìa". */
   nhan?: string;
+  /**
+   * Class NỐI THÊM, không thay thế. Bản trước để cả kiểu chữ vào giá trị mặc định, nên
+   * một call site truyền class bố cục là im lặng đánh rơi luôn `font-body` và
+   * `text-caption` — nó chỉ đúng nhờ may, vì thẻ cha tình cờ đã đặt hai thứ đó.
+   */
   className?: string;
+  /**
+   * Dòng này đứng trên nền tối (phòng đọc, khoang tủ). Đổi token vòng focus: `ring`
+   * (#A83A10) trên `surface-reader` chỉ 2.81:1, dưới ngưỡng 3:1 của WCAG 1.4.11.
+   */
+  nenToi?: boolean;
 }) {
   if (!credit) return null;
   const bamDuoc = Boolean(nguon && nguon.startsWith("https://") && !/\s/.test(nguon));
 
   return (
-    <p className={className}>
+    <p className={`font-body text-caption ${className}`}>
       {nhan}: {credit}
       {nguon && (
         <>
@@ -38,7 +49,13 @@ export function GhiCongAnh({
               href={nguon}
               target="_blank"
               rel="noreferrer noopener"
-              className="underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              // Thiếu token màu offset thì Tailwind rơi về mặc định `#fff` — một màu
+              // không có trong bảng, và trên nền sáng thì khe trắng đó vô hình (1.27:1).
+              className={
+                nenToi
+                  ? "underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-on-dark focus-visible:ring-offset-2 focus-visible:ring-offset-surface-room"
+                  : "underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+              }
             >
               Nguồn
             </a>

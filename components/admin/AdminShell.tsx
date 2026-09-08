@@ -100,9 +100,9 @@ export async function AdminShell({
             {/* `headline-lg` chứ không `headline-md`: tiêu đề màn chỉ hơn tiêu đề thẻ
                 (`headline-sm` 20px) đúng 4px thì không đọc ra cấp nào chứa cấp nào. Cùng
                 bậc với h1 của mọi màn khác trong ứng dụng. */}
-            <h1 className="mt-xs font-heading text-headline-lg text-primary-dark">{title}</h1>
+            <h1 className="mt-sm font-heading text-headline-lg text-primary-dark">{title}</h1>
             {description && (
-              <p className="mt-xs max-w-[48rem] font-body text-body-md text-secondary">
+              <p className="mt-sm max-w-3xl font-body text-body-md text-secondary">
                 {description}
               </p>
             )}

@@ -227,21 +227,13 @@
 // còn bao xa; một cái thước thì có.
 // ---------------------------------------------------------------------------
 
+// Thước tiến độ: `composes` từ định nghĩa DÙNG CHUNG. Trước đây file này giữ một bản
+// chép của cùng khối luật — một trong BA bản trong repo. Xem `components/ui/thuoc.module.scss`.
 .meter {
+  composes: thuoc from '../ui/thuoc.module.scss';
   position: relative;
-  height: 6px;
-  border-radius: theme('borderRadius.full');
-  background: theme('colors.surface-room / 75%');
-  box-shadow: inset 0 0 0 1px theme('colors.secondary / 45%');
-  overflow: hidden;
 }
 
 .meterFill {
-  height: 100%;
-  border-radius: theme('borderRadius.full');
-  background: linear-gradient(
-    to right,
-    theme('colors.tertiary-deep'),
-    theme('colors.tertiary')
-  );
+  composes: thuocDay from '../ui/thuoc.module.scss';
 }

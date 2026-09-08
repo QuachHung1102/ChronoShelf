@@ -28,11 +28,11 @@ export default function Error({
   return (
     <main
       id="noi-dung"
-      className="mx-auto flex max-w-[42rem] flex-1 flex-col items-center justify-center gap-md px-page-margin py-xl text-center"
+      className="mx-auto flex max-w-2xl flex-1 flex-col items-center justify-center gap-md px-page-margin py-xl text-center"
     >
       <TriangleAlert aria-hidden className="h-12 w-12 text-destructive" />
       <h1 className="font-heading text-headline-md text-primary-dark">Trang gặp sự cố</h1>
-      <p className="max-w-[36rem] font-body text-body-md text-secondary">
+      <p className="max-w-measure font-body text-body-md text-secondary">
         Có gì đó hỏng ở phía máy chủ. Thử tải lại — nếu vẫn vậy thì báo cho người quản lý nội dung.
       </p>
       <div className="flex flex-wrap items-center justify-center gap-md">

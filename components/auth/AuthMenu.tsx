@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { LogOut, UserRound } from "lucide-react";
 import { navItemClass } from "@/components/ui/controls";
 import { getSignedInUser, onAuthChange, signOut, type SignedInUser } from "@/lib/api/auth";
@@ -20,6 +20,7 @@ export function AuthMenu() {
   const [user, setUser] = useState<SignedInUser | null>(null);
   const [ready, setReady] = useState(false);
   const pathname = usePathname();
+  const query = useSearchParams().toString();
 
   useEffect(() => {
     let alive = true;
@@ -59,7 +60,10 @@ export function AuthMenu() {
   if (!user) {
     return (
       <Link
-        href={`/dang-nhap?next=${encodeURIComponent(pathname)}`}
+        // Ghép cả query string: `usePathname()` theo định nghĩa không chứa `?…`, nên người bị
+        // đẩy ra đăng nhập từ một trang có tham số sẽ quay về một trang trống. `safeNext`
+        // ở `lib/safe-next.ts` đã lọc phía nhận nên không mở thêm bề mặt nào.
+        href={`/dang-nhap?next=${encodeURIComponent(pathname + (query ? `?${query}` : ""))}`}
         className={navItemClass(pathname === "/dang-nhap")}
       >
         Đăng nhập

@@ -88,13 +88,13 @@ export function QuestionAdmin({
           <span>
             {questions.length === 0 ? (
               <>
-                Quyển này <strong className="text-primary-dark">chưa có câu hỏi nào</strong>, nên
+                Quyển này <strong className="font-semibold text-primary-dark">chưa có câu hỏi nào</strong>, nên
                 đọc hết trang cuối là học sinh nhận vật phẩm ngay. Thêm 2–3 câu ở dưới thì phải
                 trả lời đúng hết mới nhận được.
               </>
             ) : (
               <>
-                Học sinh phải trả lời đúng <strong className="text-primary-dark">tất cả</strong>{" "}
+                Học sinh phải trả lời đúng <strong className="font-semibold text-primary-dark">tất cả</strong>{" "}
                 {questions.length} câu mới nhận được vật phẩm. Sai thì được đọc lại và làm lại
                 không giới hạn số lần. Người đã hoàn thành quyển này từ trước không phải làm lại.
               </>
@@ -124,7 +124,7 @@ export function QuestionAdmin({
                 là "câu này đáp án là gì", không phải "câu này có mấy lựa chọn". */}
             <p className="mt-sm font-body text-body-sm text-secondary">
               Đáp án: <span className="text-primary-dark">{q.choices[q.correctIndex]}</span>
-              {q.choices.length > 1 && ` · ${q.choices.length} lựa chọn`}
+              {` · ${q.choices.length} lựa chọn`}
             </p>
 
             <CardDisclosure label={`Sửa câu ${index + 1}`}>

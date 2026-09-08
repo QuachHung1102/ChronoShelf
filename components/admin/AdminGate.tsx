@@ -38,7 +38,7 @@ export async function AdminGate({ children }: { children: React.ReactNode }) {
       <Header activeHref="" shelves={shelves} />
       <main
         id="noi-dung"
-        className="mx-auto flex max-w-[42rem] flex-1 flex-col items-center justify-center gap-md px-page-margin py-xl text-center"
+        className="mx-auto flex max-w-2xl flex-1 flex-col items-center justify-center gap-md px-page-margin py-xl text-center"
       >
         <ShieldOff aria-hidden className="h-12 w-12 text-secondary" />
         <h1 className="font-heading text-headline-md text-primary-dark">
