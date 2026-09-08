@@ -4,12 +4,14 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Volume2, VolumeX, X } from "lucide-react";
 import { Room } from "@/components/Room";
+import { GhiCongAnh } from "@/components/ui/GhiCongAnh";
 import { findBook } from "@/lib/content/find";
 import { completeBook, setCurrentPage } from "@/lib/api/shelf";
 import type { ContentPage, ContentShelf } from "@/lib/content/types";
 import type { CompleteBookResult } from "@/lib/api/types";
 import { BookPage } from "./BookPage";
 import { ItemDropOverlay } from "./ItemDropOverlay";
+import { PRIMARY_BUTTON_ON_DARK } from "@/components/ui/controls";
 import { QuizPanel } from "./QuizPanel";
 import { dangTatTieng, ghiTatTieng, phatTiengLat } from "./tieng-lat-trang";
 import s from "./reader.module.scss";
@@ -22,9 +24,12 @@ const ROUND_BUTTON =
  * này (DESIGN.md § Overview). Viên thuốc cam `tertiary-deep` là ngôn ngữ nút bấm của cả
  * app; thứ gì chỉ mang thông tin thì không được mượn nó, nếu không học sinh phải thử mới
  * biết cái nào bấm được.
+ *
+ * Nay là một alias của hằng dùng chung. Bản chép tay trước đây đã RƠI MẤT
+ * `active:brightness-90` cùng cả cụm căn flex — tức nút quan trọng nhất của màn đọc không
+ * để lại dấu vết nào trong 200–800ms chờ máy chủ chấm bài.
  */
-const PILL_BUTTON =
-  "rounded-full bg-tertiary-deep px-lg py-sm font-body text-label-md text-on-primary transition duration-200 ease-out hover:brightness-110 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-on-dark focus-visible:ring-offset-2 focus-visible:ring-offset-surface-room";
+const PILL_BUTTON = PRIMARY_BUTTON_ON_DARK;
 
 /** Một mặt giấy trong sách. Bìa và trang trắng độn cũng là "mặt" — chúng chiếm chỗ thật. */
 type Face =
@@ -333,10 +338,21 @@ export function BookReaderModal({
       aria-label={`Đang đọc: ${book.title}`}
       className={s.dialog}
     >
-      <Room className="flex h-full flex-col">
+      {/* `overflow-hidden`: trong hộp thoại này chiều cao đã bị chốt bằng khung nhìn, mà
+          `.dust` cao 200% và `.lightBeam` thì cao hơn phòng — chúng tạo ra chiều cao cuộn
+          giả. Đo thật ở 1024×768: cuộn được 271px vào khoảng đen và thanh đầu (tên sách +
+          nút đóng) trôi mất khỏi màn hình. Ở các màn khác Room PHẢI cuộn được nên
+          `overflow-x: clip` trong SCSS là đúng; chỉ riêng đây mới chốt cứng. */}
+      <Room className="flex h-full flex-col overflow-hidden">
         <div className="flex items-center justify-between px-page-margin py-md">
-          <p className="font-heading text-headline-sm text-on-primary">{book.title}</p>
-          <div className="flex items-center gap-sm">
+          {/* `truncate` + `min-w-0`: ngân sách dọc ở 1024×768 chỉ dư 44px sau khi trừ
+              sách (580) và hàng điều khiển (44). Tên sách xuống dòng thứ ba là thanh đầu
+              cao 128px và quyển sách bị cắt. Tên do admin soạn lúc chạy, không có trần
+              nào — nên phải chặn ở đây chứ không trông vào dữ liệu. */}
+          <p className="min-w-0 truncate font-heading text-headline-sm text-on-primary">
+            {book.title}
+          </p>
+          <div className="flex shrink-0 items-center gap-sm">
             {/* `aria-pressed` chứ không phải đổi nhãn theo trạng thái: nút này là một công
                 tắc, và công tắc thì phải nói được CẢ hai chuyện — nó làm gì, và nó đang
                 bật hay tắt. Nhãn giữ nguyên nghĩa "tiếng lật trang" ở cả hai trạng thái. */}
@@ -549,7 +565,7 @@ export function BookReaderModal({
                 {needsLogin ? (
                   <Link
                     href={`/dang-nhap?next=${encodeURIComponent(`/${shelf.slug}`)}`}
-                    className="shrink-0 rounded-sm underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-on-destructive"
+                    className="shrink-0 rounded-sm underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-on-dark focus-visible:ring-offset-2 focus-visible:ring-offset-destructive"
                   >
                     Đăng nhập
                   </Link>
@@ -566,7 +582,10 @@ export function BookReaderModal({
                       else void finish();
                     }}
                     disabled={busy}
-                    className="rounded-sm underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-on-destructive"
+                    // `ring-on-dark` + offset `destructive`: `on-destructive` là token
+                    // MÀU CHỮ, không phải một trong hai token vòng focus mà DESIGN.md khai
+                    // (`ring`, `ring-on-dark`). Và thiếu offset thì vành vẽ sát mép chữ.
+                    className="rounded-sm underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-on-dark focus-visible:ring-offset-2 focus-visible:ring-offset-destructive"
                   >
                     Thử lại
                   </button>
@@ -631,10 +650,12 @@ function CoverFace({
           của giấy phép đòi ghi công ở nơi nhìn được, không đòi ghi ngay cạnh mọi lần ảnh
           xuất hiện. */}
       {anhBia && credit && (
-        <p className="absolute inset-x-xl bottom-lg font-body text-caption text-secondary-light">
-          Ảnh bìa: {credit}
-          {nguon && <> — Nguồn: {nguon}</>}
-        </p>
+        <GhiCongAnh
+          nhan="Ảnh bìa"
+          credit={credit}
+          nguon={nguon}
+          className="absolute inset-x-xl bottom-lg font-body text-caption text-secondary-light"
+        />
       )}
 
       {/* Bấm thẳng vào bìa để mở sách — phản xạ đầu tiên khi thấy một quyển sách đóng nằm

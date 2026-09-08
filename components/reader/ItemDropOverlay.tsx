@@ -1,6 +1,9 @@
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { GraduationCap, LockOpen, Sparkles } from "lucide-react";
+import { AnhVatPham } from "@/components/ui/AnhVatPham";
 import { GhiCongAnh } from "@/components/ui/GhiCongAnh";
+import { PRIMARY_BUTTON_ON_DARK, QUIET_BUTTON_ON_DARK } from "@/components/ui/controls";
 import { findBook, findItem } from "@/lib/content/find";
 import type { ContentBook, ContentShelf } from "@/lib/content/types";
 import type { CompleteBookResult } from "@/lib/api/types";
@@ -28,6 +31,22 @@ export function ItemDropOverlay({
   const replay = result.alreadyCompleted;
   const anim = (className: string) => (replay ? "" : className);
 
+  /**
+   * Đưa focus vào dòng "Bạn nhận được: …" ngay khi màn này dựng lên.
+   *
+   * Không có nó thì quyển sách bị tháo khỏi cây trong khi nút "Đọc xong" đang giữ focus,
+   * và focus rơi về `<body>`: người dùng bàn phím bị ném về đầu hộp thoại, người dùng
+   * trình đọc màn hình không nghe thấy gì cả — đúng vào khoảnh khắc cao trào của cả cơ
+   * chế sưu tầm. Một lần `focus()` lo cả hai.
+   *
+   * `preventScroll` vì màn này đã căn giữa sẵn; để trình duyệt tự cuộn thì nó giật một
+   * nhịp ngay giữa hoạt cảnh vật phẩm rơi.
+   */
+  const tieuDeRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    tieuDeRef.current?.focus({ preventScroll: true });
+  }, []);
+
   return (
     <div className="flex flex-col items-center gap-lg px-page-margin text-center">
       {item && (
@@ -41,8 +60,10 @@ export function ItemDropOverlay({
             className={`${s.itemGlow} ${anim(s.dropItem)} flex h-56 w-56 items-center justify-center rounded-full`}
           >
             {item.image ? (
-              // eslint-disable-next-line @next/next/no-img-element -- ảnh vật phẩm tĩnh trong public/
-              <img src={item.image} alt="" className="h-36 w-36 object-contain" />
+              // Icon vật phẩm là hình một màu không mang mã màu nào; `AnhVatPham` vẽ nó
+              // bằng CSS mask nên màu do `text-*` ở đây quyết định. Dùng `<img>` thì
+              // `currentColor` trong file rơi về mặc định và mọi vật phẩm ra màu đen.
+              <AnhVatPham src={item.image} className="h-36 w-36 text-tertiary-light" />
             ) : (
               <Sparkles aria-hidden className="h-24 w-24 text-tertiary-light" />
             )}
@@ -51,9 +72,18 @@ export function ItemDropOverlay({
           <div className={anim(s.dropText)}>
             {/* `headline-xl` 48px: DESIGN.md § Typography dựng bậc này cho đúng hai chỗ, và
                 đây là một trong hai — "chữ PHẢI cân được với một vật thể chiếm cả màn hình". */}
-            <p className="font-heading text-headline-xl text-on-primary">
+            {/* `<h2 tabIndex={-1}>` chứ không phải `<p>`, và nó nhận focus khi màn này
+                dựng lên. Trước đây khoảnh khắc nhận vật phẩm hoàn toàn CÂM với trình đọc
+                màn hình: không heading, không vùng live, và focus vừa rơi về `<body>` khi
+                quyển sách bị tháo khỏi cây. DESIGN.md § Motion nói thẳng "người tắt chuyển
+                động không được mất thông tin nào" — ở đây thông tin mất với cả hai nhóm. */}
+            <h2
+              ref={tieuDeRef}
+              tabIndex={-1}
+              className="font-heading text-headline-xl text-on-primary focus-visible:outline-none"
+            >
               {replay ? `Vật phẩm đã có: ${item.name}` : `Bạn nhận được: ${item.name}`}
-            </p>
+            </h2>
             <p className="mt-sm max-w-xl font-body text-body-md text-secondary-light">
               {item.description}
             </p>
@@ -104,7 +134,7 @@ export function ItemDropOverlay({
         {book.baiGiang.length > 0 && (
           <Link
             href={`/bai-giang#bai-${book.baiGiang[0].slug}`}
-            className="flex items-center gap-sm rounded-sm font-body text-body-md text-tertiary-light underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-on-dark focus-visible:ring-offset-2 focus-visible:ring-offset-surface-reader"
+            className={QUIET_BUTTON_ON_DARK}
           >
             <GraduationCap aria-hidden className="h-5 w-5" />
             {book.baiGiang.length === 1
@@ -113,11 +143,7 @@ export function ItemDropOverlay({
           </Link>
         )}
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded-full bg-tertiary-deep px-lg py-sm font-body text-label-md text-on-primary transition duration-200 ease-out hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-on-dark focus-visible:ring-offset-2 focus-visible:ring-offset-surface-reader"
-        >
+        <button type="button" onClick={onClose} className={PRIMARY_BUTTON_ON_DARK}>
           Quay lại kệ sách
         </button>
       </div>

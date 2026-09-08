@@ -139,7 +139,10 @@
   gap: 5px;
   height: min(132px, 14vh);
   margin-inline: -24px;
-  padding: 0 38px;
+  // 24px, KHỚP với `.row` ngay trên. Comment ở đầu khối này tuyên bố hai giá trị
+  // khớp nhau; chúng không khớp — đo thật: sách đầu tiên ở x=24, cuốn trang trí đầu tiên
+  // ở x=38, lệch đúng 14px. Tầng sách trang trí vì thế không thẳng hàng với tầng sách thật.
+  padding: 0 24px;
 }
 
 // Gáy sách nhìn từ ngoài: cạnh trái tối (mặt không bắt sáng), mặt gáy sáng dần lên trên.

@@ -129,7 +129,7 @@ export function ImageField({
             }
           >
             {busy ? (
-              <Loader2 aria-hidden className="h-4 w-4 animate-spin" />
+              <Loader2 aria-hidden className="h-4 w-4 animate-spin motion-reduce:animate-none" />
             ) : (
               <ImagePlus aria-hidden className="h-4 w-4" />
             )}

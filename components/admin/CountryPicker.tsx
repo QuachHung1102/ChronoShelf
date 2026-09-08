@@ -133,7 +133,7 @@ export function CountryPicker({
                 className={
                   c.id === chon
                     ? "cursor-pointer fill-tertiary-deep stroke-surface"
-                    : "cursor-pointer fill-secondary-light stroke-surface hover:fill-tertiary"
+                    : "cursor-pointer fill-secondary stroke-neutral hover:fill-tertiary"
                 }
                 strokeWidth={0.3}
               >

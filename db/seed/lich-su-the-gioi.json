@@ -10,33 +10,33 @@
     {
       "slug": "vien-da-giza",
       "name": "Viên đá Giza",
-      "image": null,
-      "imageSource": null,
-      "imageCredit": null,
-      "description": "Một khối đá vôi từ cao nguyên Giza — mảnh nhỏ của công trình giữ kỷ lục cao nhất thế giới suốt hơn bốn nghìn năm."
+      "image": "/items/vien-da-giza.svg",
+      "imageSource": "https://game-icons.net/",
+      "imageCredit": "Game-icons.net · CC BY 3.0",
+      "description": "Một khối đá vôi từ cao nguyên Giza — mảnh nhỏ của công trình giữ kỷ lục cao nhất thế giới suốt gần bốn nghìn năm."
     },
     {
       "slug": "huy-hieu-quan-doan",
       "name": "Huy hiệu quân đoàn La Mã",
-      "image": null,
-      "imageSource": null,
-      "imageCredit": null,
+      "image": "/items/huy-hieu-quan-doan.svg",
+      "imageSource": "https://game-icons.net/",
+      "imageCredit": "Game-icons.net · CC BY 3.0",
       "description": "Hình chim đại bàng mà mỗi quân đoàn La Mã mang theo ra trận. Mất huy hiệu bị coi là nỗi nhục lớn nhất của cả quân đoàn."
     },
     {
       "slug": "la-ban-hang-hai",
       "name": "La bàn hàng hải",
-      "image": null,
-      "imageSource": null,
-      "imageCredit": null,
+      "image": "/items/la-ban-hang-hai.svg",
+      "imageSource": "https://game-icons.net/",
+      "imageCredit": "Game-icons.net · CC BY 3.0",
       "description": "Chiếc kim luôn chỉ hướng bắc đã cho phép thủy thủ rời khỏi tầm nhìn bờ biển mà vẫn biết mình đang ở đâu."
     },
     {
       "slug": "mo-hinh-dau-may",
       "name": "Mô hình đầu máy hơi nước",
-      "image": null,
-      "imageSource": null,
-      "imageCredit": null,
+      "image": "/items/mo-hinh-dau-may.svg",
+      "imageSource": "https://game-icons.net/",
+      "imageCredit": "Game-icons.net · CC BY 3.0",
       "description": "Cỗ máy biến than thành chuyển động, và biến khoảng cách hàng trăm cây số thành vài giờ đồng hồ."
     }
   ],

@@ -108,7 +108,7 @@ export function BookCover({
         className={`${COVER} relative z-10 transition-transform duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-on-dark focus-visible:ring-offset-2 focus-visible:ring-offset-primary-dark motion-reduce:transition-none ${
           isLocked
             ? `${s.locked} cursor-not-allowed`
-            : "cursor-pointer hover:-translate-y-2 motion-reduce:hover:translate-y-0"
+            : "cursor-pointer hover:-translate-y-2 active:-translate-y-1 active:brightness-95 motion-reduce:hover:translate-y-0"
         } ${isNext ? s.glow : ""}`}
       >
         {/* Ảnh bìa do admin tải lên. Không có thì bìa vẫn vẽ bằng CSS như cũ — đó là

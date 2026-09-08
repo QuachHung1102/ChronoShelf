@@ -66,10 +66,16 @@ export function BookShelf({
 
           <div className="w-[280px] shrink-0">
             <p className="font-body text-label-caps uppercase text-tertiary-light">
-              {nextBook ? "Đọc tiếp" : daDoc === tong ? "Đã xong cả kệ" : "Kệ này"}
+              {/* `tong === 0` phải xét TRƯỚC: kệ rỗng có `daDoc === tong` (0 === 0) nên
+                  bản trước chúc mừng người dùng đã đọc hết một cái kệ không có quyển nào. */}
+              {tong === 0 ? "Kệ này" : nextBook ? "Đọc tiếp" : "Đã xong cả kệ"}
             </p>
             <p className="mt-xs font-heading text-headline-sm text-on-primary">
-              {nextBook ? nextBook.book.title : daDoc === tong ? "Bạn đã đọc hết" : "Chưa có sách"}
+              {tong === 0
+                ? "Chưa có sách"
+                : nextBook
+                  ? nextBook.book.title
+                  : "Bạn đã đọc hết"}
             </p>
             <div className="mt-sm flex items-center gap-sm">
               <div
@@ -98,7 +104,7 @@ export function BookShelf({
           <div className={s.bay}>
             {/* Tấm ván nay là NỀN LẶP của chính hàng sách, không còn là một phần tử riêng
                 nằm sau nó — nhờ vậy mỗi tầng lưới tự có ván của mình khi sách xuống dòng. */}
-            <ul className={s.row}>
+            <ul role="list" className={s.row}>
               {shelf.books.map((view, index) => (
                 <li key={view.book.slug}>
                   <BookCover

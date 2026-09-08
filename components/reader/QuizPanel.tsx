@@ -71,7 +71,11 @@ export function QuizPanel({
           e.preventDefault();
           if (chuaChon === 0 && !busy) onSubmit();
         }}
-        className="flex h-fit w-full max-w-2xl flex-col gap-lg rounded-md bg-surface p-xl"
+        // `max-w-2xl` (672px) cho ra ~87 ký tự/dòng ở `body-md` 14px. DESIGN.md § Layout
+        // đã bác đúng con số đó một lần rồi ("hợp với chữ 16px, nhưng body-md là 14px nên
+        // dòng chạy 95–102 ký tự") và đặt `measure` = 456px ≈ 65 ký tự. Đoạn dẫn ngay
+        // dưới đây vốn đã dùng `max-w-measure`, nên trong cùng một form đang có hai chuẩn.
+        className="flex h-fit w-full max-w-measure flex-col gap-lg rounded-md bg-surface p-xl"
       >
         <div>
           <h2 className="font-heading text-headline-md text-primary-dark">
@@ -99,13 +103,21 @@ export function QuizPanel({
               className={`flex flex-col gap-sm rounded-md border p-md ${
                 sai ? "border-destructive" : "border-surface-locked"
               }`}
-              aria-describedby={sai ? errId : undefined}
+              // Không đặt `aria-describedby` ở đây: mô tả gắn trên `<fieldset>` KHÔNG lan
+              // xuống các `<input>` bên trong, nên câu "Chưa đúng…" không bao giờ tới được
+              // ô mà nó nói về (WCAG 3.3.1). Nó nằm trên chính từng `<input>` phía dưới.
             >
-              <legend className="px-xs font-body text-label-md text-primary-dark">
-                Câu {i + 1}/{cauHoi.length}
+              {/* Câu hỏi nằm TRONG `<legend>`, không phải một `<p>` bên cạnh.
+                  `<legend>` là TÊN của nhóm radio; để câu hỏi ra ngoài thì người dùng
+                  trình đọc màn hình đi qua từng lựa chọn chỉ nghe "Vì hàng hóa quá nặng…"
+                  mà không bao giờ nghe được câu hỏi. Đã soi cây a11y thật: câu hỏi hiện ra
+                  như một đoạn văn bản rời, không gắn với nhóm nào. */}
+              <legend className="px-xs font-body text-body-md text-primary-dark">
+                <span className="block font-body text-label-caps uppercase text-secondary">
+                  Câu {i + 1}/{cauHoi.length}
+                </span>
+                {q.prompt}
               </legend>
-
-              <p className="font-body text-body-md text-primary-dark">{q.prompt}</p>
 
               <div className="flex flex-col gap-xs">
                 {q.choices.map((c, k) => (
@@ -122,6 +134,7 @@ export function QuizPanel({
                       checked={answers[i] === k}
                       onChange={() => onChon(i, k)}
                       disabled={busy}
+                      aria-describedby={sai ? errId : undefined}
                       className="mt-[0.2em] h-4 w-4 shrink-0 accent-tertiary-deep focus-visible:outline-none"
                     />
                     <span>{c}</span>

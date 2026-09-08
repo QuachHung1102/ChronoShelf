@@ -15,10 +15,10 @@ import type { AdminShelfRow } from "@/lib/admin/shelves";
 import {
   DANGER_BUTTON,
   FIELD,
-  FOCUS_RING,
   LABEL,
   PRIMARY_BUTTON,
   QUIET_BUTTON,
+  QUIET_BUTTON_ON_SURFACE,
 } from "@/components/ui/controls";
 
 /**
@@ -139,7 +139,7 @@ export function ShelfAdmin({ shelves }: { shelves: AdminShelfRow[] }) {
             <div className={`mt-sm flex flex-wrap items-center gap-md border-t ${CARD_DIVIDER} pt-sm`}>
               <Link
                 href={`/quan-tri/${shelf.slug}`}
-                className={`inline-flex items-center gap-xs rounded-sm font-body text-body-sm text-tertiary-deep underline underline-offset-2 ${FOCUS_RING}`}
+                className={QUIET_BUTTON_ON_SURFACE}
               >
                 <BookOpen aria-hidden className="h-4 w-4" />
                 Quản lý sách ({shelf.bookCount})

@@ -9,7 +9,16 @@
   // đi việc hàng sách tràn 218px ra ngoài khoang tủ ở 1024px — không có thanh cuộn nào
   // xuất hiện, phần tràn bị cắt trong im lặng, nên lỗi sống sót qua nhiều phiên. Nay hàng
   // sách tự xuống tầng nên tủ có thể cao hơn khung nhìn; lúc đó trang phải cuộn được.
-  overflow-x: hidden;
+  //
+  // `clip` CHỨ KHÔNG PHẢI `hidden`, và đây là khác biệt có thật chứ không phải sở thích:
+  // theo CSS Overflow L3, khi một trục là `hidden` còn trục kia là `visible` thì
+  // `visible` **bị ép thành `auto`** — tức `.room` trở thành một scroll container dọc,
+  // đúng ngược lại ý định của chú thích ngay trên. Đo thật trong trình đọc sách ở
+  // 1024×768: `room.scrollHeight` 1039 so với `clientHeight` 768, cuộn được 271px vào
+  // khoảng đen và thanh đầu (tên sách + nút đóng) trôi mất; `.dust` cao 200% và
+  // `.lightBeam` là thứ tạo ra chiều cao giả đó. `clip` không ép trục kia, nên nó cắt
+  // đúng phần phải cắt mà trang vẫn cuộn bình thường.
+  overflow-x: clip;
   // Cắt mọi lớp nền khỏi stacking context của trang: vignette không được leo lên header.
   isolation: isolate;
 }

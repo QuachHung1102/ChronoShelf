@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Award, BookOpen, Check, ChevronRight, Lock, Sparkles } from "lucide-react";
+import { AnhVatPham } from "@/components/ui/AnhVatPham";
 import { Header } from "@/components/Header";
 import { GhiCongAnh } from "@/components/ui/GhiCongAnh";
 import {
@@ -32,14 +33,17 @@ export const metadata: Metadata = {
  * tủ trưng bày. Dựng đứng lên thì cột tên rộng bằng cả ô, và vật phẩm (bệ 96px thay vì
  * 64px) thành nhân vật chính của ô thay vì một icon phụ bên trái.
  *
- * BA TÍN HIỆU phân biệt "đã có" với "chưa có", không phải một: dấu triện tròn ở góc bệ
- * (`stamp-completed` — thứ DESIGN.md gọi là dấu hiệu duy nhất của trạng thái hoàn thành,
- * mượn nguyên khuôn từ `BookCover`), hình icon dự phòng (tia sáng ↔ ổ khóa), và dòng chữ
- * trạng thái. Cần cả ba vì 8/13 vật phẩm chưa có ảnh: với chúng, icon dự phòng từng là dấu
- * hiệu đồ họa DUY NHẤT — và nó đang bị ĐẢO NGƯỢC, `tertiary-deep` trên `surface-locked`
- * chỉ đạt 1.57:1 trong khi ô chưa có đạt 4.46:1, tức phần thưởng trông yếu hơn thứ còn
- * thiếu. Cặp mới: `tertiary-light` 6.38:1 cho ô đã có, `secondary-light` 6.02:1 cho ô chưa
- * có — cả hai vượt ngưỡng 3:1 của WCAG 1.4.11 cho đồ họa mang thông tin.
+ * BA TÍN HIỆU phân biệt "đã có" với "chưa có", và cả ba phải có mặt ở CẢ BỐN tổ hợp
+ * (có ảnh / không ảnh) × (đã có / chưa có): huy hiệu góc bệ, hình vật phẩm, và dòng chữ
+ * trạng thái.
+ *
+ * Huy hiệu góc trước đây chỉ vẽ khi ĐÃ CÓ, nên ô "chưa có nhưng có ảnh" không hề có ổ
+ * khóa — tín hiệu đồ họa duy nhất của nó là một bóng mờ 1.25:1, trong khi hàng chú giải ở
+ * đáy tủ lại dạy người dùng rằng ổ khóa nghĩa là chưa có. Nay huy hiệu có hai trạng thái,
+ * nên lời hứa ở chú giải đúng với mọi ô.
+ *
+ * Màu: `tertiary-light` 6.38:1 cho ô đã có, `secondary-light` 6.02:1 cho ô chưa có —
+ * cả hai vượt ngưỡng 3:1 của WCAG 1.4.11 cho đồ họa mang thông tin.
  *
  * Nền giữ `bg-surface` ở CẢ HAI trạng thái. Đổi ô chưa có sang `bg-surface-locked` cho
  * giống bìa sách đang khóa nghe hợp lý nhưng sai: phần mô tả bên trong dùng `text-secondary`,
@@ -51,15 +55,19 @@ function OVatPham({ v }: { v: VatPhamTuiHanhTrang }) {
       {/* `h-full` là bước không được bỏ: `<li>` là ô lưới nên nó tự giãn theo hàng, còn
           `<details>` bên trong vẫn cao đúng bằng nội dung của nó — thiếu dòng này thì hàng
           vẫn rách y như cũ dù đã bỏ `items-start` khỏi `<ul>`. */}
-      <details className={`${s.o} h-full rounded-md bg-surface p-md`}>
+      {/* `name` biến `<details>` thành accordion LOẠI TRỪ — mở một thẻ tự đóng thẻ đang
+          mở. Có sẵn trong HTML, 0 dòng JS, và trình duyệt cũ bỏ qua thuộc tính chứ không
+          hỏng. Cần nó vì `<li>` là ô lưới: mở một mô tả làm CẢ HÀNG cao thêm ~160px, mà
+          2–3 thẻ còn lại trong hàng chỉ dôi ra khoảng trắng. */}
+      <details name="tui-hanh-trang" className={`${s.o} h-full rounded-md bg-surface p-md`}>
         <summary className={`flex flex-col items-center gap-sm rounded-sm text-center ${FOCUS_RING_ON_SURFACE}`}>
           <span className="relative grid h-24 w-24 shrink-0 place-items-center rounded-sm bg-surface-locked">
             {v.image ? (
-              // eslint-disable-next-line @next/next/no-img-element -- ảnh tĩnh trong public/
-              <img
+              // Màu do `text-*` ở đây quyết định, không do file ảnh — xem `AnhVatPham`.
+              <AnhVatPham
                 src={v.image}
-                alt=""
-                className={`h-16 w-16 object-contain ${v.daCo ? "" : s.bongMo}`}
+                mo={!v.daCo}
+                className={`h-16 w-16 ${v.daCo ? "text-tertiary-light" : "text-secondary-light"}`}
               />
             ) : v.daCo ? (
               <Sparkles aria-hidden className="h-10 w-10 text-tertiary-light" />
@@ -69,17 +77,27 @@ function OVatPham({ v }: { v: VatPhamTuiHanhTrang }) {
               <Lock aria-hidden className="h-10 w-10 text-secondary-light" />
             )}
 
-            {v.daCo && (
-              <span
-                aria-hidden
-                className="absolute -right-sm -top-sm grid h-lg w-lg place-items-center rounded-full bg-tertiary-deep"
-              >
+            <span
+              aria-hidden
+              className={`absolute -right-sm -top-sm grid h-lg w-lg place-items-center rounded-full ${
+                v.daCo ? "bg-tertiary-deep" : "bg-surface-locked"
+              }`}
+            >
+              {v.daCo ? (
                 <Check className="h-3.5 w-3.5 text-on-primary" />
-              </span>
-            )}
+              ) : (
+                <Lock className="h-3.5 w-3.5 text-secondary-light" />
+              )}
+            </span>
           </span>
 
-          <span className="font-heading text-headline-sm text-primary-dark">{v.name}</span>
+          {/* Chốt hai dòng: 6/9 tên vật phẩm xuống dòng thứ hai còn 3 tên thì không, nên
+              nếu để chiều cao tự do thì dòng trạng thái của các thẻ cùng hàng lệch nhau
+              đúng một dòng chữ. `h-full` chỉ làm bằng MÉP DƯỚI của thẻ, không làm bằng
+              các hàng bên trong nó. */}
+          <span className="flex min-h-[2lh] items-center font-heading text-headline-sm text-primary-dark">
+            {v.name}
+          </span>
 
           <span
             className={`inline-flex items-center gap-xs font-body text-body-sm ${v.daCo ? "text-tertiary-deep" : "text-secondary"}`}
@@ -157,7 +175,9 @@ function TranhGhep({ bo }: { bo: BoSuuTapKe }) {
             />
           ) : (
             <div key={v.slug} className={s.manhChua}>
-              <Lock className="h-4 w-4 text-secondary-light" />
+              {/* `h-8` chứ không `h-4`: mảnh tranh cao 132px, một icon 16px ở giữa đọc ra
+                  là một hạt bụi. Vẫn dưới 25% chiều cao mảnh nên không che vân giấy. */}
+              <Lock className="h-8 w-8 text-secondary-light" />
             </div>
           ),
         )}
@@ -187,7 +207,10 @@ function PhanThuongTronBo({ bo }: { bo: BoSuuTapKe }) {
     const conThieu = bo.vatPham.filter((v) => !v.daCo).length;
     return (
       <p className="mt-md flex items-center gap-sm rounded-md bg-surface px-md py-sm font-body text-body-sm text-secondary">
-        <Lock aria-hidden className="h-4 w-4 shrink-0 text-secondary-light" />
+        {/* `text-secondary`, KHÔNG phải `secondary-light`: khối này nền `surface` (sáng),
+            mà `secondary-light` là cặp dành cho nền TỐI — trên nền sáng nó chỉ 1.53:1, và
+            chính `DESIGN.md` đã loại nó vì đúng con số đó. */}
+        <Lock aria-hidden className="h-4 w-4 shrink-0 text-secondary" />
         Còn {conThieu} vật phẩm nữa là mở khóa danh hiệu của kệ này.
       </p>
     );
@@ -199,13 +222,19 @@ function PhanThuongTronBo({ bo }: { bo: BoSuuTapKe }) {
         <Award aria-hidden className="h-4 w-4 shrink-0" />
         Danh hiệu đã mở khóa
       </p>
-      <p className="mt-xs font-heading text-headline-sm text-primary-dark">
+      {/* `<h3>`: danh hiệu là đích đến của cả cơ chế sưu tầm, nó phải là một mốc điều
+          hướng chứ không phải một đoạn văn. Trang đi h1 → h2 (mỗi kệ) → h3 (phần thưởng). */}
+      <h3 className="mt-xs font-heading text-headline-sm text-primary-dark">
         {bo.phanThuong.danhHieu}
-      </p>
+      </h3>
       {bo.phanThuong.noiDung && (
         // `whitespace-pre-line`: admin gõ nội dung thưởng trong một `<textarea>`, nên chỗ
         // họ xuống dòng phải xuống dòng thật chứ không bị gộp thành một khối chữ liền.
-        <p className="mt-sm max-w-measure whitespace-pre-line font-body text-body-md text-secondary">
+        //
+        // `text-primary-dark` (13.22:1), không phải `text-secondary` (5.22:1): DESIGN.md
+        // xếp `secondary` vào vai "chữ phụ, caption, metadata", mà đây là một bài viết để
+        // ĐỌC — phần thưởng của cả bộ sưu tập không được mang tông của chú thích ảnh.
+        <p className="mt-sm max-w-measure whitespace-pre-line font-body text-body-md text-primary-dark">
           {bo.phanThuong.noiDung}
         </p>
       )}
@@ -273,7 +302,7 @@ export default async function TuiHanhTrang() {
 
           {vatPham.length === 0 ? (
             <p className="mt-lg font-body text-body-md text-secondary">
-              Chưa có vật phẩm nào được tạo.
+              Chưa có vật phẩm nào.
             </p>
           ) : (
             <div className={`${s.tu} mt-lg rounded-md bg-surface-shelf p-lg`}>
@@ -299,7 +328,7 @@ export default async function TuiHanhTrang() {
 
                   {/* Không `items-start`: ô lưới giãn theo hàng, cộng `h-full` trên
                       `<details>` thì mọi ô cùng hàng có chung mép dưới. */}
-                  <ul className="mt-md grid gap-md sm:grid-cols-3 lg:grid-cols-4">
+                  <ul className="mt-md grid grid-cols-3 gap-md">
                     {bo.vatPham.map((v) => (
                       <OVatPham key={v.slug} v={v} />
                     ))}
@@ -319,13 +348,13 @@ export default async function TuiHanhTrang() {
                 >
                   <div className="flex flex-wrap items-baseline justify-between gap-md">
                     <h2 id="nhom-khac" className="font-heading text-headline-sm text-on-primary">
-                      Chưa gắn kệ nào
+                      Chưa thuộc bộ nào
                     </h2>
                     <p className="font-body text-body-sm text-secondary-light">
                       {chuaGanKe.filter((v) => v.daCo).length}/{chuaGanKe.length} vật phẩm
                     </p>
                   </div>
-                  <ul className="mt-md grid gap-md sm:grid-cols-3 lg:grid-cols-4">
+                  <ul className="mt-md grid grid-cols-3 gap-md">
                     {chuaGanKe.map((v) => (
                       <OVatPham key={v.slug} v={v} />
                     ))}
@@ -336,7 +365,7 @@ export default async function TuiHanhTrang() {
               {/* Hàng chú giải ở đáy tủ, sao khuôn từ màn kệ sách: hai trạng thái được nói
                   bằng CHỮ một lần, để người xem không phải tự suy ra ý nghĩa của dấu triện
                   và ổ khóa từ mười ba cái ô. */}
-              <p className="mt-xl flex flex-wrap items-center gap-lg border-t border-primary pt-md font-body text-caption text-secondary-light">
+              <p className="mt-xl flex flex-wrap items-center gap-lg border-t border-secondary pt-md font-body text-caption text-secondary-light">
                 <span className="inline-flex items-center gap-xs">
                   <span
                     aria-hidden

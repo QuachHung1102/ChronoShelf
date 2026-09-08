@@ -3,7 +3,14 @@ import type { Metadata } from "next";
 import { Award, Flame, HelpCircle, MessageSquare, PenLine, Send, Trash2 } from "lucide-react";
 import { Header } from "@/components/Header";
 import { ActionForm, SubmitButton } from "@/components/admin/ActionForm";
-import { DANGER_BUTTON, FIELD, LABEL, PRIMARY_BUTTON, QUIET_BUTTON } from "@/components/ui/controls";
+import {
+  DANGER_BUTTON,
+  DANGER_BUTTON_ON_SURFACE,
+  FIELD,
+  LABEL,
+  PRIMARY_BUTTON,
+  QUIET_BUTTON,
+} from "@/components/ui/controls";
 import { dangBai, dangBinhLuan, xoaBai, xoaBinhLuan } from "@/lib/community/actions";
 import { readBangTin } from "@/lib/community/read";
 import { BAI_TOI_DA, BINH_LUAN_TOI_DA } from "@/lib/community/validation";
@@ -51,7 +58,7 @@ export default async function CongDongPage() {
             className={
               bangTinRong
                 ? "mt-xl grid items-start gap-lg"
-                : "mt-xl grid items-start gap-lg lg:grid-cols-[minmax(0,1fr)_18rem]"
+                : "mt-xl grid items-start gap-lg grid-cols-[minmax(0,1fr)_18rem]"
             }
           >
             <section className="min-w-0" aria-labelledby="bang-tin">
@@ -108,12 +115,17 @@ export default async function CongDongPage() {
                                 {/* Vẫn là <h2> (aria-labelledby của <article> trỏ vào nó),
                                     chỉ thôi mang cỡ chữ tiêu đề: biệt danh là một chuỗi băm
                                     4 ký tự, nó không được to hơn chính bài viết. */}
-                                <h2
+                                {/* `<h3>`, không phải `<h2>`: bài nằm TRONG mục
+                                    "Bảng tin mới nhất" vốn đã là `<h2>`, nên để cùng cấp
+                                    là dàn bài của trình đọc màn hình không lồng bài vào
+                                    bảng tin. `aria-labelledby` nhận mọi phần tử, không
+                                    đòi phải là `<h2>`. */}
+                                <h3
                                   id={`bai-${bai.id}`}
                                   className="font-body text-label-md text-secondary"
                                 >
                                   {laCauHoi ? "Câu hỏi" : "Chia sẻ"} của {bai.tacGia}
-                                </h2>
+                                </h3>
                                 <time
                                   dateTime={bai.createdAt.toISOString()}
                                   className="font-body text-caption text-secondary"
@@ -151,16 +163,18 @@ export default async function CongDongPage() {
                             className="mt-lg border-t border-surface-locked pt-md"
                             aria-label={`Bình luận cho bài của ${bai.tacGia}`}
                           >
-                            <h3 className="font-body text-label-md text-primary-dark">
-                              {bai.binhLuan.length} bình luận
-                            </h3>
+                            <h4 className="font-body text-label-md text-primary-dark">
+                              {bai.binhLuan.length === 0
+                                ? "Chưa có bình luận"
+                                : `${bai.binhLuan.length} bình luận gần đây`}
+                            </h4>
 
                             {bai.binhLuan.length > 0 && (
                               <ol className="mt-sm space-y-sm">
                                 {bai.binhLuan.map((binhLuan) => (
                                   <li
                                     key={binhLuan.id}
-                                    className="border-l-2 border-secondary-light pl-md"
+                                    className="border-l-2 border-secondary pl-md"
                                   >
                                     <div className="flex flex-wrap items-baseline justify-between gap-x-md gap-y-xs">
                                       <span className="font-body text-label-md text-primary-dark">
@@ -179,7 +193,7 @@ export default async function CongDongPage() {
                                             confirmText="Gỡ bình luận này? Không hoàn tác được."
                                           >
                                             <SubmitButton
-                                              className={DANGER_BUTTON}
+                                              className={DANGER_BUTTON_ON_SURFACE}
                                               pendingLabel="Đang gỡ…"
                                             >
                                               <Trash2 aria-hidden className="h-4 w-4" />

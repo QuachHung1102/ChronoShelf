@@ -28,8 +28,19 @@ export function BookPage({
 }) {
   return (
     <div
-      className={`flex h-full w-full flex-col overflow-hidden py-lg ${
-        gutter === "left" ? "pl-[64px] pr-xl" : "pl-xl pr-[64px]"
+      // `overflow-y-auto` chứ KHÔNG phải `overflow-hidden`. Bản trước cắt cụt nội dung
+      // trong im lặng — không thanh cuộn, không dấu hiệu gì — và nó đang cắt thật: đo
+      // trên chính app này ở 1024×768, 7/52 trang vượt quá 580px chiều cao mặt giấy.
+      // Nặng nhất là "Từ vỏ sò đến tiền giấy" trang 4: cần 666px, mất 86px, tức gạch đầu
+      // dòng cuối của phần TỔNG KẾT đứt ngang giữa dòng và số trang biến mất hẳn.
+      //
+      // ponytail: đây là cầm máu, không phải chữa gốc. Gốc là trang tổng kết được nhét
+      // vào đuôi trang cuối thay vì là một mặt giấy riêng — `content.md` §4.3 gọi nó là
+      // MỘT TRANG. Đường nâng cấp: thêm `kind: "summary"` vào `Face` trong
+      // `BookReaderModal.buildFaces()`. Cùng đường đó chữa luôn chuyện một tấm ảnh minh
+      // họa (tốn 366px) không nhét vừa bất kỳ trang nào trong kho.
+      className={`flex h-full w-full flex-col overflow-y-auto py-lg ${
+        gutter === "left" ? "pl-3xl pr-xl" : "pl-xl pr-3xl"
       }`}
     >
       <p className={`${s.runningHead} font-body text-caption text-secondary`}>{bookTitle}</p>

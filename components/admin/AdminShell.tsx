@@ -51,7 +51,7 @@ export async function AdminShell({
   return (
     <>
       <Header activeHref="/quan-tri" shelves={shelves} />
-      <main id="noi-dung" className="mx-auto w-full max-w-[64rem] flex-1 px-page-margin py-lg">
+      <main id="noi-dung" className="mx-auto w-full max-w-5xl flex-1 px-page-margin py-lg">
         {/* Breadcrumb chỉ dựng khi có ít nhất một chặng CON. Ở `/quan-tri` thì `trail` chỉ
             có đúng mục "Quản trị", mà mục cuối không phải liên kết — tức một hàng không dẫn
             đi đâu, đứng ngay trên một tiêu đề nói cùng chuyện. */}
@@ -60,7 +60,10 @@ export async function AdminShell({
             <ol className="flex flex-wrap items-center gap-xs font-body text-body-sm text-secondary">
               {trail.map((c, i) => (
                 <li key={`${c.label}-${i}`} className="flex items-center gap-xs">
-                  {i > 0 && <ChevronRight aria-hidden className="h-4 w-4 text-secondary-light" />}
+                  {/* `secondary` chứ không `secondary-light`: token đó dành cho
+                      nền TỐI; trên nền trang `neutral` nó chỉ 1.32:1, và breadcrumb
+                      đọc ra thành hai nhãn dính nhau. */}
+                  {i > 0 && <ChevronRight aria-hidden className="h-4 w-4 text-secondary" />}
                   {c.href && i < trail.length - 1 ? (
                     <Link
                       href={c.href}

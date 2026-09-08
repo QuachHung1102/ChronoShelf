@@ -10,33 +10,33 @@
     {
       "slug": "dong-xu-co",
       "name": "Đồng xu cổ",
-      "image": null,
-      "imageSource": null,
-      "imageCredit": null,
+      "image": "/items/dong-xu-co.svg",
+      "imageSource": "https://game-icons.net/",
+      "imageCredit": "Game-icons.net · CC BY 3.0",
       "description": "Một đồng tiền lỗ vuông giữa — dáng tiền quen thuộc ở Đông Á suốt hai nghìn năm, xâu lại thành chuỗi mà mang đi."
     },
     {
       "slug": "qua-bong-da",
       "name": "Quả bóng da",
-      "image": null,
-      "imageSource": null,
-      "imageCredit": null,
+      "image": "/items/qua-bong-da.svg",
+      "imageSource": "https://game-icons.net/",
+      "imageCredit": "Game-icons.net · CC BY 3.0",
       "description": "Mười tám mảnh da khâu tay, bơm căng. Món đồ chơi đơn giản nhất thế giới, và cũng là môn thể thao đông người xem nhất."
     },
     {
       "slug": "ta-ao-dai",
       "name": "Tà áo dài",
-      "image": null,
-      "imageSource": null,
-      "imageCredit": null,
+      "image": "/items/ta-ao-dai.svg",
+      "imageSource": "https://game-icons.net/",
+      "imageCredit": "Game-icons.net · CC BY 3.0",
       "description": "Hai tà áo dài chấm gót — hình dáng ra đời từ chiếc áo ngũ thân, được rút gọn lại vào những năm 1930."
     },
     {
       "slug": "bong-den-soi-dot",
       "name": "Bóng đèn sợi đốt",
-      "image": null,
-      "imageSource": null,
-      "imageCredit": null,
+      "image": "/items/bong-den-soi-dot.svg",
+      "imageSource": "https://game-icons.net/",
+      "imageCredit": "Game-icons.net · CC BY 3.0",
       "description": "Sợi tóc bóng đèn nóng sáng trong bầu thủy tinh hút chân không — thứ đã kéo dài ngày làm việc của loài người thêm vài giờ."
     }
   ],

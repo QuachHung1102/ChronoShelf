@@ -8,9 +8,9 @@ import type { AdminBookHeader, AdminPageRow } from "@/lib/admin/pages";
 import {
   DANGER_BUTTON,
   FIELD,
-  FOCUS_RING,
   LABEL,
   PRIMARY_BUTTON,
+  QUIET_BUTTON_ON_SURFACE,
 } from "@/components/ui/controls";
 
 const SUMMARY_HINT =
@@ -43,7 +43,7 @@ export function PageAdmin({ book, pages }: { book: AdminBookHeader; pages: Admin
             sẽ trôi lệch khỏi trình đọc thật, còn cái này thì không thể lệch. */}
         <Link
           href={`/${book.shelfSlug}`}
-          className={`inline-flex shrink-0 items-center gap-xs rounded-sm font-body text-body-sm text-tertiary-deep underline underline-offset-2 ${FOCUS_RING}`}
+          className={`shrink-0 ${QUIET_BUTTON_ON_SURFACE}`}
         >
           <ExternalLink aria-hidden className="h-4 w-4" />
           Xem như học sinh

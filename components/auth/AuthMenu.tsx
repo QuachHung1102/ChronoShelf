@@ -50,7 +50,11 @@ export function AuthMenu() {
 
   // Chưa biết trạng thái thì chưa hiện gì: nhấp nháy "Đăng nhập" rồi đổi thành email
   // khó chịu hơn là chờ một nhịp.
-  if (!ready) return null;
+  // Chỗ giữ đúng bề rộng thay vì `null`. Khối đã đăng nhập rộng 158px, nhãn "Đăng nhập"
+  // rộng 66px; header dùng `justify-between` nên trả `null` làm cả hàng nav trượt ngang
+  // một nhịp trên MỖI lần tải trang. `HeaderStats` đã giải đúng bài toán này bằng chỗ
+  // giữ `–`; đây là chỗ duy nhất còn sót.
+  if (!ready) return <span aria-hidden className="inline-block w-[158px]" />;
 
   if (!user) {
     return (

@@ -208,7 +208,13 @@ export function QuestionAdmin({
             />
           </span>
 
-          <ChoiceFields idPrefix="moi" choices={[]} correctIndex={0} />
+          {/* `correctIndex={-1}`: KHÔNG tick sẵn ô nào. Bản trước tick sẵn Lựa chọn 1,
+                  nên admin quên chọn đáp án là xuất bản một câu có đáp án SAI mà không
+                  cảnh báo nào — và phép chặn phía máy chủ ("Chọn đáp án đúng…") không bao
+                  giờ với tới được, vì một nhóm radio đã có sẵn lựa chọn thì không thể
+                  trống. Đây là màn DUY NHẤT giữ đáp án; sai ở đây thì học sinh không bao
+                  giờ hoàn thành được quyển sách. */}
+              <ChoiceFields idPrefix="moi" choices={[]} correctIndex={-1} />
 
           <SubmitButton className={`w-fit ${PRIMARY_BUTTON}`} pendingLabel="Đang thêm…">
             <Plus aria-hidden className="h-4 w-4" />

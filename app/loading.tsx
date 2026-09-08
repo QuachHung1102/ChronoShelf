@@ -10,9 +10,10 @@ import { SKELETON_BLOCK, SKELETON_HEADER } from "@/components/ui/controls";
  * cả, kể cả khung xương.
  *
  * MỘT file ở gốc `app/` thay vì năm file cho năm route: `loading.tsx` bọc `page.tsx` và
- * mọi `layout.tsx` nằm dưới nó trong một `<Suspense>`, nên file này che hết. Chỉ
- * `app/[shelf]/loading.tsx` có bản riêng, vì màn kệ sách là nền TỐI — dùng chung khung
- * xương sáng ở đó sẽ nháy trắng một nhịp rồi mới tối lại.
+ * mọi `layout.tsx` nằm dưới nó trong một `<Suspense>`, nên file này che hết. HAI route có
+ * bản riêng vì chúng là nền TỐI — `app/[shelf]/loading.tsx` (màn kệ sách) và
+ * `app/dang-nhap/loading.tsx` (trang đăng nhập bọc trong `<Room>`). Dùng chung khung xương
+ * sáng ở đó sẽ nháy trắng một nhịp rồi mới tối lại.
  *
  * Khung xương phải tự vẽ lại dải header: repo chỉ có một layout (`app/layout.tsx`) và nó
  * KHÔNG dựng `Header` — mỗi trang tự dựng — nên fallback thay luôn cả dải nâu. Không gọi
@@ -42,14 +43,22 @@ export default function DangTai() {
             Đang tải…
           </p>
 
+          {/* MỘT màu xương duy nhất, và nó phải NHÌN THẤY ĐƯỢC. Bản trước dùng hai màu
+              khác nhau cho hai khối (`secondary-light` và `surface`) với hai bo góc khác
+              nhau, mà cả hai đều tan vào nền: đo thật trên token, `secondary-light` trên
+              `neutral` = 1.32:1 và `surface` trên `neutral` = **1.16:1**. Một khung xương
+              vô hình không nói được "chỗ này sắp có nội dung" — nó chỉ là khoảng trắng,
+              tức đúng thứ mà cả file này sinh ra để tránh. */}
           <div aria-hidden className="mt-sm flex flex-col gap-md">
-            <div className="h-xl w-2/3 max-w-measure rounded-sm bg-secondary-light" />
-            <div className="h-md w-full max-w-measure rounded-sm bg-secondary-light" />
-            <div className="h-md w-1/2 max-w-measure rounded-sm bg-secondary-light" />
+            <div className="h-xl w-2/3 max-w-measure rounded-md bg-surface-locked/30" />
+            <div className="h-md w-full max-w-measure rounded-md bg-surface-locked/30" />
+            <div className="h-md w-1/2 max-w-measure rounded-md bg-surface-locked/30" />
           </div>
 
-          <div aria-hidden className="mt-xl grid grid-cols-3 gap-lg">
-            <div className={`${SKELETON_BLOCK} h-3xl`} />
+          {/* Hai cột, không phải ba: đây phải mang HÌNH DẠNG của trang nó đang che, nếu
+              không thì lúc nội dung thật tới là một cú nhảy. Trang chủ mở đầu bằng
+              `grid-cols-[minmax(0,1fr)_18rem]`, và `/cong-dong` cũng vậy. */}
+          <div aria-hidden className="mt-xl grid grid-cols-[minmax(0,1fr)_18rem] gap-lg">
             <div className={`${SKELETON_BLOCK} h-3xl`} />
             <div className={`${SKELETON_BLOCK} h-3xl`} />
           </div>

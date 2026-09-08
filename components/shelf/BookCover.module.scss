@@ -460,7 +460,12 @@
 }
 
 // Nội dung nút phải nổi lên trên ảnh.
-.coverArt ~ * {
+// `.coverScrim` PHẢI được loại khỏi selector này. Cả hai rule cùng specificity
+// (0,1,0) nên rule đứng sau thắng, và trước đây nó biến màn chắn tối thành
+// `position: relative` cao 0px — đo thật trong Chromium: { w: 146, h: 0 }. Tức toàn bộ
+// bảo đảm tương phản cho ảnh bìa đã chết, chỉ chưa lộ ra vì 0/13 sách có ảnh bìa. Admin
+// tải tấm đầu tiên lên là tên sách rơi xuống 2.87:1 và niên đại xuống 1.49:1.
+.coverArt ~ *:not(.coverScrim) {
   position: relative;
   z-index: 1;
 }

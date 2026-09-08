@@ -78,7 +78,7 @@ export default async function BaiGiangPage() {
                   <li
                     key={b.slug}
                     id={`bai-${b.slug}`}
-                    className="scroll-mt-lg rounded-md border border-surface-locked bg-surface p-lg"
+                    className="scroll-mt-[calc(theme(spacing.header-height)+theme(spacing.md))] rounded-md border border-surface-locked bg-surface p-lg"
                   >
                     <h3 className="font-heading text-headline-sm text-primary-dark">
                       {b.title}

@@ -50,7 +50,7 @@ export function ShelfProgress({ shelves }: { shelves: ShelfChain[] }) {
   }, []);
 
   return (
-    <ul className="grid gap-md sm:grid-cols-2 lg:grid-cols-3">
+    <ul className="grid grid-cols-3 gap-md">
       {shelves.map((shelf) => {
         const daMo =
           owned === null
@@ -93,9 +93,11 @@ export function ShelfProgress({ shelves }: { shelves: ShelfChain[] }) {
                 <span className="flex items-center justify-between gap-sm font-body text-body-sm text-secondary-light">
                   {/* Chưa biết trạng thái thì nói số quyển, đừng đoán "0/n" — với người
                       chưa đăng nhập thì quyển đầu vẫn mở, nên "0" là sai. */}
-                  {daMo === null
-                    ? `${shelf.books.length} quyển`
-                    : `Bạn đã mở ${daMo}/${shelf.books.length} quyển`}
+                  {shelf.books.length === 0
+                    ? "Chưa có quyển nào"
+                    : daMo === null
+                      ? `${shelf.books.length} quyển`
+                      : `Bạn đã mở ${daMo}/${shelf.books.length} quyển`}
                   {/* `motion-reduce:` là bắt buộc, không phải phần thêm (DESIGN.md § Motion).
                       Thẻ vẫn đổi nền khi hover nên tín hiệu không mất ở chế độ giảm động. */}
                   <ArrowRight

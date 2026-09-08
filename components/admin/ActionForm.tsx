@@ -53,19 +53,73 @@ export function ActionForm({
   const [state, formAction] = useActionState(action, {});
   const formRef = useRef<HTMLFormElement>(null);
 
+  /**
+   * Bản chụp những gì người dùng vừa gõ, lấy NGAY TRƯỚC khi gửi.
+   *
+   * React 19 gọi `form.reset()` sau MỌI lần submit — kể cả lần action trả về lỗi
+   * (react-dom xếp hàng `requestFormReset` trước cả khi action chạy). `ImageField` và
+   * `SlideField` mỗi cái tự vá state riêng của mình bằng listener `reset`, nhưng KHÔNG
+   * AI vá phần input không kiểm soát: `defaultValue` chỉ đổi sau `revalidatePath`, mà
+   * đường lỗi không gọi `revalidatePath`, nên reset kéo chúng về giá trị CŨ trên máy chủ.
+   *
+   * Hệ quả đo được: admin gõ 2.000 ký tự vào ô "Nội dung thưởng", quên điền danh hiệu,
+   * bấm Lưu — máy chủ trả câu giải thích, và cùng lúc đó toàn bộ 2.000 ký tự biến mất.
+   * Cùng đường đó chạm được ở `PageAdmin` (thân trang, `rows={8}`, không giới hạn ký tự)
+   * và `QuestionAdmin`.
+   *
+   * Vá ở ĐÂY chứ không ở 15 form: đây là chỗ duy nhất mọi form đều đi qua.
+   */
+  const daGo = useRef<Map<string, string> | null>(null);
+
   useEffect(() => {
     if (resetOnSuccess && state.ok) formRef.current?.reset();
   }, [resetOnSuccess, state]);
+
+  // Khôi phục sau khi action TRẢ LỖI. Chạy sau lượt render mang `state.error`, tức sau
+  // khi React đã reset xong — nếu ghi sớm hơn thì chính cú reset sẽ xóa đè lên.
+  //
+  // Chỉ đụng `input`/`textarea`/`select` KHÔNG kiểm soát và không phải `type=file`
+  // (không gán được giá trị cho input file, và trình duyệt cấm) hay `type=hidden`
+  // (chúng do máy chủ dựng, giá trị mới luôn đúng hơn giá trị cũ).
+  useEffect(() => {
+    const form = formRef.current;
+    const cu = daGo.current;
+    if (!state.error || !form || !cu) return;
+    for (const el of form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
+      "input, textarea, select",
+    )) {
+      if (!el.name || el.type === "file" || el.type === "hidden") continue;
+      const v = cu.get(el.name);
+      if (v === undefined) continue;
+      if (el.type === "checkbox" || el.type === "radio") {
+        (el as HTMLInputElement).checked = v === (el as HTMLInputElement).value;
+      } else {
+        el.value = v;
+      }
+    }
+    daGo.current = null;
+  }, [state]);
 
   return (
     <form
       ref={formRef}
       action={formAction}
-      className={className}
+      // `relative` là mốc cho câu lỗi ở chế độ `quietStatus` (xem chú thích dưới).
+      className={`relative ${className ?? ""}`}
       onSubmit={(e) => {
         // `confirm()` chặn được vì nó đồng bộ. Đây là lớp CHỐNG LỠ TAY, không phải
         // hàng rào: action tự kiểm quyền và tự từ chối những gì không được phép.
-        if (confirmText && !window.confirm(confirmText)) e.preventDefault();
+        if (confirmText && !window.confirm(confirmText)) {
+          e.preventDefault();
+          return;
+        }
+        // Chụp TRƯỚC khi React kịp reset. `FormData` đọc giá trị hiện tại của mọi ô có
+        // `name`; radio/checkbox chưa chọn thì vắng mặt, và vòng khôi phục ở trên bỏ qua
+        // đúng những tên vắng mặt đó.
+        const fd = new FormData(e.currentTarget);
+        const m = new Map<string, string>();
+        for (const [k, v] of fd.entries()) if (typeof v === "string") m.set(k, v);
+        daGo.current = m;
       }}
     >
       {children}
@@ -100,10 +154,20 @@ export function ActionForm({
       {/* Lỗi thì `role="alert"` chứ không phải polite — nó được đọc ngay lúc chèn vào
           DOM, và với nhánh này lời báo thường là phản hồi DUY NHẤT (danh sách không đổi
           gì cả). Cùng khuôn với `LoginForm` và `BookReaderModal`. */}
+      {/* `quietStatus` trước đây chỉ làm im nhánh THÀNH CÔNG, nên nhánh lỗi vẫn vẽ một
+          câu đầy đủ ngay giữa cột 72px ở mép phải header — đúng cái đổ vỡ mà `quietStatus`
+          sinh ra để tránh, chỉ khác là nó xảy ra ở đường lỗi. `moveShelf` và `moveBook`
+          trả lỗi thật ("Kệ này đã ở đầu hoặc cuối danh sách."), chạm được bằng hai cú bấm
+          nhanh liên tiếp. Kéo câu đó ra khỏi luồng bố cục: nó vẫn hiện, vẫn được
+          `role="alert"` đọc lên, nhưng thôi quyết định bề rộng của hàng. */}
       {state.error && (
         <p
           role="alert"
-          className="mt-xs flex items-start gap-xs font-body text-body-sm text-destructive"
+          className={
+            quietStatus
+              ? "absolute right-0 top-full z-10 mt-xs flex w-max max-w-measure items-start gap-xs rounded-sm border border-destructive bg-surface px-sm py-xs font-body text-body-sm text-destructive"
+              : "mt-xs flex items-start gap-xs font-body text-body-sm text-destructive"
+          }
         >
           <AlertCircle aria-hidden className="mt-[0.15em] h-4 w-4 shrink-0" />
           {state.error}

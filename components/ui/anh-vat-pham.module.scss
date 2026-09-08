@@ -1,0 +1,24 @@
+// Hình vật phẩm vẽ bằng CSS mask — xem chú thích ở `AnhVatPham.tsx`.
+//
+// Ở SCSS vì `mask-*` là nhóm thuộc tính Tailwind 3.4 không diễn đạt được, và vì đường dẫn
+// mask là giá trị động nên nó phải đi qua `style` inline chứ không qua class.
+.stencil {
+  display: block;
+  // `currentColor`: màu do class `text-*` ở nơi gọi quyết định, không do file ảnh.
+  background-color: currentColor;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  // `contain` chứ không `cover`: icon phải vừa trọn trong ô, không bị cắt cạnh.
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+}
+
+// Vật phẩm chưa sưu tầm được. KHÔNG dùng `filter: brightness(0)` như bản cũ: nó đổ hình
+// thành một khối đen 1.25:1 so với bệ `surface-locked`, tức gần như biến mất — mà đây là
+// ô cần nhìn thấy nhất, nó chính là thứ tạo động lực sưu tầm. Giảm độ mờ giữ được HÌNH
+// DÁNG (người học vẫn đoán được đó là cái gì) trong khi vẫn tách hẳn khỏi ô đã có.
+.moDi {
+  opacity: 0.38;
+}

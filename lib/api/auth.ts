@@ -88,7 +88,11 @@ export async function signOut(): Promise<void> {
 /** Trả về null khi chưa đăng nhập. */
 export async function getSignedInUser(): Promise<SignedInUser | null> {
   const res = await fetch("/api/auth/me");
-  if (!res.ok) return null;
+  // CHỈ 401 mới là "chưa đăng nhập". Gộp cả 500/502/504 vào đây là biến một nhịp lỗi máy
+  // chủ thành một lần đăng xuất giả: header hiện nút "Đăng nhập" trong khi phiên vẫn còn
+  // nguyên, và `.catch()` ở `AuthMenu` không bao giờ chạy vì lời hứa đã resolve.
+  if (res.status === 401) return null;
+  if (!res.ok) throw new Error("/api/auth/me trả " + res.status);
   const data = (await res.json()) as { user: SignedInUser | null };
   return data.user;
 }

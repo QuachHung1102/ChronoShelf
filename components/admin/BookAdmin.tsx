@@ -26,10 +26,10 @@ import type { AdminItemRow } from "@/lib/admin/items";
 import {
   DANGER_BUTTON,
   FIELD,
-  FOCUS_RING,
   LABEL,
   PRIMARY_BUTTON,
   QUIET_BUTTON,
+  QUIET_BUTTON_ON_SURFACE,
 } from "@/components/ui/controls";
 
 /**
@@ -209,7 +209,7 @@ export function BookAdmin({
             <div className={`mt-sm flex flex-wrap items-center gap-md border-t ${CARD_DIVIDER} pt-sm`}>
               <Link
                 href={`/quan-tri/${shelf.slug}/${book.slug}`}
-                className={`inline-flex items-center gap-xs rounded-sm font-body text-body-sm text-tertiary-deep underline underline-offset-2 ${FOCUS_RING}`}
+                className={QUIET_BUTTON_ON_SURFACE}
               >
                 <FileText aria-hidden className="h-4 w-4" />
                 Soạn trang ({book.pageCount})

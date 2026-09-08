@@ -9,7 +9,12 @@
   &::after {
     position: absolute;
     inset: 0;
-    z-index: 1;
+    // `-1` CHỨ KHÔNG PHẢI `1`. `.tu` có `isolation: isolate` nên nó là gốc của một
+    // stacking context; con dương vẽ SAU mọi con không-positioned, tức dải "mặt kính"
+    // phủ lên chính các thẻ vật phẩm. Đo thật: chữ mô tả `secondary` trên `surface` tụt
+    // từ 5.22:1 xuống **3.94:1**, dưới ngưỡng AA. `-1` vẽ sau NỀN của `.tu` và trước nội
+    // dung — đúng nghĩa "kính phủ lên gỗ, không phủ lên thẻ".
+    z-index: -1;
     content: '';
     pointer-events: none;
     background: linear-gradient(
