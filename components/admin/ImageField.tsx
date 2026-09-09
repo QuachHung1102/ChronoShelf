@@ -89,7 +89,7 @@ export function ImageField({
     <fieldset
       ref={box}
       data-default-url={defaultUrl ?? ""}
-      className="flex flex-col gap-xs rounded-md border border-surface-locked p-sm"
+      className="flex flex-col gap-xs rounded-md border border-ink-dilute p-sm"
     >
       <legend className={`px-xs ${LABEL}`}>{label}</legend>
 
@@ -122,8 +122,8 @@ export function ImageField({
           <label
             htmlFor={`${id}-file`}
             className={
-              "inline-flex w-fit cursor-pointer items-center gap-xs rounded-sm font-body " +
-              "text-body-sm text-tertiary-deep underline underline-offset-2 " +
+              "inline-flex w-fit cursor-pointer items-center gap-xs rounded-sm font-ui " +
+              "text-body-sm text-son underline underline-offset-2 " +
               "peer-focus-visible:ring-2 peer-focus-visible:ring-ring " +
               "peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface"
             }
@@ -135,7 +135,7 @@ export function ImageField({
             )}
             {busy ? "Đang tải lên…" : "Chọn ảnh"}
           </label>
-          <p className="font-body text-caption text-secondary">
+          <p className="font-ui text-caption text-ink-dilute">
             {hint ?? "PNG, JPEG, WebP hoặc GIF. Tối đa 2 MB — nên chọn bản rộng khoảng 1600px."}
           </p>
         </>
@@ -148,7 +148,7 @@ export function ImageField({
             <img
               src={url}
               alt=""
-              className="h-20 w-20 shrink-0 rounded-sm bg-surface-locked object-contain"
+              className="h-20 w-20 shrink-0 rounded-sm bg-mist object-contain"
             />
             <div className="flex flex-1 flex-col gap-xs">
               <input type="hidden" name={`${prefix}Url`} value={url} />
@@ -189,7 +189,7 @@ export function ImageField({
             <Trash2 aria-hidden className="h-4 w-4" />
             Gỡ ảnh
           </button>
-          <p className="font-body text-caption text-secondary">
+          <p className="font-ui text-caption text-ink-dilute">
             Hai ô trên là điều kiện của giấy phép CC BY-SA, không phải thủ tục — thiếu là không lưu được.
           </p>
         </>
@@ -200,7 +200,7 @@ export function ImageField({
           rồi nội dung và việc hiện lại xảy ra trong cùng một lần cập nhật DOM, nên trình
           đọc màn hình coi đây là vùng live vừa được thêm chứ không phải một thay đổi và
           thường im lặng. Cùng khuôn với `ActionForm`, `LoginForm`, `BookReaderModal`. */}
-      {error && <p role="alert" className="font-body text-body-sm text-destructive">{error}</p>}
+      {error && <p role="alert" className="font-ui text-body-sm text-son">{error}</p>}
     </fieldset>
   );
 }

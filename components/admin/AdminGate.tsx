@@ -1,10 +1,8 @@
 import Link from "next/link";
 import { ShieldOff } from "lucide-react";
-import { Header } from "@/components/Header";
 import { isAdmin } from "@/lib/admin/gate";
 import { getSessionUserId } from "@/lib/auth/session";
 import { PRIMARY_BUTTON } from "@/components/ui/controls";
-import { readShelfList } from "@/lib/content/read";
 
 /**
  * Server component: quyết định hiện màn quản trị hay màn từ chối.
@@ -31,20 +29,18 @@ export async function AdminGate({ children }: { children: React.ReactNode }) {
   //
   // CỐ Ý không áp cách này cho `app/error.tsx` — comment tại chỗ đã nêu đúng lý do: lỗi
   // có thể đến từ chính lớp đọc dữ liệu mà `Header` dùng.
-  const shelves = await readShelfList();
 
   return (
     <>
-      <Header activeHref="" shelves={shelves} />
       <main
         id="noi-dung"
         className="mx-auto flex max-w-2xl flex-1 flex-col items-center justify-center gap-md px-page-margin py-xl text-center"
       >
-        <ShieldOff aria-hidden className="h-12 w-12 text-secondary" />
-        <h1 className="font-heading text-headline-md text-primary-dark">
+        <ShieldOff aria-hidden className="h-12 w-12 text-ink-dilute" />
+        <h1 className="font-ui text-display-md text-primary">
           {signedIn ? "Tài khoản này không phải quản trị viên" : "Cần đăng nhập"}
         </h1>
-        <p className="max-w-measure font-body text-body-md text-secondary">
+        <p className="max-w-measure font-ui text-body-md text-ink-dilute">
           {signedIn
             ? "Khu vực quản trị chỉ dành cho tài khoản được cấp quyền. Nếu bạn cho rằng đây là nhầm lẫn, liên hệ người quản lý nội dung."
             : "Đăng nhập bằng tài khoản quản trị để vào khu vực này."}

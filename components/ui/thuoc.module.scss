@@ -2,32 +2,38 @@
 //
 // Trước đây khối luật này tồn tại BA bản chép: `.thuoc`/`.thuocDay` ở
 // `components/home/home.module.scss`, cùng tên ở `components/bag/bag.module.scss`, và
-// `.meter`/`.meterFill` ở `components/shelf/BookShelf.module.scss` — cùng số đo, khác tên,
-// khác thứ tự thuộc tính. Chú thích ở bản của túi hành trang còn nói "Cùng công thức với
-// thước ở màn kệ sách" và trỏ vào một selector KHÔNG TỒN TẠI ở đó (`.thuoc` vs `.meter`).
-// Biết là trùng, ba lần, vẫn chép.
+// `.meter`/`.meterFill` ở màn kệ sách — cùng số đo, khác tên, khác thứ tự thuộc tính. Chú
+// thích ở bản của túi hành trang còn nói "Cùng công thức với thước ở màn kệ sách" và trỏ
+// vào một selector KHÔNG TỒN TẠI ở đó (`.thuoc` vs `.meter`). Biết là trùng, ba lần, vẫn chép.
 //
 // Ở SCSS vì cả ba thứ đều ngoài tầm Tailwind: chiều cao 6px (ngoài thang spacing),
-// `box-shadow: inset`, và gradient.
+// `box-shadow: inset`, và bo góc viên thuốc trên một phần tử con giãn theo phần trăm.
 
+// Rãnh = NƯỚC CHƯA NHUỘM. DESIGN.md § Colors giao đúng việc này cho `mist`
+// ("rãnh thước tiến độ, nền chìm, vùng nước chưa nhuộm").
+//
+// Bản cũ dùng `primary / 75%`, và nó đúng cho thế giới cũ: cả ba nơi dùng thước đều là nền
+// TỐI (thẻ kệ, tủ trưng bày, phòng đọc), nên rãnh phải sáng-trên-tối. Từ 2026-09-10 cả ba
+// nơi ấy đứng trên giấy, và một rãnh mực 75% trên `paper` đọc ra là một vệt gạch đen — phần
+// CHƯA đạt được lại là phần đậm nhất, tức thước nói ngược.
 .thuoc {
   height: 6px;
   overflow: hidden;
-  background: theme('colors.surface-room / 75%');
+  background: theme('colors.mist');
   border-radius: theme('borderRadius.full');
-  // `secondary-light`, KHÔNG phải `secondary`: rãnh nằm trên nền tối ở cả ba nơi dùng
-  // (thẻ kệ `primary-dark`, tủ `surface-shelf`, phòng đọc `surface-room`), mà `secondary`
-  // trên nền phòng chỉ cho vòng viền 1.59:1 — tức không đọc ra được thước dài tới đâu.
-  // `secondary-light` trên `surface-room` đạt 11.57:1; ở 45% vẫn dư ngưỡng 3:1.
-  box-shadow: inset 0 0 0 1px theme('colors.secondary-light / 45%');
+  // Viền mang thông tin (nó là ranh giới của thước), nên `ink-dilute` chứ không `feathered`:
+  // `mist` trên `paper` chỉ 1.09:1, thiếu nét này thì không thấy thước dài tới đâu.
+  box-shadow: inset 0 0 0 1px theme('colors.ink-dilute / 30%');
 }
 
+// Phần đã đạt = MỰC ĐÃ LOANG, nên `primary` phẳng.
+//
+// Không phải `son`: DESIGN.md § Colors giữ sắc tố thứ hai cho đúng hai việc — triện hoàn
+// thành và báo lỗi — và một thanh tiến độ không phải việc nào trong hai. Cũng không phải
+// gradient: bản cũ chạy `linear-gradient` giữa hai giá trị GIỐNG HỆT nhau (`son` → `son`)
+// sau lượt đổi token, tức một gradient không gradient gì cả.
 .thuocDay {
   height: 100%;
-  // Gradient chạy `tertiary` → `tertiary-deep`, tức SÁNG TRƯỚC. Chiều cũ ngược lại, nên
-  // đầu trái — phần LUÔN hiện, và là toàn bộ thanh khi tiến độ còn thấp — mang
-  // `tertiary-deep`, chỉ 2.87:1 so với rãnh trên thẻ kệ và 3.02:1 trên nền phòng. Đảo
-  // chiều đưa phần luôn-hiện lên 5.44:1 mà không đổi một token màu nào.
-  background: linear-gradient(to right, theme('colors.tertiary'), theme('colors.tertiary-deep'));
+  background: theme('colors.primary');
   border-radius: theme('borderRadius.full');
 }

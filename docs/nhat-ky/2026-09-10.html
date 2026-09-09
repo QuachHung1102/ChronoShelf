@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="vi">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Màu biến mất trong im lặng — ChronoShelf</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;600&family=Lexend:wght@300;400&display=swap">
+<style>
+  /* Trang này CỐ Ý một tông: nó mượn đúng thế giới thị giác của sản phẩm — mặt nước
+     trắng giấy, mực chàm là sắc tố cấu trúc duy nhất, son dùng rất tiết chế. Vì vậy
+     không có biến thể tối; nền và màu chữ đều được sơn tường minh nên trang giữ nguyên
+     diện mạo trên bất kỳ nền nào của trình xem. */
+  :root {
+    --paper: #F6F7F9;
+    --surface: #FDFDFE;
+    --ink: #0A1A33;
+    --ink-dilute: #606D80;
+    --mist: #DDE2E8;
+    --son: #B3311C;
+  }
+  * { box-sizing: border-box; }
+  body {
+    max-width: 42rem;
+    margin: 0 auto;
+    padding: 4rem 1.5rem 6rem;
+    background: var(--paper);
+    color: var(--ink);
+    font: 300 1rem/1.7 Lexend, system-ui, sans-serif;
+  }
+  .eyebrow {
+    margin: 0;
+    font-family: Manrope, system-ui, sans-serif;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--son);
+  }
+  h1 {
+    margin: 0.75rem 0 2rem;
+    font: 200 2.5rem/1.15 Manrope, system-ui, sans-serif;
+    text-wrap: balance;
+  }
+  h2 {
+    margin: 3rem 0 0.75rem;
+    font: 400 1.375rem/1.3 Manrope, system-ui, sans-serif;
+    text-wrap: balance;
+  }
+  p { margin: 0 0 1.25rem; }
+  a { color: var(--son); }
+  .lead { color: var(--ink-dilute); }
+  .scroller { overflow-x: auto; margin: 0 0 1.25rem; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: Manrope, system-ui, sans-serif;
+    font-size: 0.8125rem;
+  }
+  caption {
+    text-align: left;
+    padding-bottom: 0.5rem;
+    color: var(--ink-dilute);
+    font-size: 0.8125rem;
+  }
+  th, td {
+    padding: 0.6rem 0.75rem 0.6rem 0;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--mist);
+  }
+  th { font-weight: 600; }
+  td.do { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .truoc { color: var(--son); }
+  footer {
+    margin-top: 3rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--mist);
+    color: var(--ink-dilute);
+    font-size: 0.8125rem;
+  }
+</style>
+<main>
+  <p class="eyebrow">Nhật ký · 10/09/2026</p>
+  <h1>Màu biến mất trong im lặng</h1>
+
+  <p class="lead">Phiên này không thêm tính năng nào. Nó đi soi lại sản phẩm sau lượt thay
+    thế giới thị giác — thư viện gỗ đổi thành chậu mực — và tìm xem lượt đổi token trên
+    diện rộng đã bỏ sót chỗ nào.</p>
+
+  <p>Mọi cổng đều báo xanh trước khi bắt đầu: <code>npm run check</code> thoát 0,
+    <code>npm run db:check</code> 110 đạt / 0 hỏng. Nhưng cổng xanh chỉ nói được về những
+    thứ có cổng canh. Tailwind bỏ qua class nó không hiểu mà không kêu một tiếng nào, nên
+    một token bị đổi tên để lại class chết nằm nguyên trong mã: trình biên dịch không thấy,
+    trình kiểm kiểu không thấy, và trên màn hình thì chỉ có màu lặng lẽ biến mất.</p>
+
+  <p>Bốn chỗ đã lặng như vậy. Cả bốn đều đo được trong trình duyệt ở 1024×768:</p>
+
+  <div class="scroller">
+    <table>
+      <caption>Đo trong trình duyệt, tài khoản quản trị, khung nhìn 1024×768.</caption>
+      <thead>
+        <tr><th scope="col">Chỗ</th><th scope="col">Đo được</th><th scope="col">Sau khi sửa</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">Tên tài khoản và nút Đăng xuất ở rail</th>
+          <td class="do truoc">1,00 : 1</td>
+          <td class="do">16,0 : 1</td>
+        </tr>
+        <tr>
+          <th scope="row">Bản đồ chọn quốc gia trong khu quản trị</th>
+          <td class="do truoc">705 vùng đen</td>
+          <td class="do">có biên giới</td>
+        </tr>
+        <tr>
+          <th scope="row">Ô chọn đáp án bài trắc nghiệm</th>
+          <td class="do truoc">xanh hệ thống</td>
+          <td class="do">mực chàm</td>
+        </tr>
+        <tr>
+          <th scope="row">Chip “Nháp” trên danh sách bài học</th>
+          <td class="do truoc">4,03 : 1</td>
+          <td class="do">12,3 : 1</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>Chỗ đầu là nặng nhất, và nó nặng theo cách khó thấy: với người <em>chưa</em> đăng nhập
+    thì chính lối vào đăng nhập biến mất khỏi màn hình — chữ trắng đứng trên nền trắng, vẫn
+    bấm được, chỉ là không ai nhìn thấy để mà bấm.</p>
+
+  <h2>Một lỗi nữa, không phải màu</h2>
+
+  <p>Khung viền của mỗi câu hỏi trắc nghiệm kẻ ngang qua chính câu hỏi. Đó là hành vi thật
+    của trình duyệt với <code>&lt;legend&gt;</code> hai dòng: nó nhúng nhãn vào đường viền
+    trên và căn theo nửa chiều cao, nên dòng thứ hai rơi xuống dưới nét kẻ. Câu hỏi vẫn phải
+    nằm trong legend — nó là tên của nhóm lựa chọn, bỏ ra thì người dùng trình đọc màn hình
+    nghe hết bốn đáp án mà không bao giờ nghe được câu hỏi — nên phần nhìn được tách ra vẽ
+    lại, còn legend ở lại cho trình đọc màn hình.</p>
+
+  <h2>Thêm một cổng, để lần sau máy bắt chứ không phải mắt</h2>
+
+  <p>Sửa xong bốn chỗ thì vẫn còn nguyên câu hỏi: lần sau đổi token, ai sẽ báo? Nên phiên
+    này thêm <code>npm run design:dead-class</code> vào <code>npm run check</code>. Nó không
+    đối chiếu với một danh sách token viết tay — danh sách viết tay chính là thứ đã lỡ nhịp
+    hai lần ở chỗ khác trong dự án này — mà dựng CSS thật từ cấu hình Tailwind của dự án rồi
+    đòi mọi class mang hình dạng token phải có mặt trong đó. Cổng đã được chứng minh là biết
+    kêu: cố tình đưa lại một class chết thì nó thoát mã 1.</p>
+
+  <p>Đi kèm là một phép quét tương phản chạy trên mười ba màn, và chính nó tìm ra chip
+    “Nháp” — 4,03 trên ngưỡng 4,5, tức mắt thường không bao giờ bắt được.</p>
+
+  <h2>Rồi căn phòng gỗ bị gỡ hẳn</h2>
+
+  <p>Phiên đi tiếp sang phần đáng ra phải xong từ lâu. Trình đọc sách và trang đăng nhập vẫn
+    dựng trong căn phòng của thế giới cũ — tường sách mờ, chùm sáng nến, hạt bụi trôi — vì cả
+    hai chỉ <em>gọi một component</em>, và lượt đổi token có chạm vào file đó nhưng chỉ đổi
+    tên màu bên trong: gỗ vẫn là gỗ, chỉ là gỗ màu chàm. Nay <code>Room.tsx</code> không còn
+    tồn tại.</p>
+
+  <div class="scroller">
+    <table>
+      <caption>Những gì thay chỗ căn phòng.</caption>
+      <thead>
+        <tr><th scope="col">Màn</th><th scope="col">Dựng lại thành</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">Trình đọc</th>
+          <td>Mặt nước lặng, trang giấy dó, bìa là khối mực đặc viền triện son. Không còn bóng đổ.</td>
+        </tr>
+        <tr>
+          <th scope="row">Đăng nhập</th>
+          <td>Bờ trái mang form, chậu mực bên phải — cùng ngữ pháp với màn kệ sách.</td>
+        </tr>
+        <tr>
+          <th scope="row">Túi hành trang</th>
+          <td>Bỏ tủ kính; vật phẩm chưa có là giọt mực rỗng, không phải ổ khóa.</td>
+        </tr>
+        <tr>
+          <th scope="row">Trang chủ</th>
+          <td>Chấm mốc thời gian là giọt mực; sợi dây hạ xuống màu đường kẻ.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>Mỗi lần đổi nền một màn từ tối sang sáng lại kéo theo cả một họ màu đã đúng trên nền cũ.
+    Số trang trong sách rơi xuống 1,91 : 1. Thước tiến độ, sau khi sửa cho nền giấy, có thanh
+    “đã đạt” trùng đúng màu nền của thẻ kệ — phần hoàn thành biến mất, thước chỉ còn nói phần
+    chưa xong. Và bảy giọt mực đánh dấu “chưa có” trên hai màn khác nhau đều dừng ở 1,57 và
+    1,91 — dưới ngưỡng 3 : 1 mà một ký hiệu mang thông tin phải đạt.</p>
+
+  <p>Không cái nào là lỗi biên dịch. Phép quét tương phản tìm ra tất cả, và nó chạy trên mọi
+    màn trong vài giây — sau vòng sửa cuối: <strong>0 cặp dưới ngưỡng</strong>, cả chữ lẫn
+    ký hiệu.</p>
+
+  <h2>Còn lại</h2>
+
+  <p>Thứ vẫn đang chặn thật thì không nằm ở mã: mười ba quyển sách chưa có bìa, năm mươi
+    trang chưa có ảnh minh họa, ba kệ chưa có bức tranh ghép. Tất cả sửa được qua màn quản
+    trị, không đụng tới một dòng nào.</p>
+
+  <footer>
+    Bẫy của phiên này đã vào <a href="../agents/bay-da-gap.md">docs/agents/bay-da-gap.md</a>;
+    cổng mới đã vào <a href="../../CLAUDE.md">CLAUDE.md</a>. Nhật ký chỉ kể lại.
+  </footer>
+</main>
+</html>

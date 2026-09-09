@@ -1,44 +1,49 @@
-import { SKELETON_HEADER } from "@/components/ui/controls";
-
 /**
- * Khung xương riêng cho màn kệ sách — bản duy nhất tách khỏi `app/loading.tsx`.
+ * Khung xương riêng cho màn kệ sách.
  *
- * Lý do tách: căn phòng thư viện là nền TỐI (`surface-room`) trong khi mọi trang khác
- * nền `neutral` sáng. Dùng chung khung xương sáng ở đây là mỗi lần mở một kệ, màn hình
- * loé trắng một nhịp rồi mới tối lại — đúng thứ khó chịu mà khung xương sinh ra để tránh.
+ * Lý do tách khỏi `app/loading.tsx` đã ĐỔI cùng thế giới thị giác. Trước đây là vì màn kệ
+ * nền tối còn mọi trang khác nền sáng; nay cả hai cùng nền `paper`, và lý do tách là HÌNH
+ * DẠNG: màn kệ khoá chiều cao vào khung nhìn và không cuộn, còn các trang khác cuộn bình
+ * thường. Dùng chung khung xương kia thì lúc nội dung thật tới, cả trang đổi từ "cuộn được"
+ * sang "không cuộn", thanh cuộn biến mất và mọi thứ nhảy ngang một nhịp.
  *
- * Giữ đúng khung của `BookShelf`: cột giữa `max-w-[1180px]`, `justify-center`, dòng nhãn
- * "Kệ sách" rồi tới tên kệ. Chữ trên nền tối dùng `tertiary-light`/`secondary-light` —
- * DESIGN.md § Do's and Don'ts cấm `secondary`/`primary-dark` ở đây.
+ * **KHÔNG vẽ rail.** Rail sống ở `app/layout.tsx`, tức nằm NGOÀI ranh giới Suspense này và
+ * không hề bị thay khi chuyển trang. Bản trước vẽ thêm một rail xương cạnh rail thật.
  *
- * CỐ Ý không vẽ từng gáy sách giả: hình dạng tủ thật do dữ liệu quyết định (số quyển, số
- * tầng), nên một hàng sách giả sai số lượng chỉ đổi một cú nhảy này lấy một cú nhảy khác.
- * Một khối tủ đặc nói đúng chỗ nội dung sắp hiện ra là đủ.
+ * Vẽ đúng BA hàng bài học giả, không nhiều hơn: số bài thật do dữ liệu quyết định, nên một
+ * danh sách giả dài bằng danh sách thật là ăn may chứ không phải thiết kế.
+ *
+ * Vùng nước bên phải để TRỐNG, và đó không phải chỗ làm biếng: mặt nước chưa thả giọt nào
+ * đúng là nước trong. Khung xương ở đây không hứa một vân mực nào mà nội dung thật có thể
+ * không có.
  */
 export default function DangTaiKeSach() {
   return (
-    <>
-      {/* Giữ tên sản phẩm bằng chữ thật — cùng lý do như `app/loading.tsx`. */}
-      <div className={SKELETON_HEADER}>
-        <span className="font-heading text-headline-sm text-on-primary">CỬA SỔ LỊCH SỬ</span>
-      </div>
+    <main id="noi-dung" className="flex h-screen min-h-0 min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 flex-1">
+        {/* Bờ: cùng công thức bề rộng với `.bo` trong `ShelfBasin.module.scss`. */}
+        <div className="flex min-h-0 w-[max(516px,56%)] flex-col justify-center bg-paper px-page-margin py-2xl">
+          <p role="status" className="font-ui text-label-caps uppercase text-ink-dilute">
+            Đang mở kệ sách…
+          </p>
+          {/* `mist` là mức thấp nhất còn đọc ra hình trên nền `paper`: `surface` chỉ 1.16:1,
+              tức một khung xương vô hình — đúng thứ khung xương sinh ra để tránh. */}
+          <div aria-hidden className="mt-md h-2xl w-3/4 rounded-md bg-mist" />
+          <div aria-hidden className="mt-md h-md w-full max-w-measure rounded-md bg-mist" />
 
-      <main id="noi-dung" className="flex flex-1 flex-col bg-surface-room">
-        <div className="mx-auto flex w-full max-w-[1180px] flex-1 flex-col justify-center gap-lg px-page-margin py-xl">
-          <div>
-            <p role="status" className="font-body text-label-caps uppercase text-tertiary-light">
-              Đang mở kệ sách…
-            </p>
-            <div aria-hidden className="mt-sm h-xl w-1/2 max-w-measure rounded-sm bg-surface-locked" />
+          <div aria-hidden className="mt-xl border-t border-mist pt-xl">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex items-center gap-md border-b border-mist py-md">
+                <div className="h-md w-8 rounded-sm bg-mist" />
+                <div className="flex-1">
+                  <div className="h-lg w-1/2 rounded-md bg-mist" />
+                  <div className="mt-xs h-md w-1/3 rounded-md bg-mist" />
+                </div>
+              </div>
+            ))}
           </div>
-          {/* Khối tủ. `bg-primary` chứ KHÔNG phải `bg-surface-shelf`:
-              `surface-shelf` là màu TẤM VÁN (`.row`, `.plankLower`), còn thân tủ là
-              gradient `secondary → primary → primary-dark`. Chú thích cũ nói ngược.
-              Chiều cao và bo góc cũng sai: tủ thật ở 1024×768 cao 466.83px và `rounded-lg`,
-              nên khung xương 288px/`rounded-md` làm cú thay chỗ nhảy khoảng 115px. */}
-          <div aria-hidden className="h-[29rem] w-full rounded-lg bg-primary" />
         </div>
-      </main>
-    </>
+      </div>
+    </main>
   );
 }

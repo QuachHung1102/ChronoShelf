@@ -3,7 +3,7 @@ import Link from "next/link";
 import { GraduationCap, LockOpen, Sparkles } from "lucide-react";
 import { AnhVatPham } from "@/components/ui/AnhVatPham";
 import { GhiCongAnh } from "@/components/ui/GhiCongAnh";
-import { PRIMARY_BUTTON_ON_DARK, QUIET_BUTTON_ON_DARK } from "@/components/ui/controls";
+import { PRIMARY_BUTTON, QUIET_BUTTON } from "@/components/ui/controls";
 import { findBook, findItem } from "@/lib/content/find";
 import type { ContentBook, ContentShelf } from "@/lib/content/types";
 import type { CompleteBookResult } from "@/lib/api/types";
@@ -63,9 +63,9 @@ export function ItemDropOverlay({
               // Icon vật phẩm là hình một màu không mang mã màu nào; `AnhVatPham` vẽ nó
               // bằng CSS mask nên màu do `text-*` ở đây quyết định. Dùng `<img>` thì
               // `currentColor` trong file rơi về mặc định và mọi vật phẩm ra màu đen.
-              <AnhVatPham src={item.image} className="h-36 w-36 text-tertiary-light" />
+              <AnhVatPham src={item.image} className="h-36 w-36 text-son" />
             ) : (
-              <Sparkles aria-hidden className="h-24 w-24 text-tertiary-light" />
+              <Sparkles aria-hidden className="h-24 w-24 text-son" />
             )}
           </div>
 
@@ -80,11 +80,15 @@ export function ItemDropOverlay({
             <h2
               ref={tieuDeRef}
               tabIndex={-1}
-              className="font-heading text-headline-xl text-on-primary focus-visible:outline-none"
+              // `max-w-3xl` + `text-balance`: đo ở 1024×768 sau khi nền đổi sang giấy, dòng
+              // này chạy 928px trên 1024 — gần hết bề ngang màn hình, và ngắt dòng rơi vào
+              // chỗ để lại một chữ lẻ ở dòng dưới. Trên nền phòng tối trước đây khối chữ
+              // sáng tự có mép; trên giấy thì không còn gì giữ nó lại.
+              className="mx-auto max-w-3xl text-balance font-ui text-display-xl text-primary focus-visible:outline-none"
             >
               {replay ? `Vật phẩm đã có: ${item.name}` : `Bạn nhận được: ${item.name}`}
             </h2>
-            <p className="mt-sm max-w-xl font-body text-body-md text-secondary-light">
+            <p className="mt-sm max-w-xl font-ui text-body-md text-ink-dilute">
               {item.description}
             </p>
             {/* Ghi công ảnh vật phẩm. Năm vật phẩm seed là chỗ DUY NHẤT hôm nay thật sự
@@ -93,7 +97,7 @@ export function ItemDropOverlay({
                 kết hay in nguyên văn — xem lý do trong chính component đó. */}
             {item.image && (
               // Ba class, ba lý do đo được:
-              //   `text-secondary-light` — `secondary` trên nền phòng chỉ đạt 3.38:1, đúng
+              //   `text-ink-dilute` — `secondary` trên nền phòng chỉ đạt 3.38:1, đúng
               //     thứ DESIGN.md § Do's and Don'ts cấm thẳng ("Don't dùng `secondary` … làm
               //     màu chữ trên nền tối của căn phòng"). Cặp đúng đo được 11.57:1 trên
               //     `surface-room` và 10.76:1 trên `surface-reader`.
@@ -106,8 +110,7 @@ export function ItemDropOverlay({
               <GhiCongAnh
                 credit={item.imageCredit}
                 nguon={item.imageSource}
-                nenToi
-                className="mt-md max-w-xl text-secondary-light"
+                className="mt-md max-w-xl text-ink-dilute"
               />
             )}
           </div>
@@ -116,7 +119,7 @@ export function ItemDropOverlay({
 
       <div className={`${anim(s.dropUnlock)} flex flex-col items-center gap-md`}>
         {nextBook && (
-          <p className="flex items-center gap-sm font-body text-body-md text-tertiary-light">
+          <p className="flex items-center gap-sm font-ui text-body-md text-son">
             <LockOpen aria-hidden className="h-5 w-5" />
             {result.nextBook?.unlocked
               ? `“${nextBook.title}” đã mở khóa trên kệ.`
@@ -124,7 +127,7 @@ export function ItemDropOverlay({
           </p>
         )}
         {!nextBook && (
-          <p className="font-body text-body-md text-tertiary-light">
+          <p className="font-ui text-body-md text-son">
             Bạn đã đọc hết kệ sách này.
           </p>
         )}
@@ -135,7 +138,7 @@ export function ItemDropOverlay({
         {book.baiGiang.length > 0 && (
           <Link
             href={`/bai-giang#bai-${book.baiGiang[0].slug}`}
-            className={QUIET_BUTTON_ON_DARK}
+            className={QUIET_BUTTON}
           >
             <GraduationCap aria-hidden className="h-5 w-5" />
             {book.baiGiang.length === 1
@@ -144,7 +147,7 @@ export function ItemDropOverlay({
           </Link>
         )}
 
-        <button type="button" onClick={onClose} className={PRIMARY_BUTTON_ON_DARK}>
+        <button type="button" onClick={onClose} className={PRIMARY_BUTTON}>
           Quay lại kệ sách
         </button>
       </div>

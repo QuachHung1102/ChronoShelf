@@ -52,7 +52,7 @@ export default async function AdminBookPagesPage({
         {/* Bài kiểm tra nằm SAU danh sách trang, đúng thứ tự học sinh gặp: lật hết trang
             rồi mới tới câu hỏi. Đường kẻ tách hai phần vì chúng là hai loại nội dung
             khác nhau, không phải phần tiếp theo của cùng một danh sách. */}
-        <div className="mt-xl border-t border-secondary pt-xl">
+        <div className="mt-xl border-t border-mist pt-xl">
           <QuestionAdmin book={book} questions={questions} />
         </div>
       </AdminShell>

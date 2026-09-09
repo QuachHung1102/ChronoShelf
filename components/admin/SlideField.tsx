@@ -77,7 +77,7 @@ export function SlideField({
       ref={box}
       data-default-url={defaultUrl ?? ""}
       data-default-filename={defaultFilename ?? ""}
-      className="flex flex-col gap-xs rounded-md border border-surface-locked p-sm"
+      className="flex flex-col gap-xs rounded-md border border-ink-dilute p-sm"
     >
       <legend className={`px-xs ${LABEL}`}>Bộ slide (.pptx)</legend>
 
@@ -108,8 +108,8 @@ export function SlideField({
           <label
             htmlFor={`${id}-file`}
             className={
-              "inline-flex w-fit cursor-pointer items-center gap-xs rounded-sm font-body " +
-              "text-body-sm text-tertiary-deep underline underline-offset-2 " +
+              "inline-flex w-fit cursor-pointer items-center gap-xs rounded-sm font-ui " +
+              "text-body-sm text-son underline underline-offset-2 " +
               "peer-focus-visible:ring-2 peer-focus-visible:ring-ring " +
               "peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface"
             }
@@ -121,7 +121,7 @@ export function SlideField({
             )}
             {busy ? "Đang tải lên…" : "Chọn tệp .pptx"}
           </label>
-          <p className="font-body text-caption text-secondary">
+          <p className="font-ui text-caption text-ink-dilute">
             Tối đa 25 MB. Học sinh tải về được bản gốc, nên hãy nộp đúng tệp muốn phát.
           </p>
         </>
@@ -131,7 +131,7 @@ export function SlideField({
           <input type="hidden" name="slideFilename" value={slide.filename} />
 
           <div className="flex items-start justify-between gap-sm">
-            <p className="min-w-0 break-words font-body text-body-sm text-primary-dark">
+            <p className="min-w-0 break-words font-ui text-body-sm text-primary">
               {slide.filename}
             </p>
             <button
@@ -143,7 +143,7 @@ export function SlideField({
               Gỡ tệp
             </button>
           </div>
-          <p className="font-body text-caption text-secondary">
+          <p className="font-ui text-caption text-ink-dilute">
             Gỡ rồi bấm Lưu thì bài giảng không còn tệp tải về. Byte vẫn nằm trong kho —
             bảng tài liệu là bảng chỉ-ghi-thêm.
           </p>
@@ -153,7 +153,7 @@ export function SlideField({
       {/* Vùng live có mặt SẴN, rỗng nhưng vẫn hiện: `display:none` lúc rỗng sẽ gỡ nó khỏi
           cây trợ năng, và khi lỗi xuất hiện thì trình đọc màn hình coi đó là một vùng
           live vừa được THÊM chứ không phải một thay đổi — thường là im lặng. */}
-      <p role="alert" className="font-body text-caption text-destructive">
+      <p role="alert" className="font-ui text-caption text-son">
         {error}
       </p>
     </fieldset>

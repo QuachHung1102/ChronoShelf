@@ -2,101 +2,101 @@
   "theme": {
     "extend": {
       "colors": {
-        "primary": "#6e4a2e",
-        "primary-dark": "#3b2415",
-        "secondary": "#7a6248",
-        "tertiary": "#e8622c",
-        "tertiary-deep": "#a83a10",
-        "tertiary-light": "#ffc0a0",
-        "neutral": "#efe3cb",
-        "surface": "#fbf4e4",
-        "surface-shelf": "#2a160c",
-        "surface-reader": "#241209",
-        "surface-room": "#160b05",
-        "surface-locked": "#5a3b22",
-        "secondary-light": "#e3c39b",
-        "on-primary": "#f6ecda",
-        "ring": "#a83a10",
-        "ring-on-dark": "#f6ecda",
-        "destructive": "#b3261e",
-        "on-destructive": "#ffffff"
+        "primary": "#0a1a33",
+        "ink-current": "#1e2d4a",
+        "ink-dilute": "#606d80",
+        "feathered": "#aeb6c2",
+        "mist": "#dde2e8",
+        "paper": "#f6f7f9",
+        "surface": "#fdfdfe",
+        "washi": "#f4f2ec",
+        "son": "#b3311c",
+        "son-deep": "#8e2412",
+        "son-light": "#f0c4b6",
+        "on-ink": "#f6f7f9",
+        "on-son": "#ffffff",
+        "ring": "#1e2d4a",
+        "ring-on-ink": "#dde2e8"
       },
       "fontFamily": {
-        "headline-xl": [
-          "Playfair Display"
+        "display-xl": [
+          "Manrope"
         ],
-        "headline-lg": [
-          "Playfair Display"
+        "display-lg": [
+          "Manrope"
         ],
-        "headline-md": [
-          "Playfair Display"
+        "display-md": [
+          "Manrope"
         ],
-        "headline-sm": [
-          "Playfair Display"
+        "title-md": [
+          "Manrope"
         ],
-        "title-book": [
-          "Playfair Display"
+        "title-sm": [
+          "Manrope"
         ],
         "body-md": [
-          "Lora"
+          "Manrope"
         ],
         "body-sm": [
-          "Lora"
+          "Manrope"
+        ],
+        "reading": [
+          "Lexend"
+        ],
+        "reading-lead": [
+          "Lexend"
         ],
         "label-md": [
-          "Lora"
+          "Manrope"
         ],
         "label-caps": [
-          "Lora"
+          "Manrope"
         ],
         "caption": [
-          "Lora"
-        ],
-        "body-book": [
-          "Lora"
-        ],
-        "drop-cap": [
-          "Playfair Display"
+          "Manrope"
         ]
       },
       "fontSize": {
-        "headline-xl": [
-          "48px",
+        "display-xl": [
+          "60px",
           {
-            "fontWeight": "700",
-            "lineHeight": "1.1"
+            "letterSpacing": "-0.02em",
+            "fontWeight": "200",
+            "lineHeight": "1.05"
           }
         ],
-        "headline-lg": [
-          "36px",
+        "display-lg": [
+          "40px",
           {
-            "fontWeight": "700",
-            "lineHeight": "1.15"
+            "letterSpacing": "-0.015em",
+            "fontWeight": "200",
+            "lineHeight": "1.12"
           }
         ],
-        "headline-md": [
-          "24px",
+        "display-md": [
+          "28px",
           {
-            "fontWeight": "700",
-            "lineHeight": "1.25"
+            "letterSpacing": "-0.01em",
+            "fontWeight": "300",
+            "lineHeight": "1.2"
           }
         ],
-        "headline-sm": [
+        "title-md": [
           "20px",
           {
-            "fontWeight": "700",
+            "fontWeight": "500",
             "lineHeight": "1.3"
           }
         ],
-        "title-book": [
-          "15px",
+        "title-sm": [
+          "16px",
           {
-            "fontWeight": "700",
-            "lineHeight": "1.4"
+            "fontWeight": "600",
+            "lineHeight": "1.35"
           }
         ],
         "body-md": [
-          "14px",
+          "15px",
           {
             "fontWeight": "400",
             "lineHeight": "1.6"
@@ -109,18 +109,32 @@
             "lineHeight": "1.55"
           }
         ],
+        "reading": [
+          "17px",
+          {
+            "fontWeight": "400",
+            "lineHeight": "1.75"
+          }
+        ],
+        "reading-lead": [
+          "19px",
+          {
+            "fontWeight": "300",
+            "lineHeight": "1.7"
+          }
+        ],
         "label-md": [
           "14px",
           {
             "fontWeight": "600",
-            "lineHeight": "1.2"
+            "lineHeight": "1.25"
           }
         ],
         "label-caps": [
           "12px",
           {
-            "letterSpacing": "0.12em",
-            "fontWeight": "700",
+            "letterSpacing": "0.18em",
+            "fontWeight": "600",
             "lineHeight": "1.3"
           }
         ],
@@ -128,29 +142,15 @@
           "12px",
           {
             "fontWeight": "400",
-            "lineHeight": "1.4"
-          }
-        ],
-        "body-book": [
-          "16px",
-          {
-            "fontWeight": "400",
-            "lineHeight": "1.75"
-          }
-        ],
-        "drop-cap": [
-          "44px",
-          {
-            "fontWeight": "700",
-            "lineHeight": "0.82"
+            "lineHeight": "1.45"
           }
         ]
       },
       "borderRadius": {
         "none": "0px",
-        "sm": "4px",
-        "md": "6px",
-        "lg": "12px",
+        "sm": "2px",
+        "md": "4px",
+        "lg": "8px",
         "full": "9999px"
       },
       "spacing": {
@@ -161,10 +161,10 @@
         "xl": "32px",
         "2xl": "48px",
         "3xl": "64px",
-        "measure": "456px",
+        "4xl": "96px",
+        "measure": "560px",
         "page-margin": "48px",
-        "shelf-gap": "28px",
-        "header-height": "72px"
+        "rail-width": "232px"
       }
     }
   }

@@ -26,25 +26,11 @@ $half: 490px;
   perspective-origin: 50% 44%;
 }
 
-// Bóng của cả quyển sách đổ xuống sàn phòng. Là phần tử riêng vì .book bật preserve-3d,
-// mà preserve-3d thì `box-shadow` trên chính nó không vẽ ra gì (nó không có nền).
-.bookShadow {
-  position: absolute;
-  inset: auto -3% -40px -3%;
-  height: 96px;
-  border-radius: 50%;
-  // Nền phòng quanh đây đã gần như đen, nên vệt bóng này gần như không thấy — và đúng ra
-  // là vậy. Nó chỉ có việc dìm nốt phần sáng còn sót của luồng sáng ngay dưới chân sách,
-  // để mép dưới quyển sách không hòa vào nền. Đừng đổi nó thành quầng sáng ấm cho "nổi":
-  // trên màn hình này quầng sáng cam đã có nghĩa riêng (DESIGN.md § Elevation).
-  background: radial-gradient(
-    ellipse at center,
-    theme('colors.surface-room') 0%,
-    theme('colors.surface-room / 70%') 40%,
-    theme('colors.surface-room / 0%') 73%
-  );
-  filter: blur(10px);
-}
+// `.bookShadow` đã bị XÓA ngày 2026-09-10, đừng dựng lại. Nó là vệt bóng quyển sách đổ
+// xuống sàn căn phòng gỗ; DESIGN.md § Elevation nói hệ này PHẲNG — "một tấm thẻ có
+// `box-shadow` là một tấm thẻ sai ở đây" — và chiều sâu đến từ độ đậm của mực cùng lớp tông
+// `paper` → `surface` → `washi`. Thứ tách quyển sách khỏi mặt nước nay là đường kẻ 1px trên
+// `.face`, không phải một vệt mờ.
 
 .book {
   position: relative;
@@ -68,10 +54,12 @@ $half: 490px;
   top: 7px;
   bottom: 7px;
   width: 12px;
+  // Sọc lấy màu của TRANG GIẤY (`washi`), không của mặt nước: đây là khối giấy nhìn từ
+  // cạnh, nên nó phải cùng vật liệu với trang. Dùng `paper` thì mép sách tan vào nền.
   background: repeating-linear-gradient(
     to bottom,
-    theme('colors.neutral') 0 1px,
-    theme('colors.secondary / 40%') 1px 3px
+    theme('colors.washi') 0 1px,
+    theme('colors.ink-dilute / 40%') 1px 3px
   );
   transition: transform var(--flip-duration) var(--flip-ease);
 }
@@ -81,14 +69,14 @@ $half: 490px;
   right: calc(50% + #{$half});
   transform-origin: right center;
   border-radius: theme('borderRadius.sm') 0 0 theme('borderRadius.sm');
-  box-shadow: inset -2px 0 4px theme('colors.surface-room / 35%');
+  box-shadow: inset -2px 0 4px theme('colors.primary / 35%');
 }
 
 .edgeRight {
   left: calc(50% + #{$half});
   transform-origin: left center;
   border-radius: 0 theme('borderRadius.sm') theme('borderRadius.sm') 0;
-  box-shadow: inset 2px 0 4px theme('colors.surface-room / 35%');
+  box-shadow: inset 2px 0 4px theme('colors.primary / 35%');
 }
 
 // Một tờ giấy: mặt trước là trang lẻ, mặt sau là trang chẵn kế nó. Trục quay nằm ở gáy,
@@ -110,8 +98,13 @@ $half: 490px;
   overflow: hidden;
   // Bắt buộc: thiếu nó thì mặt sau của tờ giấy hiện ngược qua mặt trước.
   backface-visibility: hidden;
-  background: theme('colors.surface');
-  box-shadow: inset 0 0 0 1px theme('colors.primary-dark / 12%');
+  // `washi` (#EFEDE6), không phải `surface`. DESIGN.md § Colors dựng token này cho đúng một
+  // việc — "mặt trang sách trong trình đọc", ấm hơn `paper` một bậc "vì tờ giấy là vật liệu
+  // khác với mặt nước" — nhưng cho tới 2026-09-10 không chỗ nào trong sản phẩm dùng tới nó.
+  background: theme('colors.washi');
+  // Đường kẻ 1px thay cho vệt bóng đã xóa. `washi` trên `paper` chỉ chênh nhau một bậc tông,
+  // nên thiếu nét này thì mép quyển sách tan vào mặt nước.
+  box-shadow: inset 0 0 0 1px theme('colors.ink-dilute / 35%');
 }
 
 .back {
@@ -129,7 +122,7 @@ $half: 490px;
     inset: 0;
     z-index: 2;
     pointer-events: none;
-    background: theme('colors.surface-room');
+    background: theme('colors.primary');
     animation: page-shade var(--flip-duration) ease-in-out both;
   }
 }
@@ -140,7 +133,7 @@ $half: 490px;
     opacity: 0;
   }
   50% {
-    opacity: 0.3;
+    opacity: 0.16;
   }
 }
 
@@ -160,9 +153,9 @@ $half: 490px;
   left: 0;
   background: linear-gradient(
     to right,
-    theme('colors.surface-room / 30%') 0%,
-    theme('colors.surface-room / 8%') 45%,
-    theme('colors.surface-room / 0%') 100%
+    theme('colors.primary / 30%') 0%,
+    theme('colors.primary / 8%') 45%,
+    theme('colors.primary / 0%') 100%
   );
 }
 
@@ -170,38 +163,36 @@ $half: 490px;
   right: 0;
   background: linear-gradient(
     to left,
-    theme('colors.surface-room / 30%') 0%,
-    theme('colors.surface-room / 8%') 45%,
-    theme('colors.surface-room / 0%') 100%
+    theme('colors.primary / 30%') 0%,
+    theme('colors.primary / 8%') 45%,
+    theme('colors.primary / 0%') 100%
   );
 }
 
-// Bìa cứng: da nâu, khung nhũ chìm — cùng ngôn ngữ với bìa trên kệ sách.
+// Bìa: một khối mực đặc.
+//
+// Bản cũ là da nâu vân chéo với khung nhũ vàng chìm — ngôn ngữ của thư viện gỗ. Trong chậu
+// mực, bìa sách là **vùng đậm nhất trên mặt nước**: `primary` phẳng, không vân, không nhũ.
+// Đó cũng là lý do nó không cần bóng để nổi lên khỏi nền `paper` — 16.0:1 là quá đủ.
+//
+// Nét `son` mảnh chạy vòng trong là dấu triện, sắc tố thứ hai của hệ, và là thứ DUY NHẤT
+// không phải mực trên mặt bìa. Vẽ bằng `inset box-shadow` chứ không phải `border`: bìa là
+// một mặt của tờ giấy 3D, thêm `border` sẽ nong hộp và làm lệch trục lật.
 .hardCover {
-  background:
-    repeating-linear-gradient(
-      116deg,
-      theme('colors.on-primary / 3%') 0 1px,
-      theme('colors.surface-room / 3%') 1px 6px
-    ),
-    linear-gradient(
-      152deg,
-      theme('colors.secondary') 0%,
-      theme('colors.primary') 38%,
-      theme('colors.primary-dark') 100%
-    );
+  background: theme('colors.primary');
   box-shadow:
-    inset 0 0 0 1px theme('colors.surface-room / 45%'),
-    inset 0 0 0 12px theme('colors.tertiary-light / 0%'),
-    inset 0 0 0 13px theme('colors.tertiary-light / 20%'),
-    inset 0 0 0 14px theme('colors.surface-room / 25%');
+    inset 0 0 0 13px theme('colors.primary'),
+    inset 0 0 0 14px theme('colors.son / 55%');
 }
 
 .itemGlow {
+  // Quầng son quanh vật phẩm. 18%, không phải 65%: bản cũ đứng trên nền phòng gần đen nên
+  // cần đậm mới thấy; trên mặt nước 'paper' thì cùng giá trị đó ra một mảng hồng đặc át cả
+  // vật phẩm nó đang tôn lên.
   background: radial-gradient(
     circle,
-    theme('colors.tertiary / 65%') 0%,
-    theme('colors.tertiary / 0%') 70%
+    theme('colors.son / 18%') 0%,
+    theme('colors.son / 0%') 70%
   );
 }
 
@@ -250,7 +241,7 @@ $half: 490px;
 // hoa cả cụm thì mất dấu mũ và khó đọc (DESIGN.md § Typography).
 .runningHead {
   padding-bottom: theme('spacing.xs');
-  border-bottom: 1px solid theme('colors.secondary / 25%');
+  border-bottom: 1px solid theme('colors.ink-dilute / 25%');
   letter-spacing: 0.1em;
 }
 
@@ -262,8 +253,8 @@ $half: 490px;
   margin: theme('spacing.sm') 0 theme('spacing.md');
   background: linear-gradient(
     to right,
-    theme('colors.tertiary-deep / 50%') 0%,
-    theme('colors.tertiary-deep / 0%') 68%
+    theme('colors.son / 50%') 0%,
+    theme('colors.son / 0%') 68%
   );
 }
 
@@ -275,7 +266,7 @@ $half: 490px;
   width: 6px;
   height: 6px;
   transform: rotate(45deg);
-  background: theme('colors.tertiary-deep / 75%');
+  background: theme('colors.son / 75%');
 }
 
 // Chữ cái đầu thả xuống hai dòng. `::first-letter` xử lý đúng chữ tiếng Việt có dấu vì Đ, Ấ,
@@ -294,15 +285,23 @@ $half: 490px;
   hyphens: none;
 }
 
+// Chữ cái đầu đoạn thả xuống.
+//
+// Thế giới cũ (thư viện gỗ, sách in cổ) có một bậc chữ riêng `drop-cap` 44px/700 cho việc
+// này. Chậu mực thì KHÔNG: ở đây chữ là một sans humanist yên tĩnh giữ ở lề, và một chữ cái
+// 44px in đậm là đúng thứ giọng mà thế giới này không nói. Bậc `display-md` (28px/300) giữ
+// đúng chức năng — mắt biết đoạn mở đầu bắt đầu ở đâu — bằng KHỔ chữ chứ không bằng độ đậm.
+//
+// Màu `son` là sắc tố thứ hai, dùng đúng hai chỗ trong sản phẩm: triện hoàn thành và đây.
 .body::first-letter {
   float: left;
   margin: 4px theme('spacing.sm') 0 0;
-  font-family: var(--font-heading), serif;
-  font-size: theme('fontSize.drop-cap[0]');
-  font-weight: 700;
+  font-family: var(--font-ui), sans-serif;
+  font-size: theme('fontSize.display-md[0]');
+  font-weight: 300;
   // Cùng lý do như `font-size` ngay trên: nửa lấy token, nửa chép số là chỗ để trôi lệch.
-  line-height: theme('fontSize.drop-cap[1].lineHeight');
-  color: theme('colors.tertiary-deep');
+  line-height: theme('fontSize.display-md[1].lineHeight');
+  color: theme('colors.son');
 }
 
 // Ý chính ở trang tổng kết: dấu triện hình thoi thay cho gạch đầu dòng của giao diện.
@@ -319,7 +318,7 @@ $half: 490px;
   width: 6px;
   height: 6px;
   transform: rotate(45deg);
-  background: theme('colors.tertiary-deep');
+  background: theme('colors.son');
 }
 
 // Số trang giữa chân trang, hai bên là nét gạch. Gạch vẽ bằng nền chứ không phải `content`
@@ -328,11 +327,11 @@ $half: 490px;
   position: relative;
   align-self: center;
   padding-inline: 20px;
-  font-family: var(--font-body), serif;
+  font-family: var(--font-ui), serif;
   // Lấy thẳng bậc `caption` của thang chữ thay vì gõ 12px: cùng một giá trị, nhưng đổi
   // trong DESIGN.md thì chỗ này đi theo.
   font-size: theme('fontSize.caption[0]');
-  color: theme('colors.secondary');
+  color: theme('colors.ink-dilute');
 }
 
 .folio::before,
@@ -342,7 +341,7 @@ $half: 490px;
   bottom: 8px;
   width: 13px;
   height: 1px;
-  background: theme('colors.secondary / 55%');
+  background: theme('colors.ink-dilute / 55%');
 }
 
 .folio::before {
@@ -369,7 +368,10 @@ $half: 490px;
 }
 
 .dialog::backdrop {
-  background: theme('colors.surface-room');
+  // Mặt nước, không phải phòng tối: hộp thoại mở ra từ màn kệ sách trắng giấy, nên nền
+  // sau nó cũng phải là nước. Trước 2026-09-10 chỗ này là 'primary' — cả màn hình tối sầm
+  // lại khi mở một quyển sách.
+  background: theme('colors.paper');
 }
 
 // Mở/đóng mềm cho hộp thoại đọc sách.
@@ -439,9 +441,9 @@ $half: 490px;
   margin: theme('spacing.sm') 0;
   background: linear-gradient(
     to right,
-    theme('colors.tertiary-light / 0%'),
-    theme('colors.tertiary-light / 55%'),
-    theme('colors.tertiary-light / 0%')
+    theme('colors.son-light / 0%'),
+    theme('colors.son-light / 55%'),
+    theme('colors.son-light / 0%')
   );
 }
 
@@ -454,7 +456,7 @@ $half: 490px;
   height: 6px;
   margin-left: -3px;
   transform: rotate(45deg);
-  background: theme('colors.tertiary-light / 70%');
+  background: theme('colors.son-light / 70%');
 }
 
 // Hàng điều khiển dưới quyển sách, rộng ĐÚNG bằng trang đôi để hai mũi tên lật trang
@@ -503,5 +505,5 @@ $half: 490px;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: theme('colors.surface-room / 50%');
+  background: theme('colors.primary / 50%');
 }

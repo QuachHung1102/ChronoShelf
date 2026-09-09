@@ -1,0 +1,162 @@
+// Màn kệ sách — bờ và chậu.
+//
+// Bố cục là một luật của thế giới thị giác, không phải sở thích: chữ đứng ở LỀ TĨNH, mặt
+// nước ở bên kia (DESIGN.md § Ink). Hai vùng, một đường bờ, và không một ký tự nào vượt qua
+// nó. Đó cũng là câu trả lời cho mối lo hiển nhiên với hướng "chậu mực": một công cụ đọc
+// không sống được trên mặt nước đang chảy — nên nó không sống ở đó.
+
+.canh {
+  // KHÔNG phải hai cột cạnh nhau. Chậu phủ TOÀN BỘ vùng nội dung và bờ nằm đè lên nó —
+  // đó là khác biệt giữa "một cái chậu" và "một cột trang trí bên phải". Đo trên màn
+  // thật ở 1440px: với lưới 1.4fr/1fr, mực chỉ còn 500px để loang và vân ra như khói xám
+  // dạt vào mép; phủ hết thì cùng số giọt ấy đọc ra là một mặt nước.
+  position: relative;
+  display: flex;
+  min-height: 0;
+  flex: 1;
+}
+
+// BỜ — tấm giấy đặc mà chữ đứng lên. Mực chảy tới đây thì dừng.
+.bo {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  // `max(516px, 56%)` chứ không phải 56% trơn, và con số 516 là đo chứ không phải chọn.
+  //
+  // Ở 1024×768 — ngưỡng thấp nhất dự án cam kết — vùng nội dung chỉ còn 792px sau rail, nên
+  // 56% cho ra bờ 443px, trừ lề hai bên 96px còn 347px cho chữ: "Trang phục qua các thời kỳ"
+  // và "Những phát minh thắp sáng nhân loại" đều bị cắt cụt bằng dấu ba chấm. Sàn 516px trả
+  // lại 420px cho chữ, đủ cho những tên bài dài nhất trong nội dung thật.
+  //
+  // Đánh đổi có ý thức: ở 1024px mặt nước co còn 276px. Đó là hướng đúng của đánh đổi —
+  // PRODUCT.md nguyên tắc 4, "chữ trước hiệu ứng".
+  width: max(516px, 56%);
+  min-height: 0;
+  min-width: 0;
+  flex-direction: column;
+  background: theme('colors.paper');
+}
+
+// Mép bờ tan vào nước. Một dải gradient ĐỨNG NGOÀI bờ, thay vì mask đặt trên chính bờ:
+// mask sẽ làm mờ luôn phần chữ nằm gần mép, mà chữ thì không được phép mờ đi vì lý do trang trí.
+.bo::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 100%;
+  width: 140px;
+  pointer-events: none;
+  background: linear-gradient(
+    to right,
+    theme('colors.paper') 0%,
+    theme('colors.paper / 0%') 100%
+  );
+}
+
+.chau {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+// ---------------------------------------------------------------------------
+// Danh sách bài học
+// ---------------------------------------------------------------------------
+
+.danhSach {
+  margin-top: theme('spacing.xl');
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+
+  // Vùng cuộn DUY NHẤT của màn hình. Số bài do admin quyết lúc chạy, nên đây là chỗ phải
+  // chịu được cả kệ 4 bài lẫn kệ 40 bài mà không nong trang ra.
+  scrollbar-width: thin;
+  scrollbar-color: theme('colors.feathered') transparent;
+}
+
+.dong {
+  display: flex;
+  align-items: center;
+  gap: theme('spacing.md');
+  width: 100%;
+  padding: theme('spacing.md') theme('spacing.sm');
+  text-align: left;
+  cursor: pointer;
+  border-radius: theme('borderRadius.md');
+  // Đường kẻ mảnh giữa các dòng — hệ này PHẲNG, ranh giới là nét 1px chứ không phải bóng đổ.
+  border-bottom: 1px solid theme('colors.mist');
+  transition:
+    background-color 200ms ease-out,
+    padding-left 200ms ease-out;
+}
+
+.dong:hover {
+  background: theme('colors.surface');
+  // Dịch vào một nhịp khi rê chuột: cùng lúc đó giọt mực của chính bài này loang ra trong
+  // chậu, nên hai nửa màn hình phản ứng như một.
+  padding-left: theme('spacing.md');
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dong {
+    transition: none;
+  }
+
+  .dong:hover {
+    padding-left: theme('spacing.sm');
+  }
+}
+
+.dongKhoa {
+  cursor: not-allowed;
+}
+
+.dongKhoa:hover {
+  background: transparent;
+  padding-left: theme('spacing.sm');
+}
+
+// Bài nên đọc tiếp. KHÔNG phát sáng, không nhấp nháy: trong thế giới này thứ chỉ đường là
+// MỰC — giọt mới nhất trong chậu đang loang. Ở bờ, dấu hiệu là một vạch mực đặc ở mép trái,
+// tức một tín hiệu HÌNH DẠNG chứ không chỉ là màu (WCAG 1.4.1).
+.dongTiep {
+  border-left: 2px solid theme('colors.primary');
+  padding-left: calc(theme('spacing.md') - 2px);
+  background: theme('colors.surface');
+}
+
+.dongTiep:hover {
+  padding-left: calc(theme('spacing.md') - 2px);
+}
+
+// Số hiệu — nhãn kỹ thuật, đúng giọng bảng điều khiển của một chậu mực.
+.soHieu {
+  flex: 0 0 auto;
+  width: 2.25rem;
+  font-size: theme('fontSize.caption[0]');
+  line-height: theme('fontSize.caption[1].lineHeight');
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.12em;
+  // `ink-dilute`, KHÔNG phải `feathered`: số hiệu bài mang thông tin (thứ tự đọc), mà
+  // `feathered` trên `paper` chỉ đạt 1.93:1 — dưới cả ngưỡng 3:1 của WCAG 1.4.11.
+  color: theme('colors.ink-dilute');
+}
+
+// Triện son: con dấu VUÔNG bo 2px (DESIGN.md § Shapes). Đây là một trong đúng hai chỗ trong
+// sản phẩm được dùng sắc tố son.
+// Triện VIỀN, không phải triện đặc, và lý do đo được ngay trên màn: một kệ đã học xong 5
+// bài cho ra 5 ô son đặc xếp thành một cột đỏ chạy dọc màn hình, cạnh tranh thẳng với mặt
+// nước — trong khi DESIGN.md § Colors nói son là sắc tố dùng "rất tiết chế". Viền giữ đúng
+// thông tin (son trên paper 5.85:1, viền vượt xa ngưỡng 3:1 của WCAG 1.4.11) mà chỉ chiếm
+// một phần nhỏ diện tích mực đỏ.
+.trien {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: theme('borderRadius.sm');
+  border: 1.5px solid theme('colors.son');
+  color: theme('colors.son');
+}

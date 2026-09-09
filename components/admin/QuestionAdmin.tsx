@@ -31,7 +31,7 @@ function ChoiceFields({
   return (
     <fieldset className="flex flex-col gap-xs">
       <legend className={LABEL}>Các lựa chọn</legend>
-      <p className="mb-xs max-w-measure font-body text-caption text-secondary">
+      <p className="mb-xs max-w-measure font-ui text-caption text-ink-dilute">
         Điền 2–4 lựa chọn và đánh dấu đúng một đáp án. Ô để trống sẽ bị bỏ qua.
       </p>
 
@@ -45,7 +45,7 @@ function ChoiceFields({
               name="correct"
               value={slot}
               defaultChecked={correctIndex === slot}
-              className="h-4 w-4 accent-tertiary-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+              className="h-4 w-4 accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             />
             <span className="sr-only">Đáp án đúng là lựa chọn {slot + 1}</span>
           </label>
@@ -83,18 +83,18 @@ export function QuestionAdmin({
   return (
     <div className="flex flex-col gap-lg">
       <div className={ADMIN_CARD}>
-        <p className="flex max-w-measure items-start gap-sm font-body text-body-sm text-secondary">
-          <Info aria-hidden className="mt-[0.15em] h-4 w-4 shrink-0 text-tertiary-deep" />
+        <p className="flex max-w-measure items-start gap-sm font-ui text-body-sm text-ink-dilute">
+          <Info aria-hidden className="mt-[0.15em] h-4 w-4 shrink-0 text-son" />
           <span>
             {questions.length === 0 ? (
               <>
-                Quyển này <strong className="font-semibold text-primary-dark">chưa có câu hỏi nào</strong>, nên
+                Quyển này <strong className="font-semibold text-primary">chưa có câu hỏi nào</strong>, nên
                 đọc hết trang cuối là học sinh nhận vật phẩm ngay. Thêm 2–3 câu ở dưới thì phải
                 trả lời đúng hết mới nhận được.
               </>
             ) : (
               <>
-                Học sinh phải trả lời đúng <strong className="font-semibold text-primary-dark">tất cả</strong>{" "}
+                Học sinh phải trả lời đúng <strong className="font-semibold text-primary">tất cả</strong>{" "}
                 {questions.length} câu mới nhận được vật phẩm. Sai thì được đọc lại và làm lại
                 không giới hạn số lần. Người đã hoàn thành quyển này từ trước không phải làm lại.
               </>
@@ -104,7 +104,7 @@ export function QuestionAdmin({
       </div>
 
       <section aria-labelledby="ds-cau-hoi" className="flex flex-col gap-md">
-        <h2 id="ds-cau-hoi" className="font-heading text-headline-sm text-primary-dark">
+        <h2 id="ds-cau-hoi" className="font-ui text-title-md text-primary">
           {questions.length === 0 ? "Chưa có câu hỏi" : `${questions.length} câu hỏi`}
         </h2>
 
@@ -113,17 +113,17 @@ export function QuestionAdmin({
             <header className="flex flex-wrap items-start gap-sm">
               <span
                 aria-hidden
-                className="mt-[0.15em] inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-secondary bg-neutral font-body text-caption text-primary-dark"
+                className="mt-[0.15em] inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-mist bg-paper font-ui text-caption text-primary"
               >
                 {index + 1}
               </span>
-              <h3 className="font-heading text-headline-sm text-primary-dark">{q.prompt}</h3>
+              <h3 className="font-ui text-title-md text-primary">{q.prompt}</h3>
             </header>
 
             {/* Đáp án hiện ngay ở phần gập lại: khi admin lướt để soát bài, thứ cần thấy
                 là "câu này đáp án là gì", không phải "câu này có mấy lựa chọn". */}
-            <p className="mt-sm font-body text-body-sm text-secondary">
-              Đáp án: <span className="text-primary-dark">{q.choices[q.correctIndex]}</span>
+            <p className="mt-sm font-ui text-body-sm text-ink-dilute">
+              Đáp án: <span className="text-primary">{q.choices[q.correctIndex]}</span>
               {` · ${q.choices.length} lựa chọn`}
             </p>
 
@@ -184,9 +184,9 @@ export function QuestionAdmin({
       <section aria-labelledby="them-cau-hoi" className={ADMIN_CARD}>
         <h2
           id="them-cau-hoi"
-          className="mb-sm flex items-center gap-sm font-heading text-headline-sm text-primary-dark"
+          className="mb-sm flex items-center gap-sm font-ui text-title-md text-primary"
         >
-          <CircleHelp aria-hidden className="h-5 w-5 text-tertiary-deep" />
+          <CircleHelp aria-hidden className="h-5 w-5 text-son" />
           Thêm câu {questions.length + 1}
         </h2>
         <ActionForm action={createQuestion} className="flex flex-col gap-sm" resetOnSuccess>

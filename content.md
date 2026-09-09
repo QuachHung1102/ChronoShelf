@@ -43,8 +43,8 @@ Website gồm **5 mục chính** trên thanh điều hướng:
 
 Mỗi quyển sách trên kệ luôn ở một trong ba trạng thái, phân biệt rõ bằng thị giác:
 
-* **Đã khóa:** Bìa sách tối màu, có ổ khóa/dây xích chặn ngang, không click được. Hover chỉ hiện gợi ý: *"Cần [tên vật phẩm] để mở"*.
-* **Đã mở khóa – chưa đọc:** Bìa sáng rõ, viền cam nhấp nháy nhẹ để mời gọi. Hover thì sách nhô lên khỏi kệ và phát sáng cam.
+* **Đã khóa:** Quyển tối màu, có đai sắt chặn ngang và ổ khóa, không click được. Gợi ý *"Cần [tên vật phẩm] để mở"* in thẳng trên hàng — không giấu trong tooltip, vì tooltip chỉ tới được người đang cầm chuột.
+* **Đã mở khóa – chưa đọc:** Quyển sáng rõ, viền cam nhấp nháy nhẹ để mời gọi. Hover thì quyển trượt ngang ra khỏi chồng sách.
 * **Đã đọc xong:** Bìa hiện dấu triện/đánh dấu hoàn thành ở góc. Có thể mở đọc lại bất cứ lúc nào.
 
 Quyển đầu tiên của mỗi kệ luôn ở trạng thái mở sẵn để người dùng có điểm bắt đầu.
@@ -107,7 +107,7 @@ Mỗi chuyên mục có một bộ vật phẩm riêng, gắn với nội dung b
 
 ### 5.2. Lịch sử Việt Nam
 
-* Kệ sách gỗ cổ kính tông nâu đất, 3–5 quyển đặt cạnh nhau, bìa thiết kế riêng cho từng bài.
+* Chồng sách nằm trong căn phòng thư viện, tông nâu đất, mỗi quyển một hàng ngang nhìn từ cạnh gáy; ảnh bìa admin tải lên thành nhãn dán trên sống sách. **ĐỔI 2026-09-09** — bản trước tả "3–5 quyển đặt cạnh nhau" trên một cái tủ gỗ, và chính con số "3–5" là chỗ hỏng: số quyển do admin quyết lúc chạy, nên một hàng ngang cố định hoặc tràn ra ngoài tủ, hoặc đẩy tủ cao hơn khung nhìn và bắt một màn hình thiết kế-để-không-cuộn phải cuộn. Chồng sách nằm không có trần đó. Lý do đầy đủ ở `DESIGN.md` § Layout / Màn kệ sách.
 * Nội dung mẫu:
   * *Quyển 1:* Khởi nguồn bờ cõi (Hùng Vương)
   * *Quyển 2:* Trận chiến Bạch Đằng 938
@@ -118,7 +118,7 @@ Mỗi chuyên mục có một bộ vật phẩm riêng, gắn với nội dung b
 
 ### 5.3. Lịch sử Thế giới
 
-* Cùng cấu trúc kệ sách, nhưng hoa văn và bìa sách mang phong cách phương Tây cổ đại để phân biệt.
+* Cùng cấu trúc chồng sách, nhưng hoa văn và ảnh bìa mang phong cách phương Tây cổ đại để phân biệt.
 * Nội dung mẫu:
   * *Quyển 1:* Bí ẩn các Kim tự tháp Ai Cập
   * *Quyển 2:* Sự hưng thịnh và suy tàn của đế chế La Mã
@@ -127,7 +127,7 @@ Mỗi chuyên mục có một bộ vật phẩm riêng, gắn với nội dung b
 
 ### 5.4. Lịch sử quanh cuộc sống
 
-* Cùng cấu trúc kệ sách, mỗi bìa sách được vẽ cách điệu lồng ghép hình ảnh đồ vật liên quan.
+* Cùng cấu trúc chồng sách, mỗi ảnh bìa được vẽ cách điệu lồng ghép hình ảnh đồ vật liên quan.
 * Nội dung mẫu:
   * *Quyển 1 (đồng xu):* Lịch sử tiền tệ — từ vỏ sò đến tiền giấy
   * *Quyển 2 (quả bóng):* Hành trình quả bóng đá chinh phục thế giới

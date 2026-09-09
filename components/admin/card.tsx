@@ -26,13 +26,13 @@ import { CHIP } from "@/components/ui/controls";
  */
 // Alias của `CARD` với padding chật hơn một bậc: màn quản trị xếp hàng chục thẻ
 // trên một trang, `p-lg` ở đó đẩy nội dung xuống quá xa.
-export const ADMIN_CARD = "rounded-md border border-secondary bg-surface p-md";
+export const ADMIN_CARD = "rounded-md border border-mist bg-surface p-md";
 
 /**
  * Đường kẻ chia phần BÊN TRONG thẻ — cùng màu với khung để mỗi thẻ chỉ có một ngôn ngữ
  * đường kẻ, và để nó không đậm hơn chính cái khung chứa nó.
  */
-export const CARD_DIVIDER = "border-secondary";
+export const CARD_DIVIDER = "border-mist";
 
 /**
  * Nút đổi thứ tự.
@@ -41,15 +41,15 @@ export const CARD_DIVIDER = "border-secondary";
  * chính cái nút vừa bấm trở thành vô hiệu — trình duyệt lấy luôn tiêu điểm khỏi một phần
  * tử `disabled`, nên người dùng bàn phím rơi về `<body>` và phải Tab lại từ đầu trang.
  * `aria-disabled` giữ nút trong luồng Tab; thứ chặn submit là `type="button"` — thuần
- * HTML, không cần JavaScript. Cùng kỹ thuật với `components/shelf/BookCover.tsx`.
+ * HTML, không cần JavaScript. Cùng kỹ thuật với gợi ý trạng thái trên gáy sách ở `components/shelf/BookStack.tsx`.
  *
  * Đánh đổi: mất phần tự khóa lúc đang gửi của `SubmitButton`, nên bấm nhanh hai lần có
  * thể đổi chỗ hai lần. Không mất mát gì và hoàn tác được bằng nút ngược lại.
  */
 export const ORDER_BUTTON =
-  "inline-flex h-8 w-8 items-center justify-center rounded-sm text-secondary transition-colors " +
-  "duration-200 ease-out hover:text-tertiary-deep aria-disabled:cursor-not-allowed " +
-  "aria-disabled:opacity-50 aria-disabled:hover:text-secondary " +
+  "inline-flex h-8 w-8 items-center justify-center rounded-sm text-ink-dilute transition-colors " +
+  "duration-200 ease-out hover:text-son aria-disabled:cursor-not-allowed " +
+  "aria-disabled:opacity-50 aria-disabled:hover:text-ink-dilute " +
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 " +
   "focus-visible:ring-offset-surface";
 
@@ -57,7 +57,7 @@ export const ORDER_BUTTON =
  * Chip trạng thái xuất bản.
  *
  * Hai vai đã bị **đảo lại**. Bản trước cho "ĐÃ XUẤT BẢN" một viên thuốc cam chói còn
- * "NHÁP" thì `bg-neutral` trên thẻ `bg-surface` — 1.16:1, tức viên thuốc không tồn tại
+ * "NHÁP" thì `bg-paper` trên thẻ `bg-surface` — 1.16:1, tức viên thuốc không tồn tại
  * về mặt thị giác. Nhấn mạnh đó ngược với việc admin đang làm: thứ CẦN bắt được bằng mắt
  * khi lướt là "học sinh chưa thấy nội dung này", còn "đã xuất bản" mới là trạng thái bình
  * thường. Một mục nháp lọt giữa danh sách mà trượt mắt thì admin tưởng đã xuất bản trong
@@ -75,8 +75,8 @@ export function PublishBadge({ published }: { published: boolean }) {
     <span
       className={`${CHIP} ${
         published
-          ? "border border-secondary bg-neutral text-primary-dark"
-          : "bg-primary-dark text-on-primary"
+          ? "border border-mist bg-paper text-primary"
+          : "bg-primary text-on-ink"
       }`}
     >
       {published ? "Đã xuất bản" : "Nháp"}
@@ -114,8 +114,8 @@ export function CardDisclosure({
     <details className={`group mt-sm border-t ${CARD_DIVIDER} pt-sm`}>
       <summary
         className={
-          "flex w-fit cursor-pointer list-none items-center gap-xs rounded-sm font-body " +
-          "text-label-md text-tertiary-deep [&::-webkit-details-marker]:hidden " +
+          "flex w-fit cursor-pointer list-none items-center gap-xs rounded-sm font-ui " +
+          "text-label-md text-son [&::-webkit-details-marker]:hidden " +
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
           "focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
         }

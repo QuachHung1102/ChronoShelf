@@ -35,7 +35,7 @@ export function LessonAdmin({ bai, sach }: { bai: BaiGiang[]; sach: SachChon[] }
   return (
     <div className="flex flex-col gap-lg">
       <section aria-labelledby="them-bai" className={ADMIN_CARD}>
-        <h2 id="them-bai" className="font-heading text-headline-sm text-primary-dark">
+        <h2 id="them-bai" className="font-ui text-title-md text-primary">
           Thêm bài giảng
         </h2>
         <ActionForm action={createLesson} className="mt-sm grid gap-sm sm:grid-cols-[1fr_10rem_auto]">
@@ -72,7 +72,7 @@ export function LessonAdmin({ bai, sach }: { bai: BaiGiang[]; sach: SachChon[] }
       </section>
 
       {bai.length === 0 ? (
-        <p className={`font-body text-body-md text-secondary ${ADMIN_CARD}`}>
+        <p className={`font-ui text-body-md text-ink-dilute ${ADMIN_CARD}`}>
           Chưa có bài giảng nào. Tạo một bài ở trên để bắt đầu.
         </p>
       ) : (
@@ -83,7 +83,7 @@ export function LessonAdmin({ bai, sach }: { bai: BaiGiang[]; sach: SachChon[] }
                 <header className="flex flex-wrap items-center gap-sm">
                   <h2
                     id={`bai-${b.slug}-ten`}
-                    className="font-heading text-headline-sm text-primary-dark"
+                    className="font-ui text-title-md text-primary"
                   >
                     {b.title}
                   </h2>
@@ -91,7 +91,7 @@ export function LessonAdmin({ bai, sach }: { bai: BaiGiang[]; sach: SachChon[] }
                       thái nháp là thứ admin phải bắt được khi lướt, không phải một từ chìm
                       giữa hai mẩu metadata. */}
                   <PublishBadge published={b.published} />
-                  <span className="font-body text-caption text-secondary">
+                  <span className="font-ui text-caption text-ink-dilute">
                     Lớp {b.grade} · {b.slug}
                   </span>
                 </header>
@@ -181,7 +181,7 @@ export function LessonAdmin({ bai, sach }: { bai: BaiGiang[]; sach: SachChon[] }
                           </option>
                         ))}
                       </select>
-                      <span className="max-w-measure font-body text-caption text-secondary">
+                      <span className="max-w-measure font-ui text-caption text-ink-dilute">
                         Đọc xong quyển này thì học sinh được gợi ý ngay bài giảng đây
                         (content.md §7).
                       </span>

@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { ChevronRight, Settings } from "lucide-react";
-import { Header } from "@/components/Header";
 import { FOCUS_RING } from "@/components/ui/controls";
-import { readShelfList } from "@/lib/content/read";
 
 export interface Crumb {
   label: string;
@@ -45,36 +43,34 @@ export async function AdminShell({
   actions?: React.ReactNode;
   children: React.ReactNode;
 }) {
-  const shelves = await readShelfList();
   const trail: Crumb[] = [{ label: "Quản trị", href: "/quan-tri" }, ...crumbs];
 
   return (
     <>
-      <Header activeHref="/quan-tri" shelves={shelves} />
       <main id="noi-dung" className="mx-auto w-full max-w-5xl flex-1 px-page-margin py-lg">
         {/* Breadcrumb chỉ dựng khi có ít nhất một chặng CON. Ở `/quan-tri` thì `trail` chỉ
             có đúng mục "Quản trị", mà mục cuối không phải liên kết — tức một hàng không dẫn
             đi đâu, đứng ngay trên một tiêu đề nói cùng chuyện. */}
         {crumbs.length > 0 && (
           <nav aria-label="Đường dẫn" className="mb-sm">
-            <ol className="flex flex-wrap items-center gap-xs font-body text-body-sm text-secondary">
+            <ol className="flex flex-wrap items-center gap-xs font-ui text-body-sm text-ink-dilute">
               {trail.map((c, i) => (
                 <li key={`${c.label}-${i}`} className="flex items-center gap-xs">
                   {/* `secondary` chứ không `secondary-light`: token đó dành cho
                       nền TỐI; trên nền trang `neutral` nó chỉ 1.32:1, và breadcrumb
                       đọc ra thành hai nhãn dính nhau. */}
-                  {i > 0 && <ChevronRight aria-hidden className="h-4 w-4 text-secondary" />}
+                  {i > 0 && <ChevronRight aria-hidden className="h-4 w-4 text-ink-dilute" />}
                   {c.href && i < trail.length - 1 ? (
                     <Link
                       href={c.href}
-                      className={`rounded-sm underline underline-offset-2 hover:text-tertiary-deep ${FOCUS_RING}`}
+                      className={`rounded-sm underline underline-offset-2 hover:text-son ${FOCUS_RING}`}
                     >
                       {c.label}
                     </Link>
                   ) : (
                     // Mục cuối là trang hiện tại: không phải liên kết, và aria-current nói
                     // rõ điều đó cho trình đọc màn hình.
-                    <span aria-current="page" className="text-primary-dark">
+                    <span aria-current="page" className="text-primary">
                       {c.label}
                     </span>
                   )}
@@ -93,16 +89,16 @@ export async function AdminShell({
                 Dùng đúng khuôn eyebrow của `/bai-giang`, `/cong-dong`, `/tui-hanh-trang`:
                 `label-caps` + `uppercase` + `tertiary-deep`, thành phần `eyebrow` trong
                 DESIGN.md. */}
-            <p className="flex items-center gap-xs font-body text-label-caps uppercase text-tertiary-deep">
+            <p className="flex items-center gap-xs font-ui text-label-caps uppercase text-son">
               <Settings aria-hidden className="h-4 w-4" />
               Khu quản trị
             </p>
             {/* `headline-lg` chứ không `headline-md`: tiêu đề màn chỉ hơn tiêu đề thẻ
                 (`headline-sm` 20px) đúng 4px thì không đọc ra cấp nào chứa cấp nào. Cùng
                 bậc với h1 của mọi màn khác trong ứng dụng. */}
-            <h1 className="mt-sm font-heading text-headline-lg text-primary-dark">{title}</h1>
+            <h1 className="mt-sm font-ui text-display-lg text-primary">{title}</h1>
             {description && (
-              <p className="mt-sm max-w-3xl font-body text-body-md text-secondary">
+              <p className="mt-sm max-w-3xl font-ui text-body-md text-ink-dilute">
                 {description}
               </p>
             )}
@@ -112,7 +108,7 @@ export async function AdminShell({
 
         {/* Breadcrumb chỉ đi LÊN, không đi ngang — thiếu hàng này thì `/quan-tri/vat-pham`
             không có đường vào nào từ giao diện. */}
-        <nav aria-label="Khu vực quản trị" className="mb-lg border-b border-surface-locked">
+        <nav aria-label="Khu vực quản trị" className="mb-lg border-b border-ink-dilute">
           <ul className="flex flex-wrap gap-lg">
             {SECTIONS.map((s) => {
               const active = s.href === section;
@@ -121,10 +117,10 @@ export async function AdminShell({
                   <Link
                     href={s.href}
                     aria-current={active ? "page" : undefined}
-                    className={`-mb-px inline-block border-b-2 pb-sm font-body text-label-md transition-colors duration-200 ease-out ${FOCUS_RING} ${
+                    className={`-mb-px inline-block border-b-2 pb-sm font-ui text-label-md transition-colors duration-200 ease-out ${FOCUS_RING} ${
                       active
-                        ? "border-tertiary-deep text-tertiary-deep"
-                        : "border-transparent text-secondary hover:text-primary-dark"
+                        ? "border-son text-son"
+                        : "border-transparent text-ink-dilute hover:text-primary"
                     }`}
                   >
                     {s.label}

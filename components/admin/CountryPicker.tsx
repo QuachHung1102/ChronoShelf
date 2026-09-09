@@ -111,7 +111,7 @@ export function CountryPicker({
         onToggle={(e) => setMoBanDo((e.currentTarget as HTMLDetailsElement).open)}
         className="mt-xs"
       >
-        <summary className="cursor-pointer font-body text-caption text-tertiary-deep">
+        <summary className="cursor-pointer font-ui text-caption text-son">
           Hoặc chọn trên bản đồ
         </summary>
 
@@ -119,7 +119,7 @@ export function CountryPicker({
           <svg
             viewBox={banDo.viewBox}
             aria-hidden
-            className="mt-xs w-full rounded-md border border-surface-locked bg-neutral"
+            className="mt-xs w-full rounded-md border border-ink-dilute bg-paper"
             onClick={(e) => {
               const id = (e.target as SVGElement).dataset?.id;
               if (id) setChon(id === chon ? "" : id);
@@ -130,10 +130,15 @@ export function CountryPicker({
                 key={c.id}
                 d={c.d}
                 data-id={c.id}
+                // Token của thế giới mực. Bản trước dùng `tertiary-deep`/`secondary`/
+                // `neutral` — ba token đã BIẾN MẤT khỏi DESIGN.md, mà Tailwind bỏ qua
+                // class không tồn tại trong im lặng: đo thật ngày 2026-09-10, cả 705
+                // `<path>` đều ra `fill: rgb(0,0,0)` và `stroke: none`, tức bản đồ là một
+                // mảng đen không biên giới và nước đang chọn không khác gì nước không chọn.
                 className={
                   c.id === chon
-                    ? "cursor-pointer fill-tertiary-deep stroke-surface"
-                    : "cursor-pointer fill-secondary stroke-neutral hover:fill-tertiary"
+                    ? "cursor-pointer fill-primary stroke-paper"
+                    : "cursor-pointer fill-mist stroke-paper hover:fill-feathered"
                 }
                 strokeWidth={0.3}
               >
@@ -144,7 +149,7 @@ export function CountryPicker({
         )}
       </details>
 
-      <span className="font-body text-caption text-secondary">
+      <span className="font-ui text-caption text-ink-dilute">
         {dangChon
           ? `Đang chọn ${dangChon.name} — mã ISO ${dangChon.id}.`
           : chon

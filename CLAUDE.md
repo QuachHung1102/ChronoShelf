@@ -22,7 +22,7 @@ quyển thì nhận được một vật phẩm, và chính vật phẩm đó m�
 | `db/schema/README.md` | Thứ tự chạy schema, ba role và lý do. **Đọc trước khi đụng SQL.** |
 | `docs/superpowers/specs/` | Spec đã được duyệt, mỗi subsystem một file. Spec thì Ở LẠI kể cả khi việc đã xong — nó giữ *vì sao*, không phải *làm thế nào*. |
 | `docs/superpowers/plans/2026-09-07-ban-giao-phien-sau.md` | **Đọc đầu tiên khi mở phiên mới**: đã làm gì, cổng đang ở đâu, việc kế tiếp là gì và thứ đang chặn nó. Ảnh chụp một thời điểm — xóa khi các mục "còn lại" xong hết. |
-| `docs/agents/bay-da-gap.md` | 27 bẫy đã vấp thật, mỗi cái kèm phép đo. Bốn cái đắt nhất còn nằm trong file này. |
+| `docs/agents/bay-da-gap.md` | Bẫy đã vấp thật, mỗi cái kèm phép đo. Bốn cái đắt nhất còn nằm trong file này. |
 | `docs/nhat-ky/` | Nhật ký từng phiên làm việc — xem mục **Nhật ký phiên** ở cuối file. |
 | `docs/superpowers/plans/` | Chỉ còn đúng bản bàn giao. Plan xong việc thì **XÓA** — nó là danh sách bước, không giữ quyết định nào; git history vẫn còn. Đã xóa: các plan backend cũ (2026-08-28), chặng C và bảng tin (2026-09-07). |
 | `pen.dev/design.pen` | File thiết kế Pencil — mockup UI đã duyệt. |
@@ -89,21 +89,82 @@ spec → plan → code riêng: **kệ sách + đọc sách** (cơ chế lõi), t
 `DESIGN.md` giữ toàn bộ design token. `tailwind.config.ts` **đọc từ file sinh ra bởi nó**, nên:
 
 ```bash
-npm run design:lint     # kiểm tra token + tương phản WCAG AA
-npm run design:build    # DESIGN.md -> tailwind.theme.json
+npm run design:lint        # kiểm tra token + tương phản WCAG AA
+npm run design:build       # DESIGN.md -> tailwind.theme.json
+npm run design:dead-class  # bắt class Tailwind dùng token KHÔNG tồn tại
 ```
 
 - Đổi màu/chữ/spacing thì sửa `DESIGN.md` rồi chạy `design:build`. **Đừng sửa
   `tailwind.theme.json` bằng tay** — nó là file sinh ra.
 - **Đừng hardcode mã hex trong component.** Dùng class Tailwind sinh từ token: `bg-primary`,
-  `text-on-primary`, `rounded-md`, `text-headline-lg`…
+  `text-on-ink`, `text-ink-dilute`, `rounded-md`, `text-display-lg`…
 - **Tailwind là chính; SCSS chỉ cho phần phải code tay.** Layout/màu/chữ/khoảng cách viết bằng
   class Tailwind ngay trong JSX. Chỉ mở `*.module.scss` khi Tailwind không diễn đạt gọn được:
   `@keyframes`, `box-shadow`/gradient tùy biến, kích thước không có trong thang spacing. Trong
-  SCSS vẫn lấy màu từ token bằng `theme('colors.tertiary / 55%')` — không viết hex.
-- `design:lint` chặn lỗi tương phản. Palette đã được sửa để đạt AA: `tertiary` (#E8622C) chỉ
-  dùng cho đồ họa, `tertiary-deep` khi accent làm nền cho chữ, `tertiary-light` khi accent là
-  chữ trên nền nâu. Chi tiết lý do nằm trong mục Colors của `DESIGN.md`.
+  SCSS vẫn lấy màu từ token bằng `theme('colors.son / 55%')` — không viết hex.
+- **`design:lint` chỉ đọc `DESIGN.md`; nó KHÔNG biết component đang viết gì.** Đổi tên một
+  token là để lại class chết trong JSX, và Tailwind bỏ qua class không hiểu trong IM LẶNG —
+  build xanh, màu biến mất. Đó là việc của `design:dead-class` (nằm trong `check`): nó build
+  CSS thật rồi đòi mọi class hình-dạng-token phải có mặt. Sót thật đã đo 2026-09-10: bản đồ
+  chọn quốc gia đen kịt trên 705 `<path>`, ô chọn đáp án trắc nghiệm rơi về xanh hệ thống.
+- `design:lint` chặn lỗi tương phản, và nó chặn THẬT: cảnh báo cũng thoát 1. Hai cặp phải
+  nhớ trong hệ mực: `feathered` (#AEB6C2) chỉ đạt **1.93:1** trên `paper` nên KHÔNG bao giờ
+  làm viền của thứ mang thông tin — chỗ đó dùng `ink-dilute`; và `son` là sắc tố thứ hai,
+  dùng đúng hai chỗ (triện hoàn thành, báo lỗi), không dùng để trang trí.
+
+### Thay thế giới thị giác 2026-09-09 — thư viện gỗ → chậu mực suminagashi
+
+Thế giới cũ (gỗ sẫm, giấy da, ánh nến, Playfair + Lora) **đã bị thay hoàn toàn**. Thế giới
+mới là một **chậu mực suminagashi**: mặt nước trắng giấy `paper`, mực chàm `primary` là sắc
+tố cấu trúc duy nhất, `son` là sắc tố thứ hai dùng rất tiết chế, chữ Manrope (giao diện) +
+Lexend (văn xuôi bài học). Lý do đầy đủ ở `DESIGN.md`; hợp đồng hướng đi nằm trong comment
+HTML đầu `<body>` ở `app/layout.tsx` — đừng xoá nó, nó là thứ audit được sau khi build.
+
+Ba luật của thế giới này, ép ở tầng component chứ không để mỗi trang tự nhớ:
+
+- **Chữ không bao giờ nổi trên mặt nước.** Chậu có bờ; chữ đứng ở lề tĩnh NGOÀI chậu. Đây là
+  thứ giữ cho một công cụ ĐỌC sống được trên một nền đang chảy.
+- **Mực là mô phỏng thật**, không phải gradient giả chất lỏng: `lib/ink/fluid.ts` giải
+  Navier–Stokes trên GPU (WebGL2, Stable Fluids + vorticity confinement). Máy không có WebGL2
+  thì chậu biến mất và nền `paper` ở lại — màn hình vẫn đọc được. **Lưới mực 1024 tách khỏi
+  lưới vận tốc 128**; hạ nó xuống là vân sợi biến thành khói xám, đã đo trên màn thật. Và
+  advect luôn dùng texel của lưới VẬN TỐC cho cả hai lần, kể cả khi mực có lưới riêng — dùng
+  texel của mực thì mực dịch đi 1/8 quãng đúng và gần như đứng yên.
+- **`prefers-reduced-motion` thì mực DỪNG HẲN** ở một trạng thái đã lắng, không phải chậm lại.
+- **Chậu có DÒNG CHẢY NỀN, và nó chỉ bơm vận tốc.** `InkBasin` rải bốn cú khuấy khắp chậu mỗi
+  1,1 giây với `amount = 0` — không thêm một hạt mực nào, vì lượng mực trên mặt nước mang
+  nghĩa "đã đọc xong bao nhiêu quyển". Thiếu nó thì mực loang xong là nằm bất động và cả chậu
+  thành một bức tranh tĩnh (người dùng báo đúng chuyện này: "chỉ auto một chỗ"). Cú khuấy
+  dùng bán kính 0.02 chứ không phải 0.0011 của một giọt, và đọc `prefers-reduced-motion` ở
+  MỖI nhịp — bật giữa chừng thì nó phải im ngay.
+- **Giọt rơi theo trục Oz và loang TRÒN từ tâm** — chậu nhìn từ trên xuống, nên mọi vector
+  đẩy một chiều đều biến nó thành "mực phun". `giotRoi()` ở `lib/ink/giot.ts` dựng đúng hình
+  đó: một giọt ở tâm cộng tám tia chỉ-vận-tốc hướng ra ngoài, **tổng động lượng bằng 0** —
+  bất biến này có test canh. Nhịp rơi thì NGẪU NHIÊN cả vị trí lẫn thời điểm (`chonGiot`,
+  `nhipNgauNhien`); nhịp đều bị mắt bắt được sau ba lần lặp. Ở màn kệ, mỗi lần chọn ngẫu
+  nhiên một quyển ĐÃ ĐỌC XONG và nhịp tổng là `9 / số quyển`, nên lượng mực giữ đúng tỉ lệ
+  với tiến độ thay vì thành hình nền.
+
+**Thế giới cũ đã bị gỡ HẲN ngày 2026-09-10 — `components/Room.tsx` không còn tồn tại.** Căn
+phòng gỗ (tường sách mờ, chùm sáng nến, hạt bụi, sàn ván) từng sống tiếp bên trong trình đọc
+và trang đăng nhập rất lâu sau khi thế giới đổi. Nó đã bị xóa cùng `Room.module.scss`; đừng
+dựng lại. Những gì thay chỗ nó, mỗi cái vì một lý do trong DESIGN.md:
+
+| Màn | Dựng lại thành |
+|---|---|
+| Rail dọc | `components/Rail.tsx` — thay hẳn header ngang 72px |
+| Kệ sách | `components/shelf/ShelfBasin.tsx` — bờ trái + chậu mực |
+| Trình đọc | Nền `paper` LẶNG (không chậu: mỗi màn một chuyển động, ở đây là cú lật trang), trang giấy `washi`, bìa là khối mực đặc viền triện son. Không còn bóng đổ — hệ này phẳng |
+| Đăng nhập | Bờ trái mang form + chậu mực bên phải, cùng ngữ pháp với màn kệ |
+| Túi hành trang | Bỏ tủ kính gỗ; thẻ giấy trên mặt nước, vật phẩm chưa có là **giọt mực rỗng** chứ không phải ổ khóa |
+| Trang chủ | Thẻ kệ là ba khối mực; sợi dây mốc thời gian `mist`, chấm mốc là giọt mực |
+
+Cộng đồng, bài giảng và khu quản trị **không phải dựng lại**: chúng vốn là thẻ giấy trên nền
+giấy, và một lượt đo tương phản trên 13 màn cho 0 cặp dưới ngưỡng AA.
+
+**Cái bẫy của lượt đổi token vẫn còn hiệu lực**: một lượt quét cơ học đã đổi ~805 chỗ, và
+Tailwind bỏ qua class không tồn tại trong IM LẶNG. Nay có `npm run design:dead-class` canh —
+xem mục Thiết kế ở trên.
 
 ## Nội dung nằm trong database
 
@@ -248,7 +309,7 @@ phải JWT**: định dạng này không có trường `alg`, nên không có g�
 
 ## Bẫy đã gặp
 
-**Danh sách đầy đủ 27 bẫy ở `docs/agents/bay-da-gap.md`.** Nó là nhật ký chỉ-thêm và sẽ còn
+**Danh sách đầy đủ ở `docs/agents/bay-da-gap.md`.** Nó là nhật ký chỉ-thêm và sẽ còn
 dài ra; để nguyên ở đây thì nó chiếm gần một phần tư file mà mọi phiên đều phải đọc trọn.
 
 Bốn cái dưới đây ở lại vì chúng đắt nhất — mỗi cái từng làm một hàng rào bảo mật hoặc một
@@ -327,7 +388,7 @@ dynamic theo mặc định của App Router. Nhưng `npm run db:check`,
 máy mới clone là có hook luôn — không cần husky). Cần bỏ qua một lần thì `git commit --no-verify`.
 
 `npm run check` chạy tuần tự, dừng ở lỗi đầu tiên, xếp theo thứ tự nhanh-hỏng-trước:
-`design:lint` → `design:verify` → `test` → `lint` → `build`. Từng cái vẫn gọi riêng được
+`design:lint` → `design:verify` → `design:dead-class` → `test` → `lint` → `build`. Từng cái vẫn gọi riêng được
 khi cần lặp nhanh. Đừng tự bịa ra một tổ hợp lệnh khác — nếu thiếu cổng nào thì thêm vào
 `check`, để chỗ nào cũng chỉ có một câu trả lời cho câu hỏi "đã xong chưa".
 
@@ -361,6 +422,7 @@ những cổng đó bắt lỗi tốt hơn một bộ test JSX:
 | Trao vật phẩm mà không chấm bài | `npm run db:check` — gọi `complete_book` thật với đáp án sai rồi đếm `user_items` |
 | Người dùng tự phong admin | `npm run db:check` — thử lúc chưa đăng nhập lẫn khi đã đăng nhập |
 | Token màu/chữ sai, tương phản dưới AA | `design:lint` |
+| Class dùng token đã bị xoá — Tailwind bỏ qua trong im lặng | `design:dead-class` |
 | Sai kiểu, route không tồn tại | `build` (typegen + tsc) |
 | **RLS và quyền của `complete_book`** | **`npm run db:check`** |
 
@@ -418,11 +480,12 @@ báo hỏng — nhưng schema đúng, khuôn mới sai.)
 | `.githooks/pre-commit` | Chạy `npm run check` trước mỗi commit. Nối bằng `npm run prepare`. |
 | `scripts/db-check.mjs` | Self-check ranh giới bảo mật tầng DB (`npm run db:check`). |
 | `scripts/design-lint-gate.mjs` | Biến `designmd lint` thành cổng thật — cảnh báo tương phản cũng thoát 1. |
+| `scripts/design-dead-class.mjs` | Cổng bắt class Tailwind dùng token KHÔNG tồn tại. Build CSS thật bằng `tailwind.config.ts` rồi đối chiếu, KHÔNG so với danh sách token viết tay. |
 | `scripts/design-line-height.mjs` | Vá `lineHeight` mà `designmd export` đánh rơi. **Tự nó là một cổng**: thiếu lineHeight cho bất kỳ token nào thì thoát 1. |
 | `scripts/seed-content.mjs` | Bootstrap MỘT CHIỀU `db/seed/*.json` → bảng nội dung. Cũng tạo ba dòng mồi nhử mà `db:check` phụ thuộc. |
 | `scripts/build-world-map.mjs` | Sinh `public/world-countries.json` từ world-atlas cho bản đồ chọn quốc gia. Chạy **một lần**, KHÔNG nằm trong `check`, và cần `npm i --no-save d3-geo topojson-client`. |
 | `lib/db/rows-affected.ts` | Đọc số dòng UPDATE/DELETE chạm tới, chịu được cả hai hình dạng Sequelize trả về. |
-| `docs/agents/` | `bay-da-gap.md` (27 bẫy), `issue-tracker.md`, `domain.md`. |
+| `docs/agents/` | `bay-da-gap.md`, `issue-tracker.md`, `domain.md`. |
 | `.scratch/<feature>/` | Issue tracker (repo chưa có remote nên không dùng GitHub Issues). |
 | `docs/superpowers/specs/` + `plans/` | Spec và kế hoạch dài theo cả subsystem. |
 | `lib/**/*.test.ts` | Test `node --test`, xem mục Test ở trên. |

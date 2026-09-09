@@ -1,37 +1,34 @@
-import { SKELETON_HEADER } from "@/components/ui/controls";
-
 /**
- * Khung xương riêng cho `/dang-nhap`, vì trang đó là nền TỐI.
+ * Khung xương riêng cho `/dang-nhap`.
  *
- * `app/loading.tsx` ở gốc che mọi route nền sáng và tự nhận trong chú thích rằng
- * `/dang-nhap` là một trong số đó — điều đó SAI: `app/dang-nhap/page.tsx` bọc nội dung
- * trong `<Room>`, và `Room` sơn `surface-room`. Dùng chung khung xương sáng ở đây cho ra
- * đúng cú lóe trắng mà `app/[shelf]/loading.tsx` được dựng ra để tránh.
+ * Từ 2026-09-10 trang thật là nền `paper` với chậu mực ở nửa phải, nên khung xương cũng
+ * `paper`: thứ phải khớp là MÀU NỀN, để không có cú đổi nền nào khi trang thật tới. Trước
+ * đó cả hai là `primary` vì trang bọc trong `<Room>` — căn phòng gỗ đã bị gỡ.
  *
- * Không dùng `<Room>` thật: nó kéo theo cả lớp nền, luồng sáng và hạt bụi cho một thứ
- * sống chưa tới một giây. Một khối `bg-surface-room` là đủ — thứ phải khớp là MÀU, để
- * không có cú đổi nền nào khi trang thật tới.
+ * KHÔNG dựng chậu mực ở đây: khởi tạo một bộ giải chất lỏng trên GPU cho một khung xương
+ * sống chưa tới một giây là trả giá đúng lúc máy đang bận nhất. Mặt nước trống cũng là một
+ * mặt nước hợp lệ — nước trong.
+ *
+ * **KHÔNG vẽ rail.** Rail sống ở `app/layout.tsx`, tức nằm NGOÀI ranh giới Suspense này và
+ * không bị thay khi chuyển trang. Bản trước vẽ thêm một rail xương cạnh rail thật.
  */
 export default function DangTaiDangNhap() {
   return (
-    <>
-      <div className={SKELETON_HEADER}>
-        <span className="font-heading text-headline-sm text-on-primary">CỬA SỔ LỊCH SỬ</span>
-      </div>
-
-      <main id="noi-dung" className="flex flex-1 items-center justify-center bg-surface-room px-page-margin py-xl">
-        <div className="w-full max-w-md rounded-lg bg-neutral p-xl">
-          <p role="status" className="font-body text-label-caps uppercase text-tertiary-deep">
-            Đang tải…
-          </p>
-          {/* Cùng một màu xương với `app/loading.tsx`, cùng một lý do: phải nhìn thấy được. */}
-          <div aria-hidden className="mt-md flex flex-col gap-md">
-            <div className="h-xl w-2/3 rounded-md bg-surface-locked/30" />
-            <div className="h-md w-full rounded-md bg-surface-locked/30" />
-            <div className="h-2xl w-full rounded-md bg-surface-locked/30" />
-          </div>
+    <main
+      id="noi-dung"
+      className="flex min-w-0 flex-1 items-center justify-center bg-paper px-page-margin py-xl"
+    >
+      <div className="w-full max-w-md rounded-md border border-mist bg-surface p-xl">
+        <p role="status" className="font-ui text-label-caps uppercase text-ink-dilute">
+          Đang tải…
+        </p>
+        {/* Cùng một màu xương với `app/loading.tsx`, cùng một lý do: phải nhìn thấy được. */}
+        <div aria-hidden className="mt-md flex flex-col gap-md">
+          <div className="h-2xl w-2/3 rounded-md bg-mist" />
+          <div className="h-md w-full rounded-md bg-mist" />
+          <div className="h-2xl w-full rounded-md bg-mist" />
         </div>
-      </main>
-    </>
+      </div>
+    </main>
   );
 }

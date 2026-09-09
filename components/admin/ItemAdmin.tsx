@@ -21,17 +21,17 @@ import { CHIP, DANGER_BUTTON, FIELD, LABEL, PRIMARY_BUTTON } from "@/components/
 export function ItemAdmin({ items }: { items: AdminItemRow[] }) {
   return (
     <div className="flex flex-col gap-lg">
-      <p className={`flex items-start gap-sm font-body text-body-sm text-secondary ${ADMIN_CARD}`}>
-        <Info aria-hidden className="mt-[0.15em] h-4 w-4 shrink-0 text-tertiary-deep" />
+      <p className={`flex items-start gap-sm font-ui text-body-sm text-ink-dilute ${ADMIN_CARD}`}>
+        <Info aria-hidden className="mt-[0.15em] h-4 w-4 shrink-0 text-son" />
         <span>
           Vật phẩm là thứ mở khóa quyển sách kế tiếp. Tạo vật phẩm{" "}
-          <strong className="font-semibold text-primary-dark">trước</strong> khi tạo sách, vì mỗi
+          <strong className="font-semibold text-primary">trước</strong> khi tạo sách, vì mỗi
           quyển chọn phần thưởng từ danh sách này.
         </span>
       </p>
 
       <section aria-labelledby="them-vp" className={ADMIN_CARD}>
-        <h2 id="them-vp" className="mb-sm font-heading text-headline-sm text-primary-dark">
+        <h2 id="them-vp" className="mb-sm font-ui text-title-md text-primary">
           Thêm vật phẩm
         </h2>
         <ActionForm action={createItem} className="flex flex-col gap-sm">
@@ -81,12 +81,12 @@ export function ItemAdmin({ items }: { items: AdminItemRow[] }) {
       </section>
 
       <section aria-labelledby="ds-vp" className="flex flex-col gap-md">
-        <h2 id="ds-vp" className="font-heading text-headline-sm text-primary-dark">
+        <h2 id="ds-vp" className="font-ui text-title-md text-primary">
           {items.length} vật phẩm
         </h2>
 
         {items.length === 0 && (
-          <p className={`flex items-center gap-sm font-body text-body-md text-secondary ${ADMIN_CARD}`}>
+          <p className={`flex items-center gap-sm font-ui text-body-md text-ink-dilute ${ADMIN_CARD}`}>
             <Package aria-hidden className="h-5 w-5" />
             Chưa có vật phẩm nào. Tạo cái đầu tiên ở trên.
           </p>
@@ -95,12 +95,12 @@ export function ItemAdmin({ items }: { items: AdminItemRow[] }) {
         {items.map((item) => (
           <article key={item.slug} className={ADMIN_CARD}>
             <header className="flex flex-wrap items-center gap-sm">
-              <h3 className="font-heading text-headline-sm text-primary-dark">{item.name}</h3>
-              <span className="font-body text-caption text-secondary">{item.slug}</span>
+              <h3 className="font-ui text-title-md text-primary">{item.name}</h3>
+              <span className="font-ui text-caption text-ink-dilute">{item.slug}</span>
               {item.usedByBooks.length > 0 && (
-                // Viền `secondary`: `bg-neutral` trên thẻ `bg-surface` chỉ đạt 1.16:1, tức
+                // Viền `secondary`: `bg-paper` trên thẻ `bg-surface` chỉ đạt 1.16:1, tức
                 // viên thuốc không tồn tại về mặt thị giác nếu không có ranh giới.
-                <span className={`${CHIP} border border-secondary bg-neutral text-primary-dark`}>
+                <span className={`${CHIP} border border-mist bg-paper text-primary`}>
                   Phần thưởng của {item.usedByBooks.length} quyển
                 </span>
               )}
@@ -172,7 +172,7 @@ export function ItemAdmin({ items }: { items: AdminItemRow[] }) {
                 {item.usedByBooks.length > 0 && (
                   // Nêu đích danh quyển nào chặn, thay vì bắt admin đi dò. Nút đã bị khóa,
                   // nhưng lý do phải nhìn thấy được chứ không nằm trong tooltip.
-                  <p className="mt-xs max-w-measure font-body text-caption text-secondary">
+                  <p className="mt-xs max-w-measure font-ui text-caption text-ink-dilute">
                     Đổi phần thưởng của {item.usedByBooks.map((t) => `“${t}”`).join(", ")} trước khi
                     xóa.
                   </p>

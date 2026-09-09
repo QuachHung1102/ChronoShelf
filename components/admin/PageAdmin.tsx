@@ -19,11 +19,11 @@ const SUMMARY_HINT =
   "để trống ở các trang giữa.";
 
 /**
- * Chip thông tin trong header thẻ trang. Viền `secondary` là bắt buộc: `bg-neutral` đặt
+ * Chip thông tin trong header thẻ trang. Viền `secondary` là bắt buộc: `bg-paper` đặt
  * trên thẻ `bg-surface` chỉ đạt 1.16:1, tức viên thuốc không tồn tại về mặt thị giác —
  * đúng lỗi đã sửa cho huy hiệu "Nháp" ở `card.tsx`.
  */
-const PAGE_CHIP = `${CHIP} border border-secondary bg-neutral text-primary-dark`;
+const PAGE_CHIP = `${CHIP} border border-mist bg-paper text-primary`;
 
 export function PageAdmin({ book, pages }: { book: AdminBookHeader; pages: AdminPageRow[] }) {
   const last = pages.length - 1;
@@ -31,8 +31,8 @@ export function PageAdmin({ book, pages }: { book: AdminBookHeader; pages: Admin
   return (
     <div className="flex flex-col gap-lg">
       <div className={`flex flex-wrap items-center justify-between gap-md ${ADMIN_CARD}`}>
-        <p className="flex max-w-measure items-start gap-sm font-body text-body-sm text-secondary">
-          <Info aria-hidden className="mt-[0.15em] h-4 w-4 shrink-0 text-tertiary-deep" />
+        <p className="flex max-w-measure items-start gap-sm font-ui text-body-sm text-ink-dilute">
+          <Info aria-hidden className="mt-[0.15em] h-4 w-4 shrink-0 text-son" />
           <span>
             Học sinh lật từng trang theo thứ tự dưới đây. Đọc hết trang cuối mới nhận được vật phẩm.
           </span>
@@ -50,12 +50,12 @@ export function PageAdmin({ book, pages }: { book: AdminBookHeader; pages: Admin
       </div>
 
       <section aria-labelledby="ds-trang" className="flex flex-col gap-md">
-        <h2 id="ds-trang" className="font-heading text-headline-sm text-primary-dark">
+        <h2 id="ds-trang" className="font-ui text-title-md text-primary">
           {pages.length} trang
         </h2>
 
         {pages.length === 0 && (
-          <p className={`flex items-center gap-sm font-body text-body-md text-secondary ${ADMIN_CARD}`}>
+          <p className={`flex items-center gap-sm font-ui text-body-md text-ink-dilute ${ADMIN_CARD}`}>
             <FileText aria-hidden className="h-5 w-5" />
             Quyển này chưa có trang nào. Thêm trang đầu tiên ở dưới — chưa có trang thì không xuất
             bản được.
@@ -74,14 +74,14 @@ export function PageAdmin({ book, pages }: { book: AdminBookHeader; pages: Admin
                 <div className="flex flex-wrap items-center gap-sm">
                   <span
                     aria-hidden
-                    className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-secondary bg-neutral font-body text-caption text-primary-dark"
+                    className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-mist bg-paper font-ui text-caption text-primary"
                   >
                     {index + 1}
                   </span>
-                  <h3 className="font-heading text-headline-sm text-primary-dark">{page.heading}</h3>
+                  <h3 className="font-ui text-title-md text-primary">{page.heading}</h3>
                   {index === last && <span className={PAGE_CHIP}>Trang cuối</span>}
                   {summaryHidden && (
-                    <span className={`${CHIP} border border-destructive bg-neutral text-destructive`}>
+                    <span className={`${CHIP} border border-son bg-paper text-son`}>
                       Ý chính bị ẩn
                     </span>
                   )}
@@ -94,7 +94,7 @@ export function PageAdmin({ book, pages }: { book: AdminBookHeader; pages: Admin
                     `aria-disabled` + `type="button"` thay cho `disabled` — xem chú thích dài
                     ở `components/admin/card.tsx`. */}
                 <div className="flex items-center gap-xs">
-                  <span className="font-body text-caption text-secondary">Thứ tự</span>
+                  <span className="font-ui text-caption text-ink-dilute">Thứ tự</span>
                   <ActionForm action={movePage} quietStatus>
                     <input type="hidden" name="id" value={page.id} />
                     <input type="hidden" name="bookSlug" value={book.slug} />
@@ -158,7 +158,7 @@ export function PageAdmin({ book, pages }: { book: AdminBookHeader; pages: Admin
                       defaultValue={page.body}
                       required
                       rows={8}
-                      className={`${FIELD} font-body leading-relaxed`}
+                      className={`${FIELD} font-ui leading-relaxed`}
                     />
                   </span>
 
@@ -187,7 +187,7 @@ export function PageAdmin({ book, pages }: { book: AdminBookHeader; pages: Admin
                   <span className="flex flex-col gap-xs">
                     <label className={LABEL} htmlFor={`s-${page.id}`}>
                       Ý chính{" "}
-                      {index === last && <span className="text-tertiary-deep">(trang cuối)</span>}
+                      {index === last && <span className="text-son">(trang cuối)</span>}
                     </label>
                     {/* Ô cao 4 dòng ở trang CUỐI — nơi ý chính thật sự được dùng — và 2 dòng
                         ở các trang giữa, nơi nó phải để trống. Trước đây mọi trang đều 4
@@ -200,13 +200,13 @@ export function PageAdmin({ book, pages }: { book: AdminBookHeader; pages: Admin
                       className={FIELD}
                     />
                     {summaryHidden ? (
-                      <span className="max-w-measure font-body text-caption text-destructive">
+                      <span className="max-w-measure font-ui text-caption text-son">
                         Trang này không phải trang cuối nên học sinh KHÔNG thấy phần ý chính đang
                         lưu ở đây. Xóa đi, hoặc đưa trang này xuống cuối.
                       </span>
                     ) : (
                       index === last && (
-                        <span className="max-w-measure font-body text-caption text-secondary">
+                        <span className="max-w-measure font-ui text-caption text-ink-dilute">
                           {SUMMARY_HINT}
                         </span>
                       )
@@ -244,7 +244,7 @@ export function PageAdmin({ book, pages }: { book: AdminBookHeader; pages: Admin
           Và đây là biểu mẫu DUY NHẤT mở sẵn trên màn này: mọi thẻ trang đã gập, nên chỗ
           gõ chữ không phải đi tìm. */}
       <section aria-labelledby="them-trang" className={ADMIN_CARD}>
-        <h2 id="them-trang" className="mb-sm font-heading text-headline-sm text-primary-dark">
+        <h2 id="them-trang" className="mb-sm font-ui text-title-md text-primary">
           Thêm trang {pages.length + 1}
         </h2>
         <ActionForm action={createPage} className="flex flex-col gap-sm">
@@ -275,7 +275,7 @@ export function PageAdmin({ book, pages }: { book: AdminBookHeader; pages: Admin
               required
               rows={8}
               placeholder="Kể lại diễn biến bằng giọng văn dành cho học sinh…"
-              className={`${FIELD} font-body leading-relaxed`}
+              className={`${FIELD} font-ui leading-relaxed`}
             />
           </span>
 
@@ -300,7 +300,7 @@ export function PageAdmin({ book, pages }: { book: AdminBookHeader; pages: Admin
               Ý chính
             </label>
             <textarea id="s-moi" name="summary" rows={4} className={FIELD} />
-            <span className="max-w-measure font-body text-caption text-secondary">
+            <span className="max-w-measure font-ui text-caption text-ink-dilute">
               {SUMMARY_HINT}
             </span>
           </span>

@@ -121,3 +121,117 @@
   không có gì xảy ra, âm thầm. Ràng buộc nào còn phải sửa thì đặt riêng bằng
   `ALTER TABLE … DROP CONSTRAINT IF EXISTS` + `ADD CONSTRAINT`.
 
+- **`overflow-x: clip` KHÔNG cắt trục dọc, và một lớp trang trí cao 200% thì nong cả trang.**
+  `Room` có `.dust` cao `200%` và `.lightBeam` cao `132%` (top −12%); cả hai thò xuống dưới đáy
+  phòng. Chú thích trong file khẳng định `clip` "cắt đúng phần phải cắt" — nó cắt, nhưng chỉ theo
+  trục được nêu. Đo 2026-09-09 ở 1024×768 trên `/lich-su-quanh-cuoc-song`: `scrollHeight` 1440 so
+  với `clientHeight` 768, tức cuộn được 672px vào một khoảng đen — và lỗi này có ở MỌI trang dùng
+  `Room`, không riêng màn kệ. Sửa bằng một khung bao `.lopNen` với `overflow: clip` (cả hai trục)
+  ôm trọn các lớp trang trí; kẹp `overflow` lên chính `.room` thì nuốt luôn nội dung tràn của
+  trang khác. Sau khi sửa: `scrollHeight` 768, cuộn được 0.
+- **`justify-content: center` trong một hộp cuộn cắt mất phần đầu và không cuộn ngược tới được.**
+  Nội dung cao hơn hộp thì phần tràn chia đều hai đầu, nửa trên rơi vào toạ độ âm — vùng mà scroll
+  container không với tới. Với chồng sách thì đó là "kệ 20 quyển mất mấy quyển đầu". Từ khóa đúng là
+  `justify-content: safe center`: căn giữa khi còn vừa, tự rơi về `start` khi tràn.
+- **`min-height` mặc định của flex/grid item là `auto`, nên vùng cuộn con không bao giờ tràn.**
+  Item phình theo nội dung thay vì kẹp lại, và cả TRANG cuộn thay cho cái div đáng lẽ phải cuộn.
+  Mọi tổ tiên nằm giữa khung khoá chiều cao và vùng `overflow-y: auto` đều phải có `min-height: 0`
+  (Tailwind: `min-h-0`).
+- **`.catch()` quanh một lời gọi trong Server Component NUỐT luôn tín hiệu bailout của Next,
+  và `next build` chết ở một route không liên quan.** Next báo "trang này không prerender được"
+  bằng cách NÉM một exception riêng khi ta đọc cookie hay database. `Rail` ở root layout bọc
+  `readShelfList()` và `isAdmin()` trong `.catch()` để một cú nấc DB không giết cả site — hợp
+  lý, nhưng nó nuốt luôn tín hiệu, Next tưởng mọi thứ ổn và tiếp tục prerender, rồi build
+  chết ở `/dang-nhap` với "Error occurred prerendering page" kèm stack toàn ký tự rút gọn của
+  runtime, không chỉ về file nào của mình. Đo 2026-09-09. Cách sửa: khai `force-dynamic` cho
+  layout — không còn bước prerender thì không còn tín hiệu nào để nuốt. Đừng đi tìm lỗi ở
+  route bị báo; nó chỉ là route đầu tiên chạm phải.
+- **Mỗi page tự dựng thanh điều hướng của mình = điều hướng bị tháo ra dựng lại mỗi lần chuyển
+  trang.** Triệu chứng người dùng thấy: chuyển trang "giật", logo và các con số nháy một nhịp.
+  Triệu chứng máy đo được: mọi component client trong thanh đó mất state và gọi lại API
+  (`/api/me/state`, `/api/auth/me`) sau mỗi lần điều hướng. Đưa nó lên `app/layout.tsx` thì
+  Next giữ nguyên qua mọi lần chuyển route con. Phép kiểm rẻ: `setAttribute('data-probe', …)`
+  lên phần tử đó, điều hướng, rồi xem thuộc tính còn không — còn nghĩa là cùng một node DOM.
+  Kèm theo: `loading.tsx` phải THÔI vẽ khung xương cho thanh đó, nếu không sẽ có hai thanh.
+- **Một hằng số bố cục chép từ CSS sang TypeScript là một nguồn sự thật thứ hai.** Vị trí giọt
+  mực trong chậu neo cứng "bờ chiếm 56%", trong khi CSS là `max(516px, 56%)` — tức 65% ở
+  1024px. Hệ quả: giọt tính theo bề ngang toàn canvas, bán kính vượt vùng nước 40%, mực tràn
+  khỏi mép phải và dồn thành một mảng ở góc. Trên màn hình nó vẫn là mực đẹp nên không ai
+  nhận ra. Đo bằng `ResizeObserver` thay vì chép số, và đưa công thức ra một module thuần để
+  `node --test` canh được bất biến "giọt phải nằm trong vùng nước".
+- **Tailwind bỏ qua class nó không hiểu trong IM LẶNG, và không cổng nào của repo canh việc
+  đó** — cho tới `npm run design:dead-class` (thêm 2026-09-10). Sau lượt đổi ~805 chỗ dùng
+  token sang thế giới mực, còn sót đúng 7 dòng, và cả bảy đều qua được `design:lint`,
+  `tsc`, `eslint` lẫn `next build`. Thứ đắt nhất trong đó: bản đồ chọn quốc gia ở `/quan-tri`
+  ra `fill: rgb(0,0,0)` trên cả **705** `<path>` — một mảng đen không biên giới, nước đang
+  chọn không khác nước không chọn; và ô chọn đáp án trắc nghiệm rơi về `accent-color: auto`,
+  tức xanh dương của hệ điều hành, ngay giữa thao tác quan trọng nhất của sản phẩm. Cổng
+  không so với danh sách token viết tay (chính danh sách viết tay là thứ đã lỡ nhịp hai lần
+  ở khối A của `90-verify.sql`) mà build CSS thật rồi đòi mọi class hình-dạng-token phải có
+  mặt trong đó.
+- **Đổi token màu xong thì `hover:` và `active:` có thể trở thành lệnh rỗng.** Hai token cũ
+  khác nhau (`primary-dark` → `primary`) map về cùng một token mới, nên thẻ kệ sách ở trang
+  chủ mang `bg-primary hover:bg-primary active:bg-primary`: không phản hồi hover, không phản
+  hồi bấm, trong khi comment ngay trên đó vẫn hứa "hover sáng lên một bậc". Không lỗi, không
+  cảnh báo — chỉ là một thẻ chết. Quét bằng cách so phần đuôi của `hover:x-y` với `x-y` trên
+  cùng một phần tử.
+- **Bộ class viết cho nền TỐI theo chân component sang nền SÁNG và không ai thấy.** `AuthMenu`
+  giữ nguyên `navItemClass` — bộ viết cho dải header ngang nền chàm — khi chuyển vào rail nền
+  giấy, nên tên tài khoản và nút Đăng xuất mang `text-on-ink` (#F6F7F9) đứng trên `bg-paper`
+  (#F6F7F9): **1.00:1**. Với người chưa đăng nhập thì chính lối vào đăng nhập biến mất khỏi
+  màn hình. Phép kiểm rẻ và chạy được trên MỌI màn: duyệt `document.querySelectorAll('body *')`,
+  lấy phần tử có text node TRỰC TIẾP, dựng màu nền hiệu dụng bằng cách chồng ngược các lớp
+  `background-color` bán trong suốt lên tới lớp đục đầu tiên, rồi so tỉ số tương phản với
+  ngưỡng AA theo cỡ chữ. Chạy trên 13 màn ngày 2026-09-10: ra đúng hai chỗ, và cái thứ hai
+  (chip "Nháp", `ink-dilute` trên `mist`, 4.03:1) thì mắt thường không bao giờ bắt được.
+- **`<legend>` nhiều dòng bị chính đường viền của `<fieldset>` kẻ ngang qua.** Trình duyệt
+  nhúng legend vào border-top và căn theo NỬA chiều cao của nó, nên legend hai dòng (nhãn
+  "Câu 1/3" + câu hỏi) có dòng thứ hai nằm dưới đường viền — đo ở 1024×768: legend cao
+  39.6px, viền đi qua giữa. Đừng bỏ câu hỏi ra khỏi legend để né (nó là TÊN của nhóm radio,
+  bỏ ra là người dùng trình đọc màn hình nghe từng lựa chọn mà không bao giờ nghe câu hỏi):
+  cho legend `sr-only` và vẽ lại phần nhìn được bằng `<p aria-hidden>`.
+- **Đổi nền một màn từ TỐI sang SÁNG làm hỏng mọi cặp màu cùng lúc, và build vẫn xanh.** Gỡ
+  căn phòng gỗ khỏi trình đọc là một dòng JSX; thứ đi theo nó là mọi `text-on-ink`,
+  `text-son-light`, `text-feathered`, `border-feathered`, hai hằng nút `*_ON_DARK`, quầng son
+  65% và một tấm thẻ cố ý không viền. Không cái nào là lỗi biên dịch. Phép quét tương phản
+  bắt được đúng một chỗ sót — số trang "Trang 4/4" ở `text-feathered`, **1.91:1** trên
+  `paper` — và đó là chỗ mắt thường dễ bỏ qua nhất vì nó vẫn *hiện ra*. Đổi nền thì chạy
+  phép quét, đừng đọc lại từng dòng.
+- **Một thước tiến độ dùng chung trên hai nền ngược nhau thì một trong hai bản luôn sai.**
+  `components/ui/thuoc.module.scss` là bản gộp của BA bản chép trước đó — đúng, nhưng nó ra
+  đời khi cả ba nơi dùng đều là nền tối. Khi túi hành trang và trang chủ chuyển sang nền
+  giấy, sửa bản dùng chung cho nền sáng (rãnh `mist`, thanh đầy `primary`) làm thanh đầy trên
+  **thẻ kệ nền mực** thành 1.00:1 — phần ĐÃ đạt biến mất, thước chỉ còn nói phần chưa đạt.
+  Gộp được HÌNH DẠNG; màu thì phải theo nền, và chỗ đảo màu là ở file của màn đó.
+- **`<Room>` kiểu "bối cảnh dùng chung" giấu một thế giới cũ sống rất lâu sau khi nó chết.**
+  Sau khi đổi toàn bộ hệ thiết kế, hai màn vẫn dựng trong căn phòng gỗ — trình đọc (màn quan
+  trọng nhất) và đăng nhập (màn đầu tiên người dùng gặp) — vì cả hai chỉ *gọi một component*,
+  và lượt đổi token cơ học có chạm vào file đó nhưng chỉ đổi tên màu bên trong: gỗ vẫn là gỗ,
+  chỉ là gỗ màu chàm. Cách thấy: grep component bối cảnh chứ đừng grep tên token.
+- **Một chậu mực có mô phỏng thật vẫn đứng im nếu không ai khuấy nó.** Người dùng báo "hiệu
+  ứng loang mực chỉ auto một chỗ", và có hai nguyên nhân cộng lại: nhịp tự động duy nhất của
+  màn kệ chỉ `splat` tại ĐÚNG một điểm (giọt của bài nên đọc tiếp), còn
+  `velocityDissipation: 0.991` tắt vận tốc sau vài giây nên những giọt đặt sẵn loang xong là
+  nằm bất động — mặt nước thành một bức tranh tĩnh. Cách chữa KHÔNG phải là thả thêm mực:
+  lượng mực mang nghĩa "đã đọc xong bao nhiêu quyển". Thả cú khuấy `amount = 0` (chỉ bơm vận
+  tốc) ở nhiều điểm, bán kính lớn hơn giọt cỡ 18 lần (0.02 vs 0.0011 — bán kính giọt chỉ
+  chọc một lỗ kim, dòng chảy tắt trước khi tới đâu), vị trí đi theo hai tần số không cùng ước
+  để quỹ đạo không khép thành vòng lặp mắt nhận ra.
+- **`preserveDrawingBuffer` tắt thì mọi phép đo pixel trên canvas WebGL đều nói dối, và nói
+  dối theo hướng "đạt".** `drawImage(canvasWebGL, …)` sau khi khung hình đã present trả về
+  buffer RỖNG, tức toàn màu đen — một phép kiểm "đếm pixel có mực" trên đó cho 4096/4096 và
+  báo mực phủ kín chậu, đúng lúc chậu gần như trống. Đo hiệu ứng thị giác của WebGL thì chụp
+  màn hình ở các mốc thời gian rồi nhìn, và nói rõ đó là quan sát chứ không phải phép đo số.
+- **`requestAnimationFrame` ở tab nền bị throttle xuống ~1 fps, nên đừng đếm khung hình để
+  chứng minh một hoạt cảnh còn sống.** Đo trên tab không được chọn: 3 khung trong 3 giây. Con
+  số đó không nói gì về hoạt cảnh; nó nói về tab.
+- **"Phía trên" của chậu là trục Oz, không phải mép trên của khung — và đoán sai chỗ này thì
+  hai bản sửa liên tiếp đều trượt.** Chậu được nhìn TỪ TRÊN XUỐNG: giọt rơi về phía người
+  xem, chạm mặt nước tại một điểm rồi đẩy nước ra MỌI hướng quanh điểm đó. Bản đầu đẩy giọt
+  theo một vector `(dx, dy)` — mực bay lệch hẳn một phía, và người dùng gọi đúng tên: "giống
+  con mực bắn mực hơn". Bản thứ hai thêm cả một pass trọng lực theo Oy vào bộ giải để giọt
+  "rơi xuống"; nó chỉ đổi hướng bắn thành hướng xuống, tạo vệt dọc trên mặt phẳng Oxy — vẫn
+  là bắn, và pass đó đã bị gỡ nguyên vẹn. Cái đúng là `giotRoi()` ở `lib/ink/giot.ts`: một
+  giọt mực ở tâm cộng tám cú đẩy CHỈ-VẬN-TỐC xếp đều trên vòng tròn quanh nó, tất cả hướng ra
+  ngoài. Bất biến canh được bằng `node --test`, và nó chính là ranh giới giữa hai hiệu ứng:
+  **tổng động lượng của cụm phải bằng 0** — có hướng ưu tiên nào thì đó là phun, không phải rơi.

@@ -16,7 +16,7 @@ export function GhiCongAnh({
   credit,
   nguon,
   nhan = "Ảnh",
-  className = "text-secondary",
+  className = "text-ink-dilute",
   nenToi = false,
 }: {
   credit: string | null;
@@ -25,7 +25,7 @@ export function GhiCongAnh({
   nhan?: string;
   /**
    * Class NỐI THÊM, không thay thế. Bản trước để cả kiểu chữ vào giá trị mặc định, nên
-   * một call site truyền class bố cục là im lặng đánh rơi luôn `font-body` và
+   * một call site truyền class bố cục là im lặng đánh rơi luôn `font-ui` và
    * `text-caption` — nó chỉ đúng nhờ may, vì thẻ cha tình cờ đã đặt hai thứ đó.
    */
   className?: string;
@@ -39,7 +39,7 @@ export function GhiCongAnh({
   const bamDuoc = Boolean(nguon && nguon.startsWith("https://") && !/\s/.test(nguon));
 
   return (
-    <p className={`font-body text-caption ${className}`}>
+    <p className={`font-ui text-caption ${className}`}>
       {nhan}: {credit}
       {nguon && (
         <>
@@ -53,7 +53,7 @@ export function GhiCongAnh({
               // không có trong bảng, và trên nền sáng thì khe trắng đó vô hình (1.27:1).
               className={
                 nenToi
-                  ? "underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-on-dark focus-visible:ring-offset-2 focus-visible:ring-offset-surface-room"
+                  ? "underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-on-ink focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
                   : "underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
               }
             >

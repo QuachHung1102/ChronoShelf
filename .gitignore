@@ -57,3 +57,9 @@ next-env.d.ts
 
 # cau hinh Codex cuc bo — config.toml chua Bearer token cua MCP server
 .codex/config.toml
+
+# Công cụ thiết kế impeccable: consent, cache và log đều gắn với MÁY này (cache còn giữ
+# đường dẫn tuyệt đối). Chỉ `refs/` vào git — đó là ảnh tham chiếu của hướng thị giác
+# chậu mực, tức nguồn của một quyết định thiết kế.
+.impeccable/*
+!.impeccable/refs/

@@ -43,9 +43,9 @@ export function BookPage({
         gutter === "left" ? "pl-3xl pr-xl" : "pl-xl pr-3xl"
       }`}
     >
-      <p className={`${s.runningHead} font-body text-caption text-secondary`}>{bookTitle}</p>
+      <p className={`${s.runningHead} font-ui text-caption text-ink-dilute`}>{bookTitle}</p>
 
-      <h2 className="mt-md font-heading text-headline-sm text-primary-dark">{page.heading}</h2>
+      <h2 className="mt-md font-ui text-title-md text-primary">{page.heading}</h2>
       <span aria-hidden className={s.headingRule} />
 
       {page.image && (
@@ -59,7 +59,7 @@ export function BookPage({
           {/* Một `<figure>` chỉ được có ĐÚNG MỘT `<figcaption>`, nên chú thích và dòng ghi
               công nằm chung một thẻ chứ không phải hai. */}
           {(page.caption || page.imageCredit) && (
-            <figcaption className="font-body text-caption text-secondary">
+            <figcaption className="font-ui text-caption text-ink-dilute">
               {page.caption && <span className="italic">{page.caption}</span>}
               {/* Nguồn hiển thị dưới dạng VĂN BẢN THƯỜNG, cố ý không bọc `<a href>`: giá trị
                   thật trong DB là chuỗi mô tả có khoảng trắng và gạch ngang dài
@@ -81,12 +81,12 @@ export function BookPage({
           dòng 1.75 và `body-md` mang 1.6, nên một giá trị viết tay hoặc là nhân đôi nguồn sự
           thật, hoặc là một con số nằm ngoài DESIGN.md (bản trước để `leading-[1.7]` ở khối ý
           chính — 1.7 không tồn tại trong hệ). */}
-      <p className={`${s.body} font-body text-body-book text-primary-dark`}>{page.body}</p>
+      <p className={`${s.body} font-ui text-reading text-primary`}>{page.body}</p>
 
       {page.summary && (
         <ul className={`${s.summary} mt-md flex flex-col gap-sm`}>
           {page.summary.map((line) => (
-            <li key={line} className="font-body text-body-md text-primary-dark">
+            <li key={line} className="font-ui text-body-md text-primary">
               {line}
             </li>
           ))}

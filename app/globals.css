@@ -1,3 +1,35 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  /*
+    Cầu nối DUY NHẤT giữa token thiết kế và WebGL.
+
+    Bộ giải chất lỏng cần màu ở dạng ba số 0..1 để đẩy vào uniform, mà `theme()` chỉ chạy
+    lúc build CSS. Khai chúng thành custom property ở đây rồi đọc bằng `getComputedStyle`
+    giữ được đúng một nguồn sự thật: đổi màu trong DESIGN.md là mực đổi theo, không phải đi
+    sửa một mảng hex nằm trong file TypeScript nào đó mà `design:lint` không nhìn thấy.
+  */
+  :root {
+    --pigment-cham: theme('colors.primary');
+    --pigment-son: theme('colors.son');
+    --pigment-sumi: theme('colors.ink-current');
+    --basin-paper: theme('colors.paper');
+    --basin-washi: theme('colors.washi');
+  }
+
+  /*
+    Mặt nước là nền của cả sản phẩm, nên chọn màu ở đây chứ không ở từng trang.
+    Kết cấu giấy: một lớp nhiễu rất nhạt để `paper` không phải một mảng phẳng tuyệt đối —
+    giấy thật có thớ. Giữ dưới ngưỡng nhìn thấy được ở dạng hạt: nó chỉ làm mặt nền "có da".
+  */
+  body {
+    background-image: radial-gradient(
+        circle at 1px 1px,
+        theme('colors.feathered / 22%') 1px,
+        transparent 0
+      );
+    background-size: 4px 4px;
+  }
+}

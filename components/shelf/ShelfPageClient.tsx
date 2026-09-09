@@ -9,7 +9,7 @@ import { onAuthChange } from "@/lib/api/auth";
 import { buildShelfView, getUserShelfState } from "@/lib/api/shelf";
 import type { UserShelfState } from "@/lib/api/types";
 import type { UserStatePlain } from "@/lib/content/user-state";
-import { BookShelf } from "./BookShelf";
+import { ShelfBasin } from "./ShelfBasin";
 
 /** Chưa đăng nhập: kệ vẫn xem được, chỉ quyển đầu mở và tiến độ không lưu. */
 const SIGNED_OUT: UserShelfState = {
@@ -44,9 +44,12 @@ function dungTrangThai(plain: UserStatePlain): UserShelfState {
  */
 export function ShelfPageClient({
   shelf,
+  pigmentIndex = 0,
   trangThaiBanDau,
 }: {
   shelf: ContentShelf;
+  /** Vị trí kệ trong danh sách — quyết định sắc tố mực của chậu. */
+  pigmentIndex?: number;
   /** Trạng thái người dùng đọc sẵn ở server, để lần sơn đầu tiên không vẽ sai. */
   trangThaiBanDau?: UserStatePlain;
 }) {
@@ -120,14 +123,15 @@ export function ShelfPageClient({
           và repo đã tự cấm ở hai file khác. Vùng rỗng cao 0px nên không chiếm chỗ. */}
       <p aria-live="polite">
         {stateError && (
-          <span className="flex items-start gap-xs bg-destructive px-page-margin py-sm font-body text-body-sm text-on-destructive">
+          <span className="flex items-start gap-xs bg-son px-page-margin py-sm font-ui text-body-sm text-on-son">
             <AlertCircle aria-hidden className="mt-[0.15em] h-4 w-4 shrink-0" />
             {stateError}
           </span>
         )}
       </p>
-      <BookShelf
+      <ShelfBasin
         shelf={view}
+        pigmentIndex={pigmentIndex}
         onOpenBook={setOpenBookSlug}
         justUnlockedSlugs={justUnlockedSlugs}
       />

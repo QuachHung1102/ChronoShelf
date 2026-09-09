@@ -69,11 +69,31 @@ văn bản đã seed. `db/seed/*.json` có thêm khóa `questions`, và `seed-co
 ## Cổng đang ở đâu
 
 ```
-npm run check        → exit 0
-npm run db:check     → 110 đạt / 0 hỏng     (đo 2026-09-09)
+npm run check        → exit 0                (nay có thêm design:dead-class)
+npm run db:check     → 110 đạt / 0 hỏng     (đo lại 2026-09-10)
 npm run db:mutation  → 53 đạt / 0 hỏng      (đo 2026-09-09)
 npm run db:migrate   → 19 file schema
 ```
+
+> **Bổ sung 2026-09-10 — đợt soát sau khi đổi thế giới thị giác.** Sáu lỗi im lặng do lượt
+> đổi ~805 token để lại, tất cả đã sửa và đo lại trong trình duyệt: khối tài khoản ở rail
+> vô hình (1,00:1), bản đồ chọn quốc gia đen kịt trên 705 `<path>`, ô chọn đáp án rơi về
+> xanh hệ thống, gạch chân ghi công mất màu, thẻ kệ ở trang chủ mất cả hover lẫn active,
+> chip "Nháp" 4,03:1. Cộng một lỗi bố cục: viền `<fieldset>` kẻ ngang câu hỏi trắc nghiệm.
+> Chi tiết ở `docs/agents/bay-da-gap.md`; kể lại ở `docs/nhat-ky/2026-09-10.html`.
+>
+> Kèm theo là cổng mới `npm run design:dead-class` (đã chứng minh biết kêu) và một phép
+> quét tương phản chạy trên 13 màn — sau khi sửa, **0 cặp dưới ngưỡng AA**.
+>
+> **Cùng ngày, thế giới cũ bị gỡ HẲN.** `components/Room.tsx` (+ `.module.scss`) đã xóa;
+> trình đọc, đăng nhập, túi hành trang và trang chủ dựng lại trong chậu mực. Chi tiết ở
+> mục "Thay thế giới thị giác" của `CLAUDE.md`. Đợt này lộ thêm ba loại lỗi mà lượt quét
+> chữ không thấy — thước tiến độ dùng chung trên hai nền ngược nhau, và **bảy ký hiệu**
+> mang thông tin ở 1,57–1,91:1 (WCAG 1.4.11 đòi 3:1). Nay quét CẢ đồ họa, không chỉ chữ:
+> 6 màn + trình đọc, **0 lỗi**.
+>
+> Việc "dựng lại 6 màn" trong bàn giao cũ nay **chỉ còn 0**: cộng đồng, bài giảng và khu
+> quản trị không phải dựng lại — chúng vốn là thẻ giấy trên nền giấy và đã đo sạch.
 
 Trong 17 phép mới, quan trọng nhất là phép chạy `complete_book` THẬT với đáp án sai rồi đòi
 `user_items` **không nhúc nhích**, và một phép đối chứng chứng minh quyển KHÔNG có câu hỏi vẫn

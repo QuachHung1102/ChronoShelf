@@ -68,14 +68,18 @@ export function ShelfProgress({ shelves }: { shelves: ShelfChain[] }) {
           <li key={shelf.slug}>
             <Link
               href={`/${shelf.slug}`}
-              // Hover sáng lên một bậc (`primary-dark` → `primary`) chứ không đổi viền: cả
-              // thẻ là mặt gỗ, nên tín hiệu đúng là gỗ bắt sáng thêm. Vòng focus vẫn dùng
-              // `ring` trên nền `neutral` vì nó vẽ NGOÀI thẻ, trên nền trang.
-              className={`group flex h-full flex-col justify-between gap-xl rounded-lg bg-primary-dark p-lg transition-colors duration-200 ease-out hover:bg-primary active:bg-surface-shelf ${FOCUS_RING}`}
+              // Hover loãng đi một bậc (`primary` → `ink-current`) chứ không đổi viền: thẻ
+              // là một vũng mực, nên tín hiệu đúng là mực nhạt bớt khi chạm vào. Vòng focus
+              // vẫn dùng `ring` vì nó vẽ NGOÀI thẻ, trên nền trang `paper`.
+              //
+              // Cả ba trạng thái từng là `bg-primary` sau lượt đổi token cơ học — tức thẻ
+              // kệ sách trên trang chủ KHÔNG có phản hồi hover lẫn phản hồi bấm nào, trong
+              // khi comment ngay trên đây vẫn hứa là có.
+              className={`group flex h-full flex-col justify-between gap-xl rounded-lg bg-primary p-lg transition-colors duration-200 ease-out hover:bg-ink-current active:bg-primary ${FOCUS_RING}`}
             >
               <span className="flex flex-col gap-md">
-                <BookOpen aria-hidden className="h-6 w-6 text-secondary-light" />
-                <span className="text-balance font-heading text-headline-sm text-on-primary">{shelf.name}</span>
+                <BookOpen aria-hidden className="h-6 w-6 text-feathered" />
+                <span className="text-balance font-ui text-title-md text-on-ink">{shelf.name}</span>
               </span>
 
               <span className="flex flex-col gap-sm">
@@ -90,7 +94,7 @@ export function ShelfProgress({ shelves }: { shelves: ShelfChain[] }) {
                   </span>
                 )}
 
-                <span className="flex items-center justify-between gap-sm font-body text-body-sm text-secondary-light">
+                <span className="flex items-center justify-between gap-sm font-ui text-body-sm text-feathered">
                   {/* Chưa biết trạng thái thì nói số quyển, đừng đoán "0/n" — với người
                       chưa đăng nhập thì quyển đầu vẫn mở, nên "0" là sai. */}
                   {shelf.books.length === 0
@@ -102,7 +106,7 @@ export function ShelfProgress({ shelves }: { shelves: ShelfChain[] }) {
                       Thẻ vẫn đổi nền khi hover nên tín hiệu không mất ở chế độ giảm động. */}
                   <ArrowRight
                     aria-hidden
-                    className="h-4 w-4 shrink-0 text-tertiary-light transition-transform duration-200 ease-out group-hover:translate-x-1 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0"
+                    className="h-4 w-4 shrink-0 text-son-light transition-transform duration-200 ease-out group-hover:translate-x-1 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0"
                   />
                 </span>
               </span>

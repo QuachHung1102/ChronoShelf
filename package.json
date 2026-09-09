@@ -10,14 +10,15 @@
     "prepare": "git config core.hooksPath .githooks || exit 0",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "node --test \"lib/**/*.test.ts\"",
-    "check": "npm run design:lint && npm run design:verify && npm test && npm run lint && npm run build",
+    "check": "npm run design:lint && npm run design:verify && npm run design:dead-class && npm test && npm run lint && npm run build",
     "db:check": "node --env-file-if-exists=.env.local scripts/db-check.mjs",
     "seed:content": "node scripts/seed-content.mjs",
     "design:lint": "designmd lint DESIGN.md | node scripts/design-lint-gate.mjs",
     "design:build": "designmd export --format json-tailwind DESIGN.md > tailwind.theme.json && node scripts/design-line-height.mjs",
     "design:verify": "designmd export --format json-tailwind DESIGN.md > node_modules/.tailwind.theme.gen.json && node scripts/design-line-height.mjs node_modules/.tailwind.theme.gen.json && git diff --no-index --quiet tailwind.theme.json node_modules/.tailwind.theme.gen.json",
     "db:migrate": "node --env-file-if-exists=.env.local scripts/db-migrate.mjs",
-    "db:mutation": "node --env-file-if-exists=.env.local scripts/db-mutation-check.mjs"
+    "db:mutation": "node --env-file-if-exists=.env.local scripts/db-mutation-check.mjs",
+    "design:dead-class": "node scripts/design-dead-class.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.31.0",

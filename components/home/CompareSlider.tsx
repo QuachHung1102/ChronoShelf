@@ -30,7 +30,7 @@ function Ghi({ nhan, anh }: { nhan: string; anh: AnhCoCredit }) {
           href={anh.source}
           target="_blank"
           rel="noreferrer noopener"
-          className="underline decoration-secondary-light underline-offset-2 transition-colors duration-200 hover:text-tertiary-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-neutral"
+          className="underline decoration-ink-dilute underline-offset-2 transition-colors duration-200 hover:text-son focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
         >
           Wikimedia Commons
         </a>
@@ -63,7 +63,7 @@ export function CompareSlider({ xua, nay, chuDe }: Props) {
 
   return (
     <figure className="flex flex-col gap-sm">
-      <div ref={khung} className={`${s.khung} rounded-md bg-surface-locked`}>
+      <div ref={khung} className={`${s.khung} rounded-md bg-mist`}>
         {/* Ảnh "ngày nay" là nền, ảnh "ngày ấy" nằm trên và bị cắt tới vạch. */}
         {/* eslint-disable-next-line @next/next/no-img-element -- ảnh tĩnh commit sẵn trong public/ */}
         <img
@@ -99,13 +99,13 @@ export function CompareSlider({ xua, nay, chuDe }: Props) {
             khung và nằm dưới hai nhãn này, chúng không được nuốt thao tác kéo. */}
         <span
           aria-hidden
-          className="pointer-events-none absolute left-sm top-sm z-10 rounded-sm bg-primary-dark px-sm py-xs font-body text-label-caps uppercase text-on-primary"
+          className="pointer-events-none absolute left-sm top-sm z-10 rounded-sm bg-primary px-sm py-xs font-ui text-label-caps uppercase text-on-ink"
         >
           Ngày ấy
         </span>
         <span
           aria-hidden
-          className="pointer-events-none absolute right-sm top-sm z-10 rounded-sm bg-primary-dark px-sm py-xs font-body text-label-caps uppercase text-on-primary"
+          className="pointer-events-none absolute right-sm top-sm z-10 rounded-sm bg-primary px-sm py-xs font-ui text-label-caps uppercase text-on-ink"
         >
           Bây giờ
         </span>
@@ -135,7 +135,7 @@ export function CompareSlider({ xua, nay, chuDe }: Props) {
           giá trị `image_source` trong database là chuỗi mô tả có khoảng trắng nên bọc vào
           `<a>` ra link chết, còn tám tấm này là URL trang mô tả Commons hợp lệ — đã kiểm
           từng cái trả 200. `Ghi()` vẫn tự phòng: chỉ link khi thật sự là https. */}
-      <figcaption className="space-y-xs text-pretty font-body text-caption text-secondary">
+      <figcaption className="space-y-xs text-pretty font-ui text-caption text-ink-dilute">
         <Ghi nhan="Ngày ấy" anh={xua} />
         <Ghi nhan="Bây giờ" anh={nay} />
       </figcaption>

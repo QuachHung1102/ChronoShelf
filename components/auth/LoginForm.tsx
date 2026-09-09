@@ -85,8 +85,8 @@ export function LoginForm({ next }: { next: string }) {
    * khoản vĩnh viễn. Dùng lại đúng kiểu khối ghi chú của bước khôi phục ở dưới.
    */
   const ghiChuCauHoi = (
-    <p className="rounded-md border border-surface-locked bg-surface p-md font-body text-body-md text-primary-dark">
-      Đây là cách <strong className="font-semibold text-primary-dark">duy nhất</strong> lấy lại tài khoản nếu bạn quên mật khẩu — bọn
+    <p className="rounded-md border border-ink-dilute bg-surface p-md font-ui text-body-md text-primary">
+      Đây là cách <strong className="font-semibold text-primary">duy nhất</strong> lấy lại tài khoản nếu bạn quên mật khẩu — bọn
       mình không gửi email đặt lại. Hãy chọn câu bạn chắc chắn nhớ.
     </p>
   );
@@ -114,10 +114,10 @@ export function LoginForm({ next }: { next: string }) {
   );
 
   return (
-    <div className="w-full max-w-md rounded-md bg-neutral p-xl">
-      <p className="font-body text-label-caps uppercase text-tertiary-deep">Cửa sổ lịch sử</p>
-      <h1 className="mt-sm font-heading text-headline-md text-primary-dark">{tieuDe}</h1>
-      <p className="mt-sm font-body text-body-md text-secondary">{moTa}</p>
+    <div className="w-full max-w-md rounded-md border border-mist bg-surface p-xl">
+      <p className="font-ui text-label-caps uppercase text-son">Cửa sổ lịch sử</p>
+      <h1 className="mt-sm font-ui text-display-md text-primary">{tieuDe}</h1>
+      <p className="mt-sm font-ui text-body-md text-ink-dilute">{moTa}</p>
 
       {cheDo === "dang-nhap" && (
         <form
@@ -222,7 +222,7 @@ export function LoginForm({ next }: { next: string }) {
             onChange={(e) => setDapAn(e.target.value)}
             className={FIELD}
           />
-          <p className="font-body text-caption text-secondary">
+          <p className="font-ui text-caption text-ink-dilute">
             Không phân biệt hoa thường và dấu tiếng Việt — “Hà Nội” và “ha noi” đều được.
           </p>
 
@@ -257,7 +257,7 @@ export function LoginForm({ next }: { next: string }) {
 
           {cauHoiCuaToi !== null && (
             <>
-              <p className="rounded-md border border-surface-locked bg-surface p-md font-body text-body-md text-primary-dark">
+              <p className="rounded-md border border-ink-dilute bg-surface p-md font-ui text-body-md text-primary">
                 {timCauHoi(cauHoiCuaToi)?.hoi ?? "Câu hỏi bảo mật của bạn"}
               </p>
 
@@ -314,8 +314,8 @@ export function LoginForm({ next }: { next: string }) {
         role="alert"
         className={
           error
-            ? "mt-md rounded-md bg-destructive p-md font-body text-body-sm text-on-destructive"
-            : "mt-md font-body text-body-sm"
+            ? "mt-md rounded-md bg-son p-md font-ui text-body-sm text-on-son"
+            : "mt-md font-ui text-body-sm"
         }
       >
         {error}

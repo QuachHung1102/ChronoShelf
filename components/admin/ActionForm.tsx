@@ -137,13 +137,13 @@ export function ActionForm({
             className={
               quietStatus
                 ? "sr-only"
-                : "mt-xs flex items-start gap-xs font-body text-body-sm text-secondary"
+                : "mt-xs flex items-start gap-xs font-ui text-body-sm text-ink-dilute"
             }
           >
             {!quietStatus && (
               <CheckCircle2
                 aria-hidden
-                className="mt-[0.15em] h-4 w-4 shrink-0 text-tertiary-deep"
+                className="mt-[0.15em] h-4 w-4 shrink-0 text-son"
               />
             )}
             {state.ok}
@@ -165,8 +165,8 @@ export function ActionForm({
           role="alert"
           className={
             quietStatus
-              ? "absolute right-0 top-full z-10 mt-xs flex w-max max-w-measure items-start gap-xs rounded-sm border border-destructive bg-surface px-sm py-xs font-body text-body-sm text-destructive"
-              : "mt-xs flex items-start gap-xs font-body text-body-sm text-destructive"
+              ? "absolute right-0 top-full z-10 mt-xs flex w-max max-w-measure items-start gap-xs rounded-sm border border-son bg-surface px-sm py-xs font-ui text-body-sm text-son"
+              : "mt-xs flex items-start gap-xs font-ui text-body-sm text-son"
           }
         >
           <AlertCircle aria-hidden className="mt-[0.15em] h-4 w-4 shrink-0" />

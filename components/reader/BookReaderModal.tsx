@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Volume2, VolumeX, X } from "lucide-react";
-import { Room } from "@/components/Room";
 import { GhiCongAnh } from "@/components/ui/GhiCongAnh";
 import { findBook } from "@/lib/content/find";
 import { completeBook, setCurrentPage } from "@/lib/api/shelf";
@@ -11,25 +10,31 @@ import type { ContentPage, ContentShelf } from "@/lib/content/types";
 import type { CompleteBookResult } from "@/lib/api/types";
 import { BookPage } from "./BookPage";
 import { ItemDropOverlay } from "./ItemDropOverlay";
-import { PRIMARY_BUTTON_ON_DARK } from "@/components/ui/controls";
+import { PRIMARY_BUTTON } from "@/components/ui/controls";
 import { QuizPanel } from "./QuizPanel";
 import { dangTatTieng, ghiTatTieng, phatTiengLat } from "./tieng-lat-trang";
 import s from "./reader.module.scss";
 
+/**
+ * Nút tròn của thanh điều khiển, trên nền `paper`.
+ *
+ * Viền là `ink-dilute` chứ không phải `feathered`: đây là ranh giới của một thứ BẤM ĐƯỢC,
+ * và `feathered` trên `paper` chỉ 1.93:1 — trượt ngưỡng 3:1 của WCAG 1.4.11 cho ranh giới
+ * thành phần giao diện. DESIGN.md § Do's and Don'ts nói thẳng chỗ này.
+ */
 const ROUND_BUTTON =
-  "flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary transition duration-200 ease-out hover:brightness-110 disabled:pointer-events-none disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-on-dark focus-visible:ring-offset-2 focus-visible:ring-offset-surface-room";
+  "flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-ink-dilute text-primary transition duration-200 ease-out hover:bg-mist disabled:pointer-events-none disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-paper";
 
 /**
  * Hành động chính của màn hình đọc — và trên mỗi trạng thái chỉ có ĐÚNG MỘT cái mang hình
- * này (DESIGN.md § Overview). Viên thuốc cam `tertiary-deep` là ngôn ngữ nút bấm của cả
- * app; thứ gì chỉ mang thông tin thì không được mượn nó, nếu không học sinh phải thử mới
- * biết cái nào bấm được.
+ * này (DESIGN.md § Overview). Khối mực đặc là ngôn ngữ nút bấm của cả app; thứ gì chỉ mang
+ * thông tin thì không được mượn nó, nếu không học sinh phải thử mới biết cái nào bấm được.
  *
- * Nay là một alias của hằng dùng chung. Bản chép tay trước đây đã RƠI MẤT
- * `active:brightness-90` cùng cả cụm căn flex — tức nút quan trọng nhất của màn đọc không
- * để lại dấu vết nào trong 200–800ms chờ máy chủ chấm bài.
+ * Nay là bản `PRIMARY_BUTTON` dùng chung, KHÔNG còn bản `_ON_DARK`: từ 2026-09-10 màn đọc
+ * đứng trên `paper` chứ không trong phòng tối, nên nút mực trên nền giấy là đúng cặp — bản
+ * đảo màu (giấy trên mực) sẽ biến mất vào chính nền của nó.
  */
-const PILL_BUTTON = PRIMARY_BUTTON_ON_DARK;
+const PILL_BUTTON = PRIMARY_BUTTON;
 
 /** Một mặt giấy trong sách. Bìa và trang trắng độn cũng là "mặt" — chúng chiếm chỗ thật. */
 type Face =
@@ -338,18 +343,21 @@ export function BookReaderModal({
       aria-label={`Đang đọc: ${book.title}`}
       className={s.dialog}
     >
-      {/* `overflow-hidden`: trong hộp thoại này chiều cao đã bị chốt bằng khung nhìn, mà
-          `.dust` cao 200% và `.lightBeam` thì cao hơn phòng — chúng tạo ra chiều cao cuộn
-          giả. Đo thật ở 1024×768: cuộn được 271px vào khoảng đen và thanh đầu (tên sách +
-          nút đóng) trôi mất khỏi màn hình. Ở các màn khác Room PHẢI cuộn được nên
-          `overflow-x: clip` trong SCSS là đúng; chỉ riêng đây mới chốt cứng. */}
-      <Room className="flex h-full flex-col overflow-hidden">
+      {/* Mặt nước LẶNG, không phải căn phòng.
+          Trước 2026-09-10 khối này là `<Room>` — bức tường sách gỗ mờ, chùm sáng nến, hạt
+          bụi trôi — tức là thế giới cũ còn nguyên bên trong màn hình quan trọng nhất của
+          sản phẩm, mở ra ngay sau một màn kệ sách trắng giấy. Nền ở đây là `paper` phẳng và
+          KHÔNG có chậu mực: DESIGN.md § Motion cho mỗi màn đúng một chuyển động có chủ ý,
+          và ở màn đọc thì chuyển động đó là cú lật trang.
+          `overflow-hidden` vẫn cần: chiều cao đã chốt bằng khung nhìn, thứ gì cao hơn sẽ
+          đẩy thanh đầu (tên sách + nút đóng) ra khỏi màn hình. */}
+      <div className="flex h-full flex-col overflow-hidden bg-paper">
         <div className="flex items-center justify-between px-page-margin py-md">
           {/* `truncate` + `min-w-0`: ngân sách dọc ở 1024×768 chỉ dư 44px sau khi trừ
               sách (580) và hàng điều khiển (44). Tên sách xuống dòng thứ ba là thanh đầu
               cao 128px và quyển sách bị cắt. Tên do admin soạn lúc chạy, không có trần
               nào — nên phải chặn ở đây chứ không trông vào dữ liệu. */}
-          <p className="min-w-0 truncate font-heading text-headline-sm text-on-primary">
+          <p className="min-w-0 truncate font-ui text-title-md text-primary">
             {book.title}
           </p>
           <div className="flex shrink-0 items-center gap-sm">
@@ -416,7 +424,6 @@ export function BookReaderModal({
               className={s.stage}
               style={reduced ? ({ "--flip-duration": "0ms" } as CSSProperties) : undefined}
             >
-              <div aria-hidden className={s.bookShadow} />
               <div className={s.book} style={{ transform: `translateX(${shift})` }}>
                 <div
                   aria-hidden
@@ -509,7 +516,7 @@ export function BookReaderModal({
                     đã khai trong DESIGN.md (`secondary-light` trên nền phòng, 11.57:1).
                     Vùng `aria-live` phải LUÔN có mặt: tháo ra rồi gắn lại thì trình đọc màn
                     hình coi đó là vùng vừa được THÊM chứ không phải một thay đổi. */}
-                <p aria-live="polite" className="font-body text-caption text-secondary-light">
+                <p aria-live="polite" className="font-ui text-caption text-ink-dilute">
                   {currentPage === 0 ? "Bìa sách" : `Trang ${currentPage}/${pageCount}`}
                 </p>
 
@@ -559,13 +566,13 @@ export function BookReaderModal({
             {error && (
               <div
                 role="alert"
-                className="flex items-center gap-md rounded-md bg-destructive p-md font-body text-body-sm text-on-destructive"
+                className="flex items-center gap-md rounded-md bg-son p-md font-ui text-body-sm text-on-son"
               >
                 {error}
                 {needsLogin ? (
                   <Link
                     href={`/dang-nhap?next=${encodeURIComponent(`/${shelf.slug}`)}`}
-                    className="shrink-0 rounded-sm underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-on-dark focus-visible:ring-offset-2 focus-visible:ring-offset-destructive"
+                    className="shrink-0 rounded-sm underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-on-ink focus-visible:ring-offset-2 focus-visible:ring-offset-son"
                   >
                     Đăng nhập
                   </Link>
@@ -585,7 +592,7 @@ export function BookReaderModal({
                     // `ring-on-dark` + offset `destructive`: `on-destructive` là token
                     // MÀU CHỮ, không phải một trong hai token vòng focus mà DESIGN.md khai
                     // (`ring`, `ring-on-dark`). Và thiếu offset thì vành vẽ sát mép chữ.
-                    className="rounded-sm underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-on-dark focus-visible:ring-offset-2 focus-visible:ring-offset-destructive"
+                    className="rounded-sm underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-on-ink focus-visible:ring-offset-2 focus-visible:ring-offset-son"
                   >
                     Thử lại
                   </button>
@@ -594,7 +601,7 @@ export function BookReaderModal({
             )}
           </div>
         )}
-      </Room>
+      </div>
     </dialog>
   );
 }
@@ -634,14 +641,14 @@ function CoverFace({
           gỗ trống có một hòn đảo chữ lơ lửng giữa. */}
       <span aria-hidden className="flex-[2]" />
 
-      <p className="relative font-body text-label-caps uppercase text-tertiary-light">
+      <p className="relative font-ui text-label-caps uppercase text-son-light">
         Cửa sổ lịch sử
       </p>
       {/* `headline-xl` 48px — DESIGN.md § Typography dựng bậc đỉnh này cho đúng chỗ này:
           "bìa chiếm gần trọn khung nhìn nhưng tên sách trước đây chỉ 24px". */}
-      <p className="relative mt-md font-heading text-headline-xl text-on-primary">{title}</p>
+      <p className="relative mt-md font-ui text-display-xl text-on-ink">{title}</p>
       <span aria-hidden className={s.coverRule} />
-      <p className="relative font-body text-body-md text-secondary-light">{era}</p>
+      <p className="relative font-ui text-body-md text-feathered">{era}</p>
 
       <span aria-hidden className="flex-[3]" />
 
@@ -655,7 +662,7 @@ function CoverFace({
           credit={credit}
           nguon={nguon}
           nenToi
-          className="absolute inset-x-xl bottom-lg text-secondary-light"
+          className="absolute inset-x-xl bottom-lg text-feathered"
         />
       )}
 
@@ -670,7 +677,7 @@ function CoverFace({
           type="button"
           onClick={onOpen}
           aria-label={`Mở sách: ${title}`}
-          className="absolute inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring-on-dark"
+          className="absolute inset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring-on-ink"
         />
       )}
     </div>
@@ -680,7 +687,7 @@ function CoverFace({
 function EndFace() {
   return (
     <div className="flex h-full w-full items-center justify-center p-xl text-center">
-      <p className="font-heading text-headline-sm text-on-primary">Hết</p>
+      <p className="font-ui text-title-md text-on-ink">Hết</p>
     </div>
   );
 }

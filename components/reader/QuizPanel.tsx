@@ -75,13 +75,16 @@ export function QuizPanel({
         // đã bác đúng con số đó một lần rồi ("hợp với chữ 16px, nhưng body-md là 14px nên
         // dòng chạy 95–102 ký tự") và đặt `measure` = 456px ≈ 65 ký tự. Đoạn dẫn ngay
         // dưới đây vốn đã dùng `max-w-measure`, nên trong cùng một form đang có hai chuẩn.
-        className="flex h-fit w-full max-w-measure flex-col gap-lg rounded-md bg-surface p-xl"
+        // Viền `mist` là bắt buộc từ 2026-09-10: panel này từng đứng trong phòng đọc tối,
+        // nơi `surface` tách khỏi nền 15.7:1 và viền chỉ là nhiễu. Nay nền là `paper` và cặp
+        // `surface`/`paper` chỉ 1.16:1 — không có viền thì tấm giấy làm bài không có mép.
+        className="flex h-fit w-full max-w-measure flex-col gap-lg rounded-md border border-mist bg-surface p-xl"
       >
         <div>
-          <h2 className="font-heading text-headline-md text-primary-dark">
+          <h2 className="font-ui text-display-md text-primary">
             Trước khi nhận vật phẩm
           </h2>
-          <p className="mt-sm max-w-measure font-body text-body-md text-secondary">
+          <p className="mt-sm max-w-measure font-ui text-body-md text-ink-dilute">
             {cauHoi.length === 1
               ? "Một câu hỏi ngắn về những gì bạn vừa đọc."
               : `${cauHoi.length} câu hỏi ngắn về những gì bạn vừa đọc.`}{" "}
@@ -101,7 +104,7 @@ export function QuizPanel({
               // Câu sai đổi sang `destructive`, nhưng màu KHÔNG phải tín hiệu duy nhất
               // (WCAG 1.4.1): còn icon và dòng chữ ở dưới.
               className={`flex flex-col gap-sm rounded-md border p-md ${
-                sai ? "border-destructive" : "border-surface-locked"
+                sai ? "border-son" : "border-ink-dilute"
               }`}
               // Không đặt `aria-describedby` ở đây: mô tả gắn trên `<fieldset>` KHÔNG lan
               // xuống các `<input>` bên trong, nên câu "Chưa đúng…" không bao giờ tới được
@@ -111,13 +114,23 @@ export function QuizPanel({
                   `<legend>` là TÊN của nhóm radio; để câu hỏi ra ngoài thì người dùng
                   trình đọc màn hình đi qua từng lựa chọn chỉ nghe "Vì hàng hóa quá nặng…"
                   mà không bao giờ nghe được câu hỏi. Đã soi cây a11y thật: câu hỏi hiện ra
-                  như một đoạn văn bản rời, không gắn với nhóm nào. */}
-              <legend className="px-xs font-body text-body-md text-primary-dark">
-                <span className="block font-body text-label-caps uppercase text-secondary">
-                  Câu {i + 1}/{cauHoi.length}
-                </span>
-                {q.prompt}
+                  như một đoạn văn bản rời, không gắn với nhóm nào.
+
+                  Nhưng legend PHẢI là `sr-only`, và đó là một lỗi đã đo được: trình duyệt
+                  nhúng legend vào chính đường viền trên của fieldset, căn theo NỬA chiều
+                  cao của nó. Legend hai dòng (nhãn "Câu 1/3" + câu hỏi) vì thế bị đường
+                  viền kẻ ngang qua dòng thứ hai — đo ở 1024×768: legend cao 39.6px, viền
+                  đi qua giữa. Phần NHÌN được tách ra thành hai `<p>` bình thường; chúng
+                  `aria-hidden` để trình đọc màn hình không nghe câu hỏi hai lần. */}
+              <legend className="sr-only">
+                Câu {i + 1}/{cauHoi.length}: {q.prompt}
               </legend>
+              <div aria-hidden>
+                <p className="font-ui text-label-caps uppercase text-ink-dilute">
+                  Câu {i + 1}/{cauHoi.length}
+                </p>
+                <p className="mt-xs font-ui text-body-md text-primary">{q.prompt}</p>
+              </div>
 
               <div className="flex flex-col gap-xs">
                 {q.choices.map((c, k) => (
@@ -126,7 +139,7 @@ export function QuizPanel({
                   // vòng focus bám quanh chính cái chấm và gần như không thấy.
                   <label
                     key={k}
-                    className="flex cursor-pointer items-start gap-sm rounded-sm px-xs py-xs font-body text-body-md text-primary-dark transition-colors duration-200 ease-out hover:bg-neutral has-[:focus-visible]:outline-none has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-surface"
+                    className="flex cursor-pointer items-start gap-sm rounded-sm px-xs py-xs font-ui text-body-md text-primary transition-colors duration-200 ease-out hover:bg-paper has-[:focus-visible]:outline-none has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-surface"
                   >
                     <input
                       type="radio"
@@ -135,7 +148,7 @@ export function QuizPanel({
                       onChange={() => onChon(i, k)}
                       disabled={busy}
                       aria-describedby={sai ? errId : undefined}
-                      className="mt-[0.2em] h-4 w-4 shrink-0 accent-tertiary-deep focus-visible:outline-none"
+                      className="mt-[0.2em] h-4 w-4 shrink-0 accent-primary focus-visible:outline-none"
                     />
                     <span>{c}</span>
                   </label>
@@ -145,7 +158,7 @@ export function QuizPanel({
               {sai && (
                 <p
                   id={errId}
-                  className="flex items-center gap-xs font-body text-body-sm text-destructive"
+                  className="flex items-center gap-xs font-ui text-body-sm text-son"
                 >
                   <AlertCircle aria-hidden className="h-4 w-4 shrink-0" />
                   Chưa đúng. Quay lại đọc phần liên quan rồi chọn lại.
@@ -160,8 +173,8 @@ export function QuizPanel({
             không đọc (bẫy `empty:hidden` đã ghi ở CLAUDE.md). */}
         <p
           aria-live="polite"
-          className={`flex min-h-lg items-center gap-xs font-body text-body-sm ${
-            error ? "text-destructive" : "text-secondary"
+          className={`flex min-h-lg items-center gap-xs font-ui text-body-sm ${
+            error ? "text-son" : "text-ink-dilute"
           }`}
         >
           {error ? (

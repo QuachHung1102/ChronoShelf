@@ -78,17 +78,17 @@ export function BookAdmin({
 }) {
   return (
     <div className="flex flex-col gap-lg">
-      <p className={`flex items-start gap-sm font-body text-body-sm text-secondary ${ADMIN_CARD}`}>
-        <KeyRound aria-hidden className="mt-[0.15em] h-4 w-4 shrink-0 text-tertiary-deep" />
+      <p className={`flex items-start gap-sm font-ui text-body-sm text-ink-dilute ${ADMIN_CARD}`}>
+        <KeyRound aria-hidden className="mt-[0.15em] h-4 w-4 shrink-0 text-son" />
         <span>
-          Chuỗi mở khóa suy ra từ <strong className="font-semibold text-primary-dark">thứ tự</strong>
+          Chuỗi mở khóa suy ra từ <strong className="font-semibold text-primary">thứ tự</strong>
           , không có ô nào để nhập: quyển sau mở bằng vật phẩm thưởng của quyển ngay trước. Đổi thứ
           tự hoặc đổi phần thưởng thì chuỗi tự tính lại, nên nó không thể đứt.
         </span>
       </p>
 
       <section aria-labelledby="them-sach" className={ADMIN_CARD}>
-        <h2 id="them-sach" className="mb-sm font-heading text-headline-sm text-primary-dark">
+        <h2 id="them-sach" className="mb-sm font-ui text-title-md text-primary">
           Thêm quyển sách
         </h2>
         <ActionForm action={createBook} className="flex flex-wrap items-end gap-sm">
@@ -123,7 +123,7 @@ export function BookAdmin({
             <Plus aria-hidden className="h-4 w-4" />
             Tạo sách
           </SubmitButton>
-          <p className="w-full max-w-measure font-body text-caption text-secondary">
+          <p className="w-full max-w-measure font-ui text-caption text-ink-dilute">
             Đường dẫn sinh tự động từ tiêu đề. Quyển mới luôn ở dạng nháp — soạn trang rồi mới xuất
             bản được.
           </p>
@@ -131,12 +131,12 @@ export function BookAdmin({
       </section>
 
       <section aria-labelledby="ds-sach" className="flex flex-col gap-md">
-        <h2 id="ds-sach" className="font-heading text-headline-sm text-primary-dark">
+        <h2 id="ds-sach" className="font-ui text-title-md text-primary">
           {books.length} quyển
         </h2>
 
         {books.length === 0 && (
-          <p className={`font-body text-body-md text-secondary ${ADMIN_CARD}`}>
+          <p className={`font-ui text-body-md text-ink-dilute ${ADMIN_CARD}`}>
             Kệ này chưa có quyển nào. Tạo quyển đầu tiên ở trên — nó sẽ luôn mở sẵn cho học sinh.
           </p>
         )}
@@ -145,17 +145,17 @@ export function BookAdmin({
           <article key={book.slug} className={ADMIN_CARD}>
             <header className="flex flex-wrap items-center justify-between gap-sm">
               <div className="flex flex-wrap items-center gap-sm">
-                {/* Viền `secondary` là bắt buộc: `bg-neutral` đặt trên thẻ `bg-surface` chỉ
+                {/* Viền `secondary` là bắt buộc: `bg-paper` đặt trên thẻ `bg-surface` chỉ
                     đạt 1.16:1, tức cái vòng tròn số thứ tự không tồn tại về mặt thị giác. */}
                 <span
                   aria-hidden
-                  className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-secondary bg-neutral font-body text-caption text-primary-dark"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-mist bg-paper font-ui text-caption text-primary"
                 >
                   {index + 1}
                 </span>
-                <h3 className="font-heading text-headline-sm text-primary-dark">{book.title}</h3>
+                <h3 className="font-ui text-title-md text-primary">{book.title}</h3>
                 <PublishBadge published={book.published} />
-                <span className="font-body text-caption text-secondary">
+                <span className="font-ui text-caption text-ink-dilute">
                   {book.era} · {book.pageCount} trang
                 </span>
               </div>
@@ -167,7 +167,7 @@ export function BookAdmin({
                   `aria-disabled` + `type="button"` thay cho `disabled` — xem chú thích dài
                   ở `components/admin/card.tsx`. */}
               <div className="flex items-center gap-xs">
-                <span className="font-body text-caption text-secondary">Thứ tự</span>
+                <span className="font-ui text-caption text-ink-dilute">Thứ tự</span>
                 <ActionForm action={moveBook} quietStatus>
                   <input type="hidden" name="slug" value={book.slug} />
                   <input type="hidden" name="shelfSlug" value={shelf.slug} />
@@ -201,8 +201,8 @@ export function BookAdmin({
 
             {/* Chuỗi mở khóa — ĐỌC-THÔI, không có ô nhập nào. Ở lại tầng LUÔN HIỆN vì đây
                 là thứ admin cần đọc khi lướt cả kệ, không phải khi đang sửa một quyển. */}
-            <p className="mt-sm flex items-center gap-xs rounded-sm border border-secondary bg-neutral px-sm py-xs font-body text-caption text-primary-dark">
-              <Unlock aria-hidden className="h-3.5 w-3.5 shrink-0 text-tertiary-deep" />
+            <p className="mt-sm flex items-center gap-xs rounded-sm border border-mist bg-paper px-sm py-xs font-ui text-caption text-primary">
+              <Unlock aria-hidden className="h-3.5 w-3.5 shrink-0 text-son" />
               {unlockSentence(books, index)}
             </p>
 
@@ -290,7 +290,7 @@ export function BookAdmin({
                       "tạo vật phẩm trước" chỉ tồn tại ở màn /quan-tri/vat-pham, tức đúng chỗ
                       admin chưa tới. Không có vật phẩm thưởng thì quyển kế tiếp không bao giờ
                       mở được, nên đây không phải chuyện nhỏ. */}
-                  <span className="flex max-w-measure items-start gap-xs font-body text-caption text-secondary">
+                  <span className="flex max-w-measure items-start gap-xs font-ui text-caption text-ink-dilute">
                     <Info aria-hidden className="mt-[0.15em] h-3.5 w-3.5 shrink-0" />
                     {items.length === 0 ? (
                       <span>

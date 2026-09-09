@@ -41,7 +41,7 @@ export function ShelfAdmin({ shelves }: { shelves: AdminShelfRow[] }) {
   return (
     <div className="flex flex-col gap-lg">
       <section aria-labelledby="them-ke" className={ADMIN_CARD}>
-        <h2 id="them-ke" className="mb-sm font-heading text-headline-sm text-primary-dark">
+        <h2 id="them-ke" className="mb-sm font-ui text-title-md text-primary">
           Thêm kệ mới
         </h2>
         <ActionForm action={createShelf} className="flex flex-wrap items-end gap-sm">
@@ -71,19 +71,19 @@ export function ShelfAdmin({ shelves }: { shelves: AdminShelfRow[] }) {
           </SubmitButton>
           {/* Slug sinh tự động từ tên nên không có ô nhập: một slug gõ tay sai chính tả
               là một URL sai vĩnh viễn, mà sửa slug sau đó thì gãy mọi liên kết đã chia sẻ. */}
-          <p className="w-full max-w-measure font-body text-caption text-secondary">
+          <p className="w-full max-w-measure font-ui text-caption text-ink-dilute">
             Đường dẫn sinh tự động từ tên. Kệ mới luôn ở dạng nháp cho tới khi bạn xuất bản.
           </p>
         </ActionForm>
       </section>
 
       <section aria-labelledby="ds-ke" className="flex flex-col gap-md">
-        <h2 id="ds-ke" className="font-heading text-headline-sm text-primary-dark">
+        <h2 id="ds-ke" className="font-ui text-title-md text-primary">
           {shelves.length} kệ
         </h2>
 
         {shelves.length === 0 && (
-          <p className={`${ADMIN_CARD} font-body text-body-md text-secondary`}>
+          <p className={`${ADMIN_CARD} font-ui text-body-md text-ink-dilute`}>
             Chưa có kệ nào. Tạo kệ đầu tiên ở trên.
           </p>
         )}
@@ -92,9 +92,9 @@ export function ShelfAdmin({ shelves }: { shelves: AdminShelfRow[] }) {
           <article key={shelf.slug} className={ADMIN_CARD}>
             <header className="flex flex-wrap items-center justify-between gap-sm">
               <div className="flex flex-wrap items-center gap-sm">
-                <h3 className="font-heading text-headline-sm text-primary-dark">{shelf.name}</h3>
+                <h3 className="font-ui text-title-md text-primary">{shelf.name}</h3>
                 <PublishBadge published={shelf.published} />
-                <span className="font-body text-caption text-secondary">
+                <span className="font-ui text-caption text-ink-dilute">
                   /{shelf.slug} · {shelf.bookCount} quyển
                 </span>
               </div>
@@ -106,7 +106,7 @@ export function ShelfAdmin({ shelves }: { shelves: AdminShelfRow[] }) {
                   Nhãn "Thứ tự" hiện ra bằng mắt vì tên của hai nút này trước đó chỉ nằm
                   trong `title=` (phải rê chuột chờ) và trong `sr-only`. */}
               <div className="flex items-center gap-xs">
-                <span className="font-body text-caption text-secondary">Thứ tự</span>
+                <span className="font-ui text-caption text-ink-dilute">Thứ tự</span>
                 <ActionForm action={moveShelf} quietStatus>
                   <input type="hidden" name="slug" value={shelf.slug} />
                   <input type="hidden" name="direction" value="-1" />
@@ -242,7 +242,7 @@ export function ShelfAdmin({ shelves }: { shelves: AdminShelfRow[] }) {
                     maxLength={2000}
                     className={FIELD}
                   />
-                  <span className="font-body text-caption text-secondary">
+                  <span className="font-ui text-caption text-ink-dilute">
                     Bài viết mở rộng hiện ra cùng danh hiệu. Để trống cũng được — khi đó
                     phần thưởng chỉ là danh hiệu. Có nội dung thì bắt buộc có danh hiệu.
                   </span>
