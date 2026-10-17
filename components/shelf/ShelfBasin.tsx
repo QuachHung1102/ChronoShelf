@@ -84,8 +84,11 @@ export function ShelfBasin({
 
   /**
    * Giọt mới nhất — bài nên đọc tiếp — là thứ DUY NHẤT còn chuyển động trên màn hình
-   * (DESIGN.md § Ink, § Motion). Nhịp 2.6s đủ chậm để không cướp sự chú ý khỏi việc đọc,
+   * (DESIGN.md § Ink, § Motion). Nhịp 4.2s đủ chậm để không cướp sự chú ý khỏi việc đọc,
    * đủ đều để mắt nhận ra "chỗ này đang sống".
+   *
+   * Lượng 0.35 mỗi nhịp. Bản trước (1.1 mỗi 2.6s) đổ mực nhanh hơn tốc độ mực tan, nên kệ
+   * CHƯA ĐỌC quyển nào mà chậu đã ngập mực — ngược hẳn nghĩa "chưa học = nước trong".
    */
   useEffect(() => {
     if (nextIndex < 0) return;
@@ -97,7 +100,7 @@ export function ShelfBasin({
     const nho = () => {
       const basin = basinRef.current;
       if (!basin) return;
-      for (const cu of giotRoi(p.x, p.y, 1.1, 120)) {
+      for (const cu of giotRoi(p.x, p.y, 0.35, 120)) {
         basin.splat(cu.x, cu.y, cu.dx, cu.dy, cu.amount, cu.radius);
       }
     };
@@ -105,7 +108,7 @@ export function ShelfBasin({
     // Nhịp đầu tiên hơi trễ: để những giọt "đã đọc" kịp nở ra trước, nếu không thì khung
     // hình đầu tiên có tất cả các giọt cùng bung một lúc và không giọt nào là "mới nhất".
     const mo = window.setTimeout(nho, 700);
-    const nhip = window.setInterval(nho, 2600);
+    const nhip = window.setInterval(nho, 4200);
     return () => {
       window.clearTimeout(mo);
       window.clearInterval(nhip);

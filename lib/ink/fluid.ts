@@ -48,7 +48,9 @@ const DEFAULTS: Required<BasinOptions> = {
   pressureIterations: 20,
   dyeDissipation: 0.9994,
   velocityDissipation: 0.991,
-  curlStrength: 26,
+  // 16, không phải 26: ở 26 xoáy kéo mỗi giọt thành những sợi khói dài — người dùng chê
+  // đúng chữ "kéo dài". 16 vẫn giữ vân hoa cúc quanh giọt mà sợi ngắn lại.
+  curlStrength: 16,
 };
 
 /**
@@ -96,6 +98,34 @@ void main() {
   // Truy ngược theo dòng chảy: hạt bây giờ ở đây thì một bước trước nó ở đâu.
   vec2 coord = vUv - uDt * texture(uVelocity, vUv).xy * uTexel;
   outColor = uDissipation * texture(uSource, coord);
+}`;
+
+// Bước sửa của MacCormack: kết quả xuôi cộng nửa sai số khứ hồi, rồi KẸP vào khoảng của bốn
+// texel quanh điểm truy ngược. Thiếu cái kẹp thì sai số đổi dấu thành vòng sáng-tối dao động
+// quanh mép mực và bộ giải nổ dần.
+const MACCORMACK = `#version 300 es
+precision highp float;
+in vec2 vUv;
+uniform sampler2D uVelocity;
+uniform sampler2D uPhi;
+uniform sampler2D uXuoi;
+uniform sampler2D uNguoc;
+uniform vec2 uTexel;
+uniform vec2 uDyeTexel;
+uniform float uDt;
+uniform float uDissipation;
+out vec4 outColor;
+void main() {
+  vec2 coord = vUv - uDt * texture(uVelocity, vUv).xy * uTexel;
+  vec2 c0 = (floor(coord / uDyeTexel - 0.5) + 0.5) * uDyeTexel;
+  float a = texture(uPhi, c0).x;
+  float b = texture(uPhi, c0 + vec2(uDyeTexel.x, 0.0)).x;
+  float c = texture(uPhi, c0 + vec2(0.0, uDyeTexel.y)).x;
+  float d = texture(uPhi, c0 + uDyeTexel).x;
+  float lo = min(min(a, b), min(c, d));
+  float hi = max(max(a, b), max(c, d));
+  float v = texture(uXuoi, vUv).x + 0.5 * (texture(uPhi, vUv).x - texture(uNguoc, vUv).x);
+  outColor = vec4(uDissipation * clamp(v, lo, hi), 0.0, 0.0, 1.0);
 }`;
 
 const DIVERGENCE = `#version 300 es
@@ -285,6 +315,7 @@ export function createInkBasin(
     pressure: buildProgram(gl, VERT, PRESSURE),
     gradient: buildProgram(gl, VERT, GRADIENT),
     splat: buildProgram(gl, VERT, SPLAT),
+    maccormack: buildProgram(gl, VERT, MACCORMACK),
     display: buildProgram(gl, VERT, DISPLAY),
   };
   if (Object.values(programs).some((p) => p === null)) return null;
@@ -295,6 +326,8 @@ export function createInkBasin(
   const velocity = createDoubleFbo(gl, n, n, gl.RG16F, gl.RG, gl.HALF_FLOAT);
   const m = opt.dyeSize;
   const dye = createDoubleFbo(gl, m, m, gl.R16F, gl.RED, gl.HALF_FLOAT);
+  const dyeXuoi = createFbo(gl, m, m, gl.R16F, gl.RED, gl.HALF_FLOAT);
+  const dyeNguoc = createFbo(gl, m, m, gl.R16F, gl.RED, gl.HALF_FLOAT);
   const divergence = createFbo(gl, n, n, gl.R16F, gl.RED, gl.HALF_FLOAT);
   const curl = createFbo(gl, n, n, gl.R16F, gl.RED, gl.HALF_FLOAT);
   const pressure = createDoubleFbo(gl, n, n, gl.R16F, gl.RED, gl.HALF_FLOAT);
@@ -379,9 +412,30 @@ export function createInkBasin(
     // riêng dày hơn. Vận tốc lưu theo đơn vị ô-lưới-vận-tốc trên giây, nên quãng truy ngược
     // phải chia cho n; chia cho 1024 thì mực dịch đi 1/8 quãng đúng và gần như đứng yên trong
     // khi dòng chảy vẫn chạy — đã suýt ship đúng lỗi đó.
-    g.uniform1f(g.getUniformLocation(programs.advect!, "uDissipation"), opt.dyeDissipation);
+    //
+    // Mực đi theo MacCormack chứ không semi-Lagrange một lượt: lấy mẫu song tuyến tính mỗi
+    // khung hình làm mờ một chút, cộng dồn 60 lần một giây thì đám mực tan thành một lớp
+    // sương xám — người dùng chê "loang mực". Lượt xuôi rồi lượt ngược đo được chính sai số
+    // đó và trừ đi. Giọt vẫn rơi và nở y như cũ; chỉ có mép mực giữ được nét.
+    g.uniform1f(g.getUniformLocation(programs.advect!, "uDissipation"), 1);
     bind(programs.advect!, "uVelocity", velocity.read.texture, 0);
     bind(programs.advect!, "uSource", dye.read.texture, 1);
+    draw(dyeXuoi);
+
+    g.uniform1f(g.getUniformLocation(programs.advect!, "uDt"), -dt);
+    bind(programs.advect!, "uSource", dyeXuoi.texture, 1);
+    draw(dyeNguoc);
+
+    const mc = programs.maccormack!;
+    g.useProgram(mc);
+    g.uniform2f(g.getUniformLocation(mc, "uTexel"), texel[0], texel[1]);
+    g.uniform2f(g.getUniformLocation(mc, "uDyeTexel"), 1 / m, 1 / m);
+    g.uniform1f(g.getUniformLocation(mc, "uDt"), dt);
+    g.uniform1f(g.getUniformLocation(mc, "uDissipation"), opt.dyeDissipation);
+    bind(mc, "uVelocity", velocity.read.texture, 0);
+    bind(mc, "uPhi", dye.read.texture, 1);
+    bind(mc, "uXuoi", dyeXuoi.texture, 2);
+    bind(mc, "uNguoc", dyeNguoc.texture, 3);
     draw(dye.write);
     dye.swap();
   }
@@ -459,7 +513,7 @@ export function createInkBasin(
       basin.stop();
       const g = gl!;
       for (const p of Object.values(programs)) if (p) g.deleteProgram(p);
-      for (const f of [divergence, curl]) {
+      for (const f of [divergence, curl, dyeXuoi, dyeNguoc]) {
         g.deleteTexture(f.texture);
         g.deleteFramebuffer(f.fbo);
       }
