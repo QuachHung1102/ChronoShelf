@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { InkBasin } from "@/components/ink/InkBasin";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Volume2, VolumeX, X } from "lucide-react";
 import { GhiCongAnh } from "@/components/ui/GhiCongAnh";
@@ -639,18 +640,41 @@ function CoverFace({
           2:3 — không có kích thước cứng nào nên nó đúng ở mọi chiều cao bìa. Trước đây khối
           này căn giữa dọc, chiếm 5,4% diện tích bìa, nên tấm bìa 490×580 đọc ra là một khối
           gỗ trống có một hòn đảo chữ lơ lửng giữa. */}
-      <span aria-hidden className="flex-[2]" />
+      {/* Bìa không có ảnh thì dán một tấm GIẤY VÂN ở phần dưới — đúng thứ suminagashi được
+          làm ra để làm từ thế kỷ 12: giấy bìa sách. Vân ở chế độ LẶNG (vẽ một lần rồi đứng
+          yên): màn đọc đã có chuyển động của nó là cú lật trang. Chữ nằm trọn ở phần mực đặc
+          phía trên — tấm vân không mang một ký tự nào. */}
+      {!anhBia && (
+        <div aria-hidden className="absolute inset-x-0 bottom-0 h-[38%] border-t border-son-light/40">
+          <InkBasin
+            pigment="nhat"
+            nen="cham"
+            lang
+            dongChay={false}
+            seeds={[
+              { x: 0.14, y: 0.6, dx: 0, dy: 0, amount: 0.8, co: 1.6 },
+              { x: 0.42, y: 0.3, dx: 0, dy: 0, amount: 0.7, co: 1.7 },
+              { x: 0.66, y: 0.7, dx: 0, dy: 0, amount: 0.75, co: 1.5 },
+              { x: 0.9, y: 0.35, dx: 0, dy: 0, amount: 0.65, co: 1.6 },
+            ]}
+          />
+        </div>
+      )}
+
+      <span aria-hidden className="flex-1" />
 
       <p className="relative font-ui text-label-caps uppercase text-son-light">
         Cửa sổ lịch sử
       </p>
       {/* `headline-xl` 48px — DESIGN.md § Typography dựng bậc đỉnh này cho đúng chỗ này:
           "bìa chiếm gần trọn khung nhìn nhưng tên sách trước đây chỉ 24px". */}
-      <p className="relative mt-md font-ui text-display-xl text-on-ink">{title}</p>
+      <p className="relative mt-md text-balance font-ui text-display-xl text-on-ink">{title}</p>
       <span aria-hidden className={s.coverRule} />
       <p className="relative font-ui text-body-md text-feathered">{era}</p>
 
-      <span aria-hidden className="flex-[3]" />
+      <span aria-hidden className="flex-1" />
+      {/* Chừa chỗ cho tấm giấy vân để khối chữ căn giữa trong phần mực đặc phía trên. */}
+      {!anhBia && <span aria-hidden className="h-[38%] shrink-0" />}
 
       {/* Ghi công ảnh bìa. Trên kệ thì bìa sách quá nhỏ để chứa dòng này, nên đây là chỗ
           đầu tiên đủ rộng mà người đọc chắc chắn đi qua — mở sách ra là thấy. Điều kiện BY

@@ -93,7 +93,7 @@ function OVatPham({ v }: { v: VatPhamTuiHanhTrang }) {
               nếu để chiều cao tự do thì dòng trạng thái của các thẻ cùng hàng lệch nhau
               đúng một dòng chữ. `h-full` chỉ làm bằng MÉP DƯỚI của thẻ, không làm bằng
               các hàng bên trong nó. */}
-          <span className="flex min-h-[2lh] items-center font-ui text-title-md text-primary">
+          <span className="flex min-h-[2lh] items-center text-balance font-ui text-title-sm text-primary">
             {v.name}
           </span>
 
@@ -322,7 +322,7 @@ export default async function TuiHanhTrang() {
 
                 {/* Không `items-start`: ô lưới giãn theo hàng, cộng `h-full` trên
                     `<details>` thì mọi ô cùng hàng có chung mép dưới. */}
-                <ul className="mt-md grid grid-cols-3 gap-md">
+                <ul className="mt-md grid grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-md">
                   {bo.vatPham.map((v) => (
                     <OVatPham key={v.slug} v={v} />
                   ))}
@@ -348,7 +348,7 @@ export default async function TuiHanhTrang() {
                     {chuaGanKe.filter((v) => v.daCo).length}/{chuaGanKe.length} vật phẩm
                   </p>
                 </div>
-                <ul className="mt-md grid grid-cols-3 gap-md">
+                <ul className="mt-md grid grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))] gap-md">
                   {chuaGanKe.map((v) => (
                     <OVatPham key={v.slug} v={v} />
                   ))}

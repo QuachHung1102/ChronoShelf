@@ -15,21 +15,14 @@
     --pigment-cham: theme('colors.primary');
     --pigment-son: theme('colors.son');
     --pigment-sumi: theme('colors.ink-current');
+    --pigment-nhat: theme('colors.mist');
     --basin-paper: theme('colors.paper');
     --basin-washi: theme('colors.washi');
   }
 
   /*
-    Mặt nước là nền của cả sản phẩm, nên chọn màu ở đây chứ không ở từng trang.
-    Kết cấu giấy: một lớp nhiễu rất nhạt để `paper` không phải một mảng phẳng tuyệt đối —
-    giấy thật có thớ. Giữ dưới ngưỡng nhìn thấy được ở dạng hạt: nó chỉ làm mặt nền "có da".
+    Nền trang là `paper` trơn. Bản trước phủ một lưới chấm 4px để "giấy có thớ", nhưng trên
+    màn thật nó đọc ra là GIẤY KẺ Ô — từ vựng của vở toán, không phải của mặt nước. Thớ giấy
+    nay nằm trong shader hiển thị của chậu mực, đúng chỗ có vật liệu để mà có thớ.
   */
-  body {
-    background-image: radial-gradient(
-        circle at 1px 1px,
-        theme('colors.feathered / 22%') 1px,
-        transparent 0
-      );
-    background-size: 4px 4px;
-  }
 }

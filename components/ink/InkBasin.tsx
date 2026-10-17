@@ -2,10 +2,40 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createInkBasin, toBasinCoords, type InkBasin as Basin, type Pigment } from "@/lib/ink/fluid";
-import { chonGiot, giotRoi, nhipNgauNhien, type CuGiot } from "@/lib/ink/giot";
+import { chonGiot, giotRoi, nhipNgauNhien } from "@/lib/ink/giot";
 
-/** Ba sắc tố của chậu — mỗi kệ sách một sắc tố (DESIGN.md § Ink). */
-export type PigmentName = "cham" | "son" | "sumi";
+/**
+ * Sắc tố của chậu — mỗi kệ sách một sắc tố (DESIGN.md § Ink). `nhat` là mực SÁNG, chỉ dùng
+ * trên nền chàm (`nen="cham"`), ví dụ tấm giấy vân dán trên bìa sách.
+ */
+export type PigmentName = "cham" | "son" | "sumi" | "nhat";
+
+const BIEN_SAC_TO: Record<PigmentName, string> = {
+  cham: "--pigment-cham",
+  son: "--pigment-son",
+  sumi: "--pigment-sumi",
+  nhat: "--pigment-nhat",
+};
+
+/**
+ * Bốn cú khuấy của dòng chảy nền ở thời điểm `t` giây. Chỉ bơm vận tốc.
+ *
+ * Vị trí đi theo hai tần số KHÔNG cùng ước — 0.11 và 0.073 vòng/giây — nên quỹ đạo không bao
+ * giờ khép lại thành một vòng lặp mắt nhận ra được. Tách thành hàm vì chế độ LẶNG cần chạy
+ * đúng dòng chảy này, chỉ là tua nhanh.
+ */
+function khuay(basin: Basin, t: number) {
+  for (let i = 0; i < 4; i++) {
+    const pha = (i * Math.PI) / 2;
+    const x = 0.5 + 0.34 * Math.cos(t * 0.11 * Math.PI * 2 + pha);
+    const y = 0.5 + 0.34 * Math.sin(t * 0.073 * Math.PI * 2 + pha);
+    // Đẩy NGANG, biên độ nhỏ. Bản trước đẩy theo phương tiếp tuyến quanh tâm chậu, và
+    // cộng với việc giọt nở đều ra mọi phía thì cả chậu đọc ra là "con mực phun mực" —
+    // người dùng nói đúng chữ đó. Cú khuấy chỉ có việc làm mặt nước lay nhẹ.
+    const chieu = i % 2 === 0 ? 1 : -1;
+    basin.splat(x, y, chieu * 13, 0, 0, 0.02);
+  }
+}
 
 /**
  * Một cú thả mực đặt sẵn, chạy khi chậu vừa dựng xong. Toạ độ 0..1, gốc dưới-trái.
@@ -20,6 +50,8 @@ export interface Seed {
   dx: number;
   dy: number;
   amount?: number;
+  /** Hệ số cỡ giọt, mặc định 1. Chậu thấp (tấm giấy vân trên bìa sách) cần giọt to hơn. */
+  co?: number;
 }
 
 function readPigment(varName: string): Pigment {
@@ -36,14 +68,21 @@ function readPigment(varName: string): Pigment {
  */
 function thaGiot(basin: Basin, danhSach: Seed[]) {
   for (const s of danhSach) {
-    thaVong(basin, giotRoi(s.x, s.y, s.amount ?? 0.6, 4, undefined, undefined, Math.random));
+    const co = s.co ?? 1;
+    for (const cu of giotRoi(s.x, s.y, s.amount ?? 1)) {
+      // Phóng cả cụm quanh tâm giọt. Bán kính của splat là bán kính BÌNH PHƯƠNG của hàm Gauss
+      // nên nhân co².
+      basin.splat(
+        s.x + (cu.x - s.x) * co,
+        s.y + (cu.y - s.y) * co,
+        cu.dx * co,
+        cu.dy * co,
+        cu.amount,
+        (cu.radius ?? 0.0011) * co * co,
+      );
+    }
     if (s.dx !== 0 || s.dy !== 0) basin.splat(s.x, s.y, s.dx, s.dy, 0, 0.006);
   }
-}
-
-/** Chạy một chuỗi lần chạm của `giotRoi` lên chậu. */
-export function thaVong(basin: Basin, cu: CuGiot[]) {
-  for (const c of cu) basin.drop(c.x, c.y, c.r, c.amount);
 }
 
 /** `#RRGGBB` → ba số 0..1. Hex hỏng thì trả về đen — mực đen vẫn là mực. */
@@ -67,6 +106,8 @@ function hexToPigment(hex: string): Pigment {
  */
 export function InkBasin({
   pigment = "cham",
+  nen = "giay",
+  lang = false,
   seeds = [],
   interactive = false,
   dongChay = true,
@@ -75,6 +116,14 @@ export function InkBasin({
   className = "",
 }: {
   pigment?: PigmentName;
+  /** Mặt nước: `giay` (trắng giấy, mặc định) hoặc `cham` (nền chàm, đi với mực `nhat`). */
+  nen?: "giay" | "cham";
+  /**
+   * LẶNG — động từ thứ tư của suminagashi. Vân được khuấy tới trạng thái đã lắng rồi đứng
+   * yên: không vòng lặp khung hình, không dòng chảy nền, không mưa mực. Dùng cho tấm giấy
+   * vân trên bìa sách — màn đọc đã có chuyển động của nó là cú lật trang (DESIGN.md § Motion).
+   */
+  lang?: boolean;
   seeds?: Seed[];
   /** Cho phép mực trả lời con trỏ trong khung này. Chỉ bật ở nơi KHÔNG có chữ đang đọc. */
   interactive?: boolean;
@@ -143,9 +192,11 @@ export function InkBasin({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const varName =
-      pigment === "son" ? "--pigment-son" : pigment === "sumi" ? "--pigment-sumi" : "--pigment-cham";
-    const basin = createInkBasin(canvas, readPigment(varName), readPigment("--basin-paper"));
+    const basin = createInkBasin(
+      canvas,
+      readPigment(BIEN_SAC_TO[pigment]),
+      readPigment(nen === "cham" ? "--pigment-cham" : "--basin-paper"),
+    );
     if (!basin) {
       setFailed(true);
       return;
@@ -154,6 +205,19 @@ export function InkBasin({
     onReadyRef.current?.(basin);
 
     thaGiot(basin, seedsRef.current);
+
+    if (lang) {
+      // Tua nhanh ~12 giây dòng chảy nền rồi vẽ MỘT lần.
+      for (let k = 0; k < 11; k++) {
+        khuay(basin, k * 1.1);
+        basin.settle(66);
+      }
+      return () => {
+        basin.destroy();
+        basinRef.current = null;
+        onReadyRef.current?.(null);
+      };
+    }
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
     const apply = () => {
@@ -187,13 +251,13 @@ export function InkBasin({
       basinRef.current = null;
       onReadyRef.current?.(null);
     };
-  }, [pigment]);
+  }, [pigment, nen, lang]);
 
   /**
-   * Dòng chảy nền: sáu cú quạt rải khắp chậu mỗi 1,1 giây, chỉ bơm vận tốc.
+   * Dòng chảy nền: bốn cú khuấy rải khắp chậu mỗi 1,1 giây, biên độ nhỏ, bán kính lớn.
    *
    * Vị trí đi theo hai tần số KHÔNG cùng ước — 0.11 và 0.073 vòng/giây — nên quỹ đạo không
-   * bao giờ khép lại thành một vòng lặp mắt nhận ra được. Sáu điểm lệch pha đều nhau phủ
+   * bao giờ khép lại thành một vòng lặp mắt nhận ra được. Bốn điểm lệch pha đều nhau phủ
    * kín chậu, thay cho "auto một chỗ" của bản trước.
    *
    * Bán kính 0.02 chứ không phải 0.0011 của một giọt: cú khuấy phải đẩy được cả một VÙNG
@@ -203,7 +267,7 @@ export function InkBasin({
    * cú khuấy sẽ khởi động lại đúng thứ người dùng vừa tắt.
    */
   useEffect(() => {
-    if (!dongChay) return;
+    if (!dongChay || lang) return;
     // Đọc `matches` ở MỖI nhịp chứ không một lần lúc dựng: người dùng bật "giảm chuyển
     // động" giữa chừng thì `apply()` ở effect trên dừng vòng vẽ, nhưng cú khuấy vẫn tiếp
     // tục bơm vận tốc vào một chậu đã lắng — và nó sẽ bung ra ngay khi tắt lại thiết lập đó.
@@ -213,25 +277,11 @@ export function InkBasin({
     const nhip = window.setInterval(() => {
       const basin = basinRef.current;
       if (!basin || document.hidden || giamChuyenDong.matches) return;
-      const t = (performance.now() - batDau) / 1000;
-      for (let i = 0; i < 6; i++) {
-        const pha = (i * Math.PI) / 3;
-        const x = 0.5 + 0.34 * Math.cos(t * 0.11 * Math.PI * 2 + pha);
-        const y = 0.5 + 0.34 * Math.sin(t * 0.073 * Math.PI * 2 + pha);
-        // Đẩy NGANG, biên độ nhỏ. Bản trước đẩy theo phương tiếp tuyến quanh tâm chậu, và
-        // cộng với việc giọt nở đều ra mọi phía thì cả chậu đọc ra là "con mực phun mực" —
-        // người dùng nói đúng chữ đó. Chuyển động chính nay do TRỌNG LỰC của mực lo (mực
-        // chìm, kéo vệt dọc); cú khuấy chỉ còn việc làm mặt nước lay nhẹ để vệt không rơi
-        // thẳng đơ như một cột.
-        // Hướng quạt xoay chậm theo thời gian và lệch nhau giữa bốn điểm: mặt nước bị quạt
-        // nhẹ từ nhiều phía, đủ để uốn vòng đồng tâm thành vân cẩm thạch trong ~10 giây.
-        const huong = t * 0.09 + pha * 1.3;
-        basin.splat(x, y, 22 * Math.cos(huong), 22 * Math.sin(huong), 0, 0.02);
-      }
+      khuay(basin, (performance.now() - batDau) / 1000);
     }, 1100);
 
     return () => window.clearInterval(nhip);
-  }, [dongChay]);
+  }, [dongChay, lang]);
 
   /**
    * Mưa mực: MỘT giọt mỗi lần, chọn ngẫu nhiên trong `seeds`, lệch nhẹ khỏi chỗ cũ, và cách
@@ -245,25 +295,28 @@ export function InkBasin({
    * Lượng mực mỗi giọt cũng dao động: mưa thật không có hai hạt bằng nhau.
    */
   useEffect(() => {
-    if (nhipGiot <= 0) return;
+    if (nhipGiot <= 0 || lang) return;
     const giamChuyenDong = window.matchMedia("(prefers-reduced-motion: reduce)");
     let hen = 0;
+    let truoc: { x: number; y: number } | null = null;
 
     const roi = () => {
       const basin = basinRef.current;
-      const goc = chonGiot(seedsRef.current);
+      const goc = chonGiot(seedsRef.current, Math.random, 0.07, truoc);
+      truoc = goc;
       if (basin && goc && !document.hidden && !giamChuyenDong.matches) {
         const mau = seedsRef.current[0];
-        const luong = (mau?.amount ?? 0.6) * (0.75 + Math.random() * 0.5);
-        // 2–3 vòng: giọt thả lại nhỏ hơn giọt dựng chậu, để nó nong vân cũ ra chứ không xoá.
-        thaVong(basin, giotRoi(goc.x, goc.y, luong, 2 + Math.round(Math.random()), undefined, undefined, Math.random));
+        const luong = (mau?.amount ?? 1) * (0.75 + Math.random() * 0.5);
+        for (const cu of giotRoi(goc.x, goc.y, luong, 110 + Math.random() * 90)) {
+          basin.splat(cu.x, cu.y, cu.dx, cu.dy, cu.amount, cu.radius);
+        }
       }
       hen = window.setTimeout(roi, nhipNgauNhien(nhipGiot));
     };
 
     hen = window.setTimeout(roi, nhipNgauNhien(nhipGiot));
     return () => window.clearTimeout(hen);
-  }, [nhipGiot]);
+  }, [nhipGiot, lang]);
 
   useEffect(() => {
     if (!interactive) return;
@@ -279,7 +332,7 @@ export function InkBasin({
       if (last) {
         // Lực đẩy tỉ lệ với quãng con trỏ đi được, nhân một hệ số đủ để khuấy được nước.
         // Không có nhân tử này thì rê chuột chỉ nhuộm màu chứ không tạo dòng chảy nào.
-        basin.splat(p.x, p.y, (p.x - last.x) * 700, (p.y - last.y) * 700, 0, 0.004);
+        basin.splat(p.x, p.y, (p.x - last.x) * 900, (p.y - last.y) * 900, 0.18);
       }
       last = p;
     };

@@ -114,9 +114,11 @@ export function LoginForm({ next }: { next: string }) {
   );
 
   return (
-    <div className="w-full max-w-md rounded-md border border-mist bg-surface p-xl">
+    // Không còn khung thẻ: form đứng thẳng trên BỜ, như danh sách bài ở màn kệ. Một tấm thẻ
+    // trôi giữa khoảng trắng là thứ làm màn này trông như mẫu dựng sẵn.
+    <div className="w-full max-w-sm">
       <p className="font-ui text-label-caps uppercase text-son">Cửa sổ lịch sử</p>
-      <h1 className="mt-sm font-ui text-display-md text-primary">{tieuDe}</h1>
+      <h1 className="mt-md text-balance font-ui text-display-lg text-primary">{tieuDe}</h1>
       <p className="mt-sm font-ui text-body-md text-ink-dilute">{moTa}</p>
 
       {cheDo === "dang-nhap" && (

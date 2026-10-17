@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { GOC_VANG, chonGiot, giotRoi, nhipNgauNhien, viTriGiot } from "./giot.ts";
+import { CACH_TOI_THIEU, GOC_VANG, SO_TIA, chonGiot, giotRoi, nhipNgauNhien, viTriGiot } from "./giot.ts";
 
 /**
  * Phép kiểm quan trọng nhất ở đây là phép ĐẦU TIÊN, và nó tồn tại vì một lỗi đã ship: giọt
@@ -57,30 +57,35 @@ test("góc vàng đúng giá trị", () => {
   assert.ok(Math.abs(GOC_VANG - Math.PI * (3 - Math.sqrt(5))) < 1e-9);
 });
 
-test("giotRoi: mọi lần chạm chung MỘT tâm — loang tròn, không bắn về một phía", () => {
-  // Bất biến phân biệt "giọt rơi" với "mực phun": lệch tâm dù một lần là vân bị kéo về
-  // một phía.
-  for (const c of giotRoi(0.3, 0.7, 1, 5)) {
-    assert.deepEqual({ x: c.x, y: c.y }, { x: 0.3, y: 0.7 });
+test("giotRoi: một giọt mực ở tâm, phần còn lại chỉ là vận tốc", () => {
+  const cu = giotRoi(0.5, 0.5, 2);
+  assert.equal(cu.length, SO_TIA + 1);
+  assert.equal(cu.filter((c) => c.amount > 0).length, 1, "chỉ ĐÚNG một cú thả mực");
+  assert.deepEqual(
+    { x: cu[0].x, y: cu[0].y, dx: cu[0].dx, dy: cu[0].dy },
+    { x: 0.5, y: 0.5, dx: 0, dy: 0 },
+    "mực đổ đúng tâm và KHÔNG kèm vector đẩy nào — đó là chỗ bản cũ làm mực bay lệch",
+  );
+});
+
+test("giotRoi: tổng động lượng bằng 0 — loang tròn, không bắn về một phía", () => {
+  const cu = giotRoi(0.3, 0.7, 1, 200);
+  const tong = cu.reduce((s, c) => ({ dx: s.dx + c.dx, dy: s.dy + c.dy }), { dx: 0, dy: 0 });
+  // Đây là bất biến phân biệt "giọt rơi" với "mực phun": các tia phải triệt tiêu nhau theo
+  // cặp đối xứng, nên cả cụm không có hướng ưu tiên nào.
+  assert.ok(Math.abs(tong.dx) < 1e-9, `dx tổng ${tong.dx}`);
+  assert.ok(Math.abs(tong.dy) < 1e-9, `dy tổng ${tong.dy}`);
+});
+
+test("giotRoi: mọi tia đẩy RA NGOÀI khỏi tâm", () => {
+  const cu = giotRoi(0.5, 0.5, 1).slice(1);
+  for (const c of cu) {
+    const rx = c.x - 0.5;
+    const ry = c.y - 0.5;
+    // Tích vô hướng giữa vector vị-trí-so-với-tâm và vector đẩy phải dương: đẩy vào trong
+    // thì giọt tự bóp lại thành một chấm thay vì loang.
+    assert.ok(rx * c.dx + ry * c.dy > 0, "tia phải hướng ra ngoài");
   }
-});
-
-test("giotRoi: mực và nước trong XEN KẼ, bắt đầu bằng mực, kết thúc bằng nước", () => {
-  // Kết thúc bằng nước trong là thứ biến lòng giọt thành vòng; kết thúc bằng mực thì tâm là
-  // một chấm đặc và vân đồng tâm biến mất.
-  const cu = giotRoi(0.5, 0.5, 0.6, 4);
-  assert.equal(cu.length, 8);
-  cu.forEach((c, i) => {
-    if (i % 2 === 0) assert.ok(c.amount > 0, `lần chạm ${i} phải là mực`);
-    else assert.equal(c.amount, 0, `lần chạm ${i} phải là nước trong`);
-    assert.ok(c.r > 0, "bán kính phải dương");
-  });
-});
-
-test("giotRoi: lượng mực tỉ lệ với amount — giọt 'đọc xong' và giọt 'mời gọi' khác nhau", () => {
-  const nhat = giotRoi(0.5, 0.5, 0.3).reduce((s, c) => s + c.amount, 0);
-  const dam = giotRoi(0.5, 0.5, 0.9).reduce((s, c) => s + c.amount, 0);
-  assert.ok(Math.abs(dam / nhat - 3) < 1e-9);
 });
 
 test("chonGiot: giọt lệch đi vẫn luôn nằm TRONG chậu", () => {
@@ -138,4 +143,27 @@ test("nhipNgauNhien: luôn dương và dao động quanh giá trị trung bình"
   assert.ok(min >= 3 * 1000 * 0.55, `min ${min}`);
   assert.ok(max <= 3 * 1000 * 1.45, `max ${max}`);
   assert.ok(max - min > 1000, "phải thật sự dao động, không kẹt ở một giá trị");
+});
+
+test("chonGiot: không rơi lại sát chỗ giọt trước khi còn chỗ khác để rơi", () => {
+  const ds = [
+    { x: 0.6, y: 0.3 },
+    { x: 0.8, y: 0.7 },
+    { x: 0.7, y: 0.5 },
+  ];
+  let seed = 11;
+  const rand = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
+  let truoc = chonGiot(ds, rand);
+  let sat = 0;
+  for (let i = 0; i < 300; i++) {
+    const g = chonGiot(ds, rand, 0.07, truoc)!;
+    if (Math.hypot(g.x - truoc!.x, g.y - truoc!.y) < CACH_TOI_THIEU) sat++;
+    truoc = g;
+  }
+  // Sáu lần bốc lại không bảo đảm tuyệt đối, nhưng phải hiếm: dưới 2%.
+  assert.ok(sat < 6, `${sat}/300 giọt rơi sát giọt trước`);
+});
+
+test("chonGiot: danh sách một giọt vẫn rơi được, không treo vòng lặp", () => {
+  assert.ok(chonGiot([{ x: 0.7, y: 0.5 }], Math.random, 0.07, { x: 0.7, y: 0.5 }));
 });

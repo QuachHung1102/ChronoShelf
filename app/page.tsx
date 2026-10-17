@@ -1,5 +1,6 @@
 import { ArrowDown, ArrowRight } from "lucide-react";
-import { CARD, FOCUS_RING_ON_SURFACE, PRIMARY_BUTTON } from "@/components/ui/controls";
+import { FOCUS_RING, PRIMARY_BUTTON } from "@/components/ui/controls";
+import { InkBasin } from "@/components/ink/InkBasin";
 import { CompareSlider } from "@/components/home/CompareSlider";
 import { KHOI_SO_SANH } from "@/components/home/noi-dung";
 import { ShelfProgress } from "@/components/home/ShelfProgress";
@@ -30,40 +31,60 @@ export default async function Home() {
       {/* `max-w-5xl` (1024px) là bề rộng cột nội dung dùng chung với /cong-dong và
           /bai-giang. Trước đây trang này dùng `max-w-4xl` nên lề trái của <h1> nhảy
           ~56px mỗi lần bấm qua lại giữa hai màn nằm cạnh nhau trên cùng thanh nav. */}
-      <section className="mx-auto grid max-w-5xl grid-cols-[minmax(0,1fr)_18rem] items-end gap-2xl border-b border-primary/20 pb-2xl pt-md">
-        <div>
+      {/* Hero: chữ ở bờ trái, một ô chậu mực ở bên phải.
+
+          Bản trước để cột phải là một thẻ mục lục — tức màn hình ĐẦU TIÊN của sản phẩm không
+          có một giọt mực nào, trong khi chậu mực là toàn bộ bản sắc thị giác. Ô chậu ở đây
+          không mang chữ (luật "chữ không nổi trên mặt nước") và trả lời con trỏ: rê chuột
+          qua là quạt được vân, cú chạm đầu tiên giữa người học và thế giới này. */}
+      <section className="mx-auto grid max-w-5xl grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-stretch gap-2xl border-b border-mist pb-2xl pt-md">
+        <div className="flex flex-col justify-end">
           <p className="font-ui text-label-caps uppercase text-son">Cửa sổ lịch sử</p>
-          <h1 className="mt-md max-w-measure text-balance font-ui text-display-lg text-primary">
+          <h1 className="mt-md text-balance font-ui text-display-xl text-primary">
             Mọi thứ quanh bạn đều từng khác hẳn
           </h1>
-          <p className="mt-md max-w-measure font-ui text-body-md text-ink-dilute">
+          <p className="mt-lg max-w-measure text-pretty font-ui text-body-md text-ink-dilute">
             Bữa ăn, bộ quần áo, mái nhà, cái điện thoại trong túi — mỗi thứ là kết quả của
             hàng nghìn năm. Kéo vạch giữa hai tấm ảnh để thấy khoảng cách đó bằng mắt, rồi
             mở một quyển sách để biết chuyện gì đã xảy ra ở giữa.
           </p>
-          <a href="#vao-ke" className={`mt-lg ${PRIMARY_BUTTON}`}>
-            Khám phá kệ sách <ArrowRight aria-hidden className="h-4 w-4" />
-          </a>
+          <div className="mt-xl flex flex-wrap items-center gap-lg">
+            <a href="#vao-ke" className={PRIMARY_BUTTON}>
+              Khám phá kệ sách <ArrowRight aria-hidden className="h-4 w-4" />
+            </a>
+          </div>
+          {/* Mục lục bốn chủ đề — một hàng chip thay cho thẻ cột phải. Viền `ink-dilute`
+              chứ không `mist`: chip là thứ bấm được, ranh giới của nó mang thông tin. */}
+          <nav aria-label="Chủ đề ngày ấy và bây giờ" className="mt-xl border-t border-mist pt-md">
+            <p className="font-ui text-label-caps uppercase text-ink-dilute">Ngày ấy — Bây giờ</p>
+            <ul className="mt-sm flex flex-wrap gap-sm">
+              {KHOI_SO_SANH.map((khoi) => (
+                <li key={khoi.key}>
+                  <a
+                    href={`#khoi-${khoi.key}`}
+                    className={`inline-flex items-center gap-xs rounded-full border border-ink-dilute px-md py-xs font-ui text-label-md text-primary transition-colors duration-200 ease-out hover:bg-primary hover:text-on-ink ${FOCUS_RING}`}
+                  >
+                    {khoi.chuDe}
+                    <ArrowDown aria-hidden className="h-3.5 w-3.5 shrink-0" />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </div>
-        <nav aria-label="Chủ đề ngày ấy và bây giờ" className={CARD}>
-          <p className="font-ui text-label-caps uppercase text-son">Ngày ấy — Bây giờ</p>
-          <p className="mb-md mt-sm font-ui text-body-sm text-ink-dilute">
-            Chọn một điều quen thuộc, nhìn lại từ đầu.
-          </p>
-          <ul className="divide-y divide-primary/15">
-            {KHOI_SO_SANH.map((khoi) => (
-              <li key={khoi.key}>
-                <a
-                  href={`#khoi-${khoi.key}`}
-                  className={`flex items-center justify-between gap-md rounded-sm py-sm font-ui text-label-md text-primary transition-colors duration-200 hover:text-son ${FOCUS_RING_ON_SURFACE}`}
-                >
-                  {khoi.chuDe}
-                  <ArrowDown aria-hidden className="h-4 w-4 shrink-0 text-son" />
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <div className="relative min-h-[24rem] overflow-hidden rounded-lg border border-mist bg-paper">
+          <InkBasin
+            pigment="cham"
+            interactive
+            nhipGiot={2.4}
+            seeds={[
+              { x: 0.4, y: 0.7, dx: 0, dy: 0, amount: 0.45 },
+              { x: 0.68, y: 0.52, dx: 0, dy: 0, amount: 0.38 },
+              { x: 0.32, y: 0.34, dx: 0, dy: 0, amount: 0.3 },
+              { x: 0.62, y: 0.2, dx: 0, dy: 0, amount: 0.25 },
+            ]}
+          />
+        </div>
       </section>
 
       <div className={`${s.day} mx-auto mt-3xl max-w-5xl pl-lg`}>
