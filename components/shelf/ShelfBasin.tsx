@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, Droplet } from "lucide-react";
-import { InkBasin, type PigmentName, type Seed } from "@/components/ink/InkBasin";
+import { InkBasin, thaVong, type PigmentName, type Seed } from "@/components/ink/InkBasin";
 import { GhiCongAnh } from "@/components/ui/GhiCongAnh";
 import { FOCUS_RING } from "@/components/ui/controls";
 import type { InkBasin as Basin } from "@/lib/ink/fluid";
@@ -75,7 +75,7 @@ export function ShelfBasin({
       // tại chỗ của mình rồi loang tròn ra; `InkBasin` lo phần loang qua `giotRoi`.
       // Không còn `dx`/`dy`: mọi vector đẩy ở đây đều làm giọt bay lệch một phía, và đó
       // chính là thứ người dùng đọc ra là 'con mực bắn mực'.
-      return { x: p.x, y: p.y, dx: 0, dy: 0, amount: 2.4 };
+      return { x: p.x, y: p.y, dx: 0, dy: 0, amount: 0.45 };
     });
 
   const onReady = useCallback((basin: Basin | null) => {
@@ -84,7 +84,7 @@ export function ShelfBasin({
 
   /**
    * Giọt mới nhất — bài nên đọc tiếp — là thứ DUY NHẤT còn chuyển động trên màn hình
-   * (DESIGN.md § Ink, § Motion). Nhịp 2.6s đủ chậm để không cướp sự chú ý khỏi việc đọc,
+   * (DESIGN.md § Ink, § Motion). Nhịp 3.4s đủ chậm để không cướp sự chú ý khỏi việc đọc,
    * đủ đều để mắt nhận ra "chỗ này đang sống".
    */
   useEffect(() => {
@@ -97,15 +97,15 @@ export function ShelfBasin({
     const nho = () => {
       const basin = basinRef.current;
       if (!basin) return;
-      for (const cu of giotRoi(p.x, p.y, 1.1, 120)) {
-        basin.splat(cu.x, cu.y, cu.dx, cu.dy, cu.amount, cu.radius);
-      }
+      // Một vòng đậm + nước trong: mỗi nhịp nong mọi vòng cũ ra một bậc, nên chỗ bài kế
+      // tiếp phát ra những gợn đồng tâm — "đang sống" mà không đổ thêm một mảng mực.
+      thaVong(basin, giotRoi(p.x, p.y, 0.85, 1, 0.016, 0.022));
     };
 
     // Nhịp đầu tiên hơi trễ: để những giọt "đã đọc" kịp nở ra trước, nếu không thì khung
     // hình đầu tiên có tất cả các giọt cùng bung một lúc và không giọt nào là "mới nhất".
     const mo = window.setTimeout(nho, 700);
-    const nhip = window.setInterval(nho, 2600);
+    const nhip = window.setInterval(nho, 3400);
     return () => {
       window.clearTimeout(mo);
       window.clearInterval(nhip);
@@ -119,11 +119,12 @@ export function ShelfBasin({
       if (!basin) return;
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
       const p = viTriGiot(i, boRatio, tong);
-      for (const cu of giotRoi(p.x, p.y, 0.9, 200)) {
-        basin.splat(cu.x, cu.y, cu.dx, cu.dy, cu.amount, cu.radius);
-      }
+      // Bài đang khóa thả NƯỚC TRONG: nó nong vân xung quanh ra mà không nhuộm thêm gì —
+      // "chưa mở = nước chưa nhuộm" (DESIGN.md § Ink) đúng cả khi người dùng chạm vào nó.
+      const khoa = shelf.books[i]?.state === "locked";
+      thaVong(basin, giotRoi(p.x, p.y, khoa ? 0 : 0.5, 2, undefined, undefined, Math.random));
     },
-    [boRatio, tong],
+    [boRatio, tong, shelf.books],
   );
 
   return (

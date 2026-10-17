@@ -125,22 +125,29 @@ Ba luật của thế giới này, ép ở tầng component chứ không để m
 - **Chữ không bao giờ nổi trên mặt nước.** Chậu có bờ; chữ đứng ở lề tĩnh NGOÀI chậu. Đây là
   thứ giữ cho một công cụ ĐỌC sống được trên một nền đang chảy.
 - **Mực là mô phỏng thật**, không phải gradient giả chất lỏng: `lib/ink/fluid.ts` giải
-  Navier–Stokes trên GPU (WebGL2, Stable Fluids + vorticity confinement). Máy không có WebGL2
+  Navier–Stokes trên GPU (WebGL2, Stable Fluids; giọt mực theo Jaffer–Lu). Máy không có WebGL2
   thì chậu biến mất và nền `paper` ở lại — màn hình vẫn đọc được. **Lưới mực 1024 tách khỏi
   lưới vận tốc 128**; hạ nó xuống là vân sợi biến thành khói xám, đã đo trên màn thật. Và
   advect luôn dùng texel của lưới VẬN TỐC cho cả hai lần, kể cả khi mực có lưới riêng — dùng
   texel của mực thì mực dịch đi 1/8 quãng đúng và gần như đứng yên.
 - **`prefers-reduced-motion` thì mực DỪNG HẲN** ở một trạng thái đã lắng, không phải chậm lại.
-- **Chậu có DÒNG CHẢY NỀN, và nó chỉ bơm vận tốc.** `InkBasin` rải bốn cú khuấy khắp chậu mỗi
+- **Chậu có DÒNG CHẢY NỀN, và nó chỉ bơm vận tốc.** `InkBasin` rải sáu cú quạt khắp chậu mỗi
   1,1 giây với `amount = 0` — không thêm một hạt mực nào, vì lượng mực trên mặt nước mang
   nghĩa "đã đọc xong bao nhiêu quyển". Thiếu nó thì mực loang xong là nằm bất động và cả chậu
   thành một bức tranh tĩnh (người dùng báo đúng chuyện này: "chỉ auto một chỗ"). Cú khuấy
   dùng bán kính 0.02 chứ không phải 0.0011 của một giọt, và đọc `prefers-reduced-motion` ở
   MỖI nhịp — bật giữa chừng thì nó phải im ngay.
-- **Giọt rơi theo trục Oz và loang TRÒN từ tâm** — chậu nhìn từ trên xuống, nên mọi vector
-  đẩy một chiều đều biến nó thành "mực phun". `giotRoi()` ở `lib/ink/giot.ts` dựng đúng hình
-  đó: một giọt ở tâm cộng tám tia chỉ-vận-tốc hướng ra ngoài, **tổng động lượng bằng 0** —
-  bất biến này có test canh. Nhịp rơi thì NGẪU NHIÊN cả vị trí lẫn thời điểm (`chonGiot`,
+- **Giọt KHÔNG phải splat vận tốc — nó là phép biến đổi giọt mực của "Mathematical Marbling"
+  (Jaffer & Lu)**, shader `DROP` + `basin.drop()` ở `lib/ink/fluid.ts`: mọi vân cũ bị đẩy ra
+  ngoài, diện tích bảo toàn. Splat vận tốc hướng tâm (bản cũ, tám tia) bị bước áp suất của bộ
+  giải KHÔNG NÉN ĐƯỢC xoá sạch, nên giọt chỉ còn là vết khói. `giotRoi()` ở `lib/ink/giot.ts`
+  trả chuỗi lần chạm XEN KẼ mực / nước trong cùng một tâm → vân vòng đồng tâm, đúng thao tác
+  của nghệ nhân. Ba thông số đã đo trên màn thật, đừng hoàn tác: **`curlStrength: 0`** (ở 26
+  mực thành khói, ở 5 viền tưa lăn tăn sau ~20 s — màng mực chảy TẦNG); mực advect bằng
+  **MacCormack** (semi-Lagrange một lượt làm mọi vân tan thành sương xám sau vài giây); và
+  ngưỡng 0.03 ở shader hiển thị cắt phần mực loãng còn sót. **Soi bằng Playwright thì chạy một
+  `evaluate` chờ rAF TRƯỚC khi chụp** — ảnh chụp trần trả về khung hình cũ, đã làm mất nửa giờ
+  tưởng mực đứng yên. Nhịp rơi thì NGẪU NHIÊN cả vị trí lẫn thời điểm (`chonGiot`,
   `nhipNgauNhien`); nhịp đều bị mắt bắt được sau ba lần lặp. Ở màn kệ, mỗi lần chọn ngẫu
   nhiên một quyển ĐÃ ĐỌC XONG và nhịp tổng là `9 / số quyển`, nên lượng mực giữ đúng tỉ lệ
   với tiến độ thay vì thành hình nền.

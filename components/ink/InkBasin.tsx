@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createInkBasin, toBasinCoords, type InkBasin as Basin, type Pigment } from "@/lib/ink/fluid";
-import { chonGiot, giotRoi, nhipNgauNhien } from "@/lib/ink/giot";
+import { chonGiot, giotRoi, nhipNgauNhien, type CuGiot } from "@/lib/ink/giot";
 
 /** Ba sắc tố của chậu — mỗi kệ sách một sắc tố (DESIGN.md § Ink). */
 export type PigmentName = "cham" | "son" | "sumi";
@@ -36,11 +36,14 @@ function readPigment(varName: string): Pigment {
  */
 function thaGiot(basin: Basin, danhSach: Seed[]) {
   for (const s of danhSach) {
-    for (const cu of giotRoi(s.x, s.y, s.amount ?? 1)) {
-      basin.splat(cu.x, cu.y, cu.dx, cu.dy, cu.amount, cu.radius);
-    }
+    thaVong(basin, giotRoi(s.x, s.y, s.amount ?? 0.6, 4, undefined, undefined, Math.random));
     if (s.dx !== 0 || s.dy !== 0) basin.splat(s.x, s.y, s.dx, s.dy, 0, 0.006);
   }
+}
+
+/** Chạy một chuỗi lần chạm của `giotRoi` lên chậu. */
+export function thaVong(basin: Basin, cu: CuGiot[]) {
+  for (const c of cu) basin.drop(c.x, c.y, c.r, c.amount);
 }
 
 /** `#RRGGBB` → ba số 0..1. Hex hỏng thì trả về đen — mực đen vẫn là mực. */
@@ -187,10 +190,10 @@ export function InkBasin({
   }, [pigment]);
 
   /**
-   * Dòng chảy nền: bốn cú khuấy rải khắp chậu mỗi 1,1 giây, biên độ nhỏ, bán kính lớn.
+   * Dòng chảy nền: sáu cú quạt rải khắp chậu mỗi 1,1 giây, chỉ bơm vận tốc.
    *
    * Vị trí đi theo hai tần số KHÔNG cùng ước — 0.11 và 0.073 vòng/giây — nên quỹ đạo không
-   * bao giờ khép lại thành một vòng lặp mắt nhận ra được. Bốn điểm lệch pha đều nhau phủ
+   * bao giờ khép lại thành một vòng lặp mắt nhận ra được. Sáu điểm lệch pha đều nhau phủ
    * kín chậu, thay cho "auto một chỗ" của bản trước.
    *
    * Bán kính 0.02 chứ không phải 0.0011 của một giọt: cú khuấy phải đẩy được cả một VÙNG
@@ -211,8 +214,8 @@ export function InkBasin({
       const basin = basinRef.current;
       if (!basin || document.hidden || giamChuyenDong.matches) return;
       const t = (performance.now() - batDau) / 1000;
-      for (let i = 0; i < 4; i++) {
-        const pha = (i * Math.PI) / 2;
+      for (let i = 0; i < 6; i++) {
+        const pha = (i * Math.PI) / 3;
         const x = 0.5 + 0.34 * Math.cos(t * 0.11 * Math.PI * 2 + pha);
         const y = 0.5 + 0.34 * Math.sin(t * 0.073 * Math.PI * 2 + pha);
         // Đẩy NGANG, biên độ nhỏ. Bản trước đẩy theo phương tiếp tuyến quanh tâm chậu, và
@@ -220,8 +223,10 @@ export function InkBasin({
         // người dùng nói đúng chữ đó. Chuyển động chính nay do TRỌNG LỰC của mực lo (mực
         // chìm, kéo vệt dọc); cú khuấy chỉ còn việc làm mặt nước lay nhẹ để vệt không rơi
         // thẳng đơ như một cột.
-        const chieu = i % 2 === 0 ? 1 : -1;
-        basin.splat(x, y, chieu * 13, 0, 0, 0.02);
+        // Hướng quạt xoay chậm theo thời gian và lệch nhau giữa bốn điểm: mặt nước bị quạt
+        // nhẹ từ nhiều phía, đủ để uốn vòng đồng tâm thành vân cẩm thạch trong ~10 giây.
+        const huong = t * 0.09 + pha * 1.3;
+        basin.splat(x, y, 22 * Math.cos(huong), 22 * Math.sin(huong), 0, 0.02);
       }
     }, 1100);
 
@@ -249,10 +254,9 @@ export function InkBasin({
       const goc = chonGiot(seedsRef.current);
       if (basin && goc && !document.hidden && !giamChuyenDong.matches) {
         const mau = seedsRef.current[0];
-        const luong = (mau?.amount ?? 1) * (0.75 + Math.random() * 0.5);
-        for (const cu of giotRoi(goc.x, goc.y, luong, 110 + Math.random() * 90)) {
-          basin.splat(cu.x, cu.y, cu.dx, cu.dy, cu.amount, cu.radius);
-        }
+        const luong = (mau?.amount ?? 0.6) * (0.75 + Math.random() * 0.5);
+        // 2–3 vòng: giọt thả lại nhỏ hơn giọt dựng chậu, để nó nong vân cũ ra chứ không xoá.
+        thaVong(basin, giotRoi(goc.x, goc.y, luong, 2 + Math.round(Math.random()), undefined, undefined, Math.random));
       }
       hen = window.setTimeout(roi, nhipNgauNhien(nhipGiot));
     };
@@ -275,7 +279,7 @@ export function InkBasin({
       if (last) {
         // Lực đẩy tỉ lệ với quãng con trỏ đi được, nhân một hệ số đủ để khuấy được nước.
         // Không có nhân tử này thì rê chuột chỉ nhuộm màu chứ không tạo dòng chảy nào.
-        basin.splat(p.x, p.y, (p.x - last.x) * 900, (p.y - last.y) * 900, 0.18);
+        basin.splat(p.x, p.y, (p.x - last.x) * 700, (p.y - last.y) * 700, 0, 0.004);
       }
       last = p;
     };

@@ -51,48 +51,48 @@ export function viTriGiot(i: number, boRatio: number, tong: number): ViTri {
 }
 
 /**
- * Một cú THẢ GIỌT: mực chạm mặt nước và loang tròn ra từ tâm.
+ * Một cú THẢ GIỌT theo đúng thao tác suminagashi: bút mực chạm mặt nước, rồi bút nước trong
+ * chạm ĐÚNG chỗ đó, lặp lại `soVong` lần. Mỗi lần chạm đẩy mọi vân cũ ra ngoài (xem shader
+ * `DROP` ở `fluid.ts`), nên chuỗi này để lại những VÒNG MỰC ĐỒNG TÂM mảnh, xen nước trong.
  *
- * "Phía trên" của chậu là trục **Oz** — vuông góc với màn hình — chứ không phải mép trên
- * của khung. Chậu được nhìn từ trên xuống, nên giọt rơi về phía người xem, chạm mặt nước
- * tại một điểm, rồi đẩy nước ra **mọi hướng quanh điểm đó**.
+ * Giọt rơi theo trục Oz — vuông góc với màn hình — nên mọi vòng chung một tâm và không có
+ * hướng ưu tiên nào. Ba bản trước đều thất bại ở đúng chỗ này: bản đẩy một vector làm mực
+ * "bắn như con mực", bản tám tia vận tốc thì bị bước áp suất của bộ giải nuốt mất và chỉ còn
+ * một vết khói.
  *
- * Hai bản trước đều sai theo cùng một kiểu và người dùng gọi đúng tên: một cú đẩy theo MỘT
- * vector `(dx, dy)` làm mực bay lệch hẳn về một phía — "giống con mực bắn mực hơn". Thêm
- * trọng lực theo Oy chỉ đổi hướng bắn thành hướng xuống, vẫn là bắn.
+ * Vòng mực xen kẽ ĐẬM–NHẠT: vân thật không đều màu, và hai tông xen nhau là thứ làm mắt đọc
+ * ra "vân" thay vì "bia bắn".
  *
- * Trả về danh sách cú `splat` cần chạy theo thứ tự: một giọt mực ở tâm, rồi `SO_TIA` cú đẩy
- * CHỈ-VẬN-TỐC xếp đều trên một vòng tròn quanh tâm, mỗi cú hướng ra ngoài. Vorticity
- * confinement của bộ giải biến vòng loang đó thành vân hoa cúc — đó là suminagashi.
+ * Bán kính tính theo CHIỀU CAO chậu, nên giọt tròn trên mọi tỉ lệ khung.
  */
-export const SO_TIA = 8;
-
-export interface CuSplat {
+export interface CuGiot {
   x: number;
   y: number;
-  dx: number;
-  dy: number;
+  r: number;
   amount: number;
-  radius?: number;
 }
 
-export function giotRoi(x: number, y: number, amount: number, luc = 150): CuSplat[] {
-  // Vòng đẩy phải nằm NGOÀI lõi giọt, nếu không nó đẩy chính chỗ vừa đổ mực và triệt tiêu
-  // nhau. 0.035 ≈ bán kính hình học của lõi (√0.0011 ≈ 0.033).
-  const banKinh = 0.035;
-  const cu: CuSplat[] = [{ x, y, dx: 0, dy: 0, amount }];
-  for (let k = 0; k < SO_TIA; k++) {
-    const goc = (k / SO_TIA) * Math.PI * 2;
-    const cx = Math.cos(goc);
-    const cy = Math.sin(goc);
-    cu.push({
-      x: x + banKinh * cx,
-      y: y + banKinh * cy,
-      dx: cx * luc,
-      dy: cy * luc,
-      amount: 0,
-      radius: 0.004,
-    });
+export function giotRoi(
+  x: number,
+  y: number,
+  amount: number,
+  soVong = 4,
+  rMuc = 0.024,
+  rNuoc = 0.04,
+  /**
+   * Tay nghệ nhân không chạm đúng một điểm hai lần. `rand` cho mỗi lần chạm lệch tâm một
+   * chút và đổi bán kính ±25% — chính độ lệch đó biến "bia bắn" thành vân. Để mặc định
+   * (không truyền) thì tất định, cho test.
+   */
+  rand?: () => number,
+): CuGiot[] {
+  const lech = (k: number) => (rand ? (rand() * 2 - 1) * k : 0);
+  const cu: CuGiot[] = [];
+  for (let k = 0; k < soVong; k++) {
+    const dx = lech(0.006);
+    const dy = lech(0.006);
+    cu.push({ x: x + dx, y: y + dy, r: rMuc * (1 + lech(0.25)), amount: k % 2 === 0 ? amount : amount * 0.55 });
+    cu.push({ x: x + dx + lech(0.004), y: y + dy + lech(0.004), r: rNuoc * (1 + lech(0.25)), amount: 0 });
   }
   return cu;
 }
