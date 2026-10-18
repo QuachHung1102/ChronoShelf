@@ -1,0 +1,3 @@
+# Seed nạp ảnh và slide theo sha256 của chính tệp — git đổi một byte nào là seed từ chối.
+db/seed/media/** binary
+db/seed/tai-lieu/** binary

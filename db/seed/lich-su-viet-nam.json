@@ -2,50 +2,59 @@
   "slug": "lich-su-viet-nam",
   "name": "Lịch sử Việt Nam",
   "order": 1,
+  "countryCode": "704",
+  "published": true,
+  "blurb": "",
+  "cover": null,
+  "coverSource": null,
+  "coverCredit": null,
+  "mosaic": "/media/a51e10358bb34a380243d5e8fcd3a849d43f1914c7f931e2c858ffb1f819340a",
+  "mosaicSource": "https://commons.wikimedia.org/wiki/File:Panorama_of_Ricefields_in_Muong_Thanh_Valley_-_Dien_Bien_Phu_-_Vietnam_-_01_(48178533987).jpg",
+  "mosaicCredit": "Adam Jones from Kelowna, BC, Canada · CC BY-SA 2.0 · Wikimedia Commons",
   "reward": {
     "title": "Người giữ hồn nước",
-    "body": "Năm vật phẩm bạn vừa gom đủ không phải năm món đồ rời nhau. Trống đồng là tiếng nói của một dân tộc vừa biết mình là ai; cọc gỗ Bạch Đằng là lần đầu tiếng nói ấy tự bảo vệ được mình; ấn tín Đông A là lúc nó biết tổ chức thành sức mạnh; áo bào Quang Trung là lúc nó đi nhanh hơn mọi đội quân đến đánh nó; và lá cờ Quyết Chiến Quyết Thắng là lúc cả thế giới phải nghe.\n\nHai nghìn năm nằm giữa món đầu và món cuối. Thứ không đổi suốt hai nghìn năm ấy mới là điều đáng nhớ: mỗi thế hệ đều nhận lấy một đất nước chưa xong, và đều trao lại một đất nước còn đó."
+    "body": "Năm vật phẩm bạn vừa gom đủ không phải năm món đồ rời nhau. Trống đồng là tiếng nói của một dân tộc vừa biết mình là ai; cọc gỗ Bạch Đằng là lần đầu tiếng nói ấy tự bảo vệ được mình; ấn tín Đông A là lúc nó biết tổ chức thành sức mạnh; áo bào Quang Trung là lúc nó đi nhanh hơn mọi đội quân đến đánh nó; và lá cờ Quyết Chiến Quyết Thắng là lúc cả thế giới phải nghe.\r\n\r\nHai nghìn năm nằm giữa món đầu và món cuối. Thứ không đổi suốt hai nghìn năm ấy mới là điều đáng nhớ: mỗi thế hệ đều nhận lấy một đất nước chưa xong, và đều trao lại một đất nước còn đó."
   },
   "items": [
     {
       "slug": "trong-dong",
       "name": "Trống đồng",
+      "description": "Biểu tượng của nền văn minh Đông Sơn thời Hùng Vương.",
       "image": "/items/trong-dong.svg",
       "imageSource": "https://game-icons.net/",
-      "imageCredit": "Game-icons.net · CC BY 3.0",
-      "description": "Biểu tượng của nền văn minh Đông Sơn thời Hùng Vương."
+      "imageCredit": "Game-icons.net · CC BY 3.0"
     },
     {
       "slug": "coc-go-bach-dang",
       "name": "Cọc gỗ Bạch Đằng",
+      "description": "Cọc gỗ bịt sắt đóng ngầm dưới lòng sông, vũ khí thủy chiến của Ngô Quyền năm 938.",
       "image": "/items/coc-go-bach-dang.svg",
       "imageSource": "https://game-icons.net/",
-      "imageCredit": "Game-icons.net · CC BY 3.0",
-      "description": "Cọc gỗ bịt sắt đóng ngầm dưới lòng sông, vũ khí thủy chiến của Ngô Quyền năm 938."
+      "imageCredit": "Game-icons.net · CC BY 3.0"
     },
     {
       "slug": "an-tin-dong-a",
       "name": "Ấn tín Đông A",
+      "description": "Ấn tín tượng trưng cho hào khí nhà Trần ba lần đánh tan quân Nguyên - Mông.",
       "image": "/items/an-tin-dong-a.svg",
       "imageSource": "https://game-icons.net/",
-      "imageCredit": "Game-icons.net · CC BY 3.0",
-      "description": "Ấn tín tượng trưng cho hào khí nhà Trần ba lần đánh tan quân Nguyên - Mông."
+      "imageCredit": "Game-icons.net · CC BY 3.0"
     },
     {
       "slug": "ao-bao-quang-trung",
       "name": "Áo bào Quang Trung",
+      "description": "Chiếc áo bào nhuốm khói thuốc súng trong trận Ngọc Hồi - Đống Đa mùa xuân 1789.",
       "image": "/items/ao-bao-quang-trung.svg",
       "imageSource": "https://game-icons.net/",
-      "imageCredit": "Game-icons.net · CC BY 3.0",
-      "description": "Chiếc áo bào nhuốm khói thuốc súng trong trận Ngọc Hồi - Đống Đa mùa xuân 1789."
+      "imageCredit": "Game-icons.net · CC BY 3.0"
     },
     {
       "slug": "la-co-quyet-chien",
       "name": "Lá cờ Quyết Chiến Quyết Thắng",
+      "description": "Lá cờ tung bay trên nóc hầm Đờ Cát chiều 7/5/1954.",
       "image": "/items/la-co-quyet-chien.svg",
       "imageSource": "https://game-icons.net/",
-      "imageCredit": "Game-icons.net · CC BY 3.0",
-      "description": "Lá cờ tung bay trên nóc hầm Đờ Cát chiều 7/5/1954."
+      "imageCredit": "Game-icons.net · CC BY 3.0"
     }
   ],
   "books": [
@@ -53,32 +62,43 @@
       "slug": "khoi-nguon-bo-coi",
       "title": "Khởi nguồn bờ cõi",
       "era": "TK VII – 179 TCN",
-      "cover": null,
+      "published": true,
+      "cover": "/media/398a88341363cc34e7b0090aa29b4621deb0cc145d0fe7c5ebf1a22d0fb86c4f",
+      "coverSource": "https://commons.wikimedia.org/wiki/File:HoangHaBronzeDrum.jpg",
+      "coverCredit": "VuThiAnh · Public domain · Wikimedia Commons",
       "rewardItem": "trong-dong",
       "pages": [
         {
           "heading": "Nhà nước Văn Lang",
-          "image": null,
-          "caption": null,
-          "body": "Khoảng thế kỷ VII trước Công nguyên, nhà nước đầu tiên trong lịch sử dân tộc ra đời ở lưu vực sông Hồng, sông Mã và sông Cả: nước Văn Lang. Đứng đầu là Hùng Vương, đóng đô ở Phong Châu — vùng Việt Trì, Phú Thọ ngày nay. Cả nước chia làm mười lăm bộ, giúp việc cho vua có các lạc hầu, lạc tướng; người dân được gọi là lạc dân. Tổ chức nhà nước còn rất đơn giản, chưa có luật pháp thành văn, nhưng đó là bước chuyển quyết định từ các bộ lạc rời rạc sang một cộng đồng có chung người đứng đầu và chung bờ cõi."
+          "body": "Khoảng thế kỷ VII trước Công nguyên, nhà nước đầu tiên trong lịch sử dân tộc ra đời ở lưu vực sông Hồng, sông Mã và sông Cả: nước Văn Lang. Đứng đầu là Hùng Vương, đóng đô ở Phong Châu — vùng Việt Trì, Phú Thọ ngày nay. Cả nước chia làm mười lăm bộ, giúp việc cho vua có các lạc hầu, lạc tướng; người dân được gọi là lạc dân. Tổ chức nhà nước còn rất đơn giản, chưa có luật pháp thành văn, nhưng đó là bước chuyển quyết định từ các bộ lạc rời rạc sang một cộng đồng có chung người đứng đầu và chung bờ cõi.",
+          "image": "/media/d9cf7ed048fdbe471a8591c3097ab8d44c817326867f4da8bf4a875ecffd6aeb",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:%C4%90%E1%BB%81n_H%C3%B9ng,_%C4%91%E1%BB%81n_Th%C6%B0%E1%BB%A3ng.jpg",
+          "imageCredit": "Thang Nguyen from Nottingham, United Kingdom · CC BY-SA 2.0 · Wikimedia Commons",
+          "caption": "Đền Thượng trong khu di tích Đền Hùng (Phú Thọ), nơi thờ các vua Hùng – ảnh chụp ngày nay."
         },
         {
           "heading": "Văn minh Đông Sơn",
-          "image": null,
-          "caption": null,
-          "body": "Cùng thời với nước Văn Lang là nền văn hóa Đông Sơn, mang tên một làng nhỏ bên sông Mã ở Thanh Hóa, nơi các nhà khảo cổ tìm thấy những hiện vật đầu tiên. Người Đông Sơn đạt tới đỉnh cao của nghề đúc đồng: trống đồng Ngọc Lũ, Hoàng Hạ, thạp đồng, lưỡi cày, mũi giáo. Mặt trống khắc ngôi sao nhiều cánh ở chính giữa, quanh đó là những vòng chim Lạc bay, người giã gạo, người đánh trống và những chiếc thuyền dài. Họ trồng lúa nước, ở nhà sàn, và chính những hình khắc ấy đã kể lại đời sống của tổ tiên ta cho tới hôm nay."
+          "body": "Cùng thời với nước Văn Lang là nền văn hóa Đông Sơn, mang tên một làng nhỏ bên sông Mã ở Thanh Hóa, nơi các nhà khảo cổ tìm thấy những hiện vật đầu tiên. Người Đông Sơn đạt tới đỉnh cao của nghề đúc đồng: trống đồng Ngọc Lũ, Hoàng Hạ, thạp đồng, lưỡi cày, mũi giáo. Mặt trống khắc ngôi sao nhiều cánh ở chính giữa, quanh đó là những vòng chim Lạc bay, người giã gạo, người đánh trống và những chiếc thuyền dài. Họ trồng lúa nước, ở nhà sàn, và chính những hình khắc ấy đã kể lại đời sống của tổ tiên ta cho tới hôm nay.",
+          "image": "/media/b9ee28c5ef813b77ff5d9e0214be8a93f3713ca09b3e4fd3247692400be12907",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Dong_Son_axe.JPG",
+          "imageCredit": "Bình Giang · Public domain · Wikimedia Commons",
+          "caption": "Rìu đồng gót vuông văn hóa Đông Sơn, trang trí cảnh chó săn hươu, Bảo tàng Lịch sử Quốc gia."
         },
         {
           "heading": "Âu Lạc và thành Cổ Loa",
-          "image": null,
-          "caption": null,
-          "body": "Khoảng năm 208 trước Công nguyên, Thục Phán hợp nhất hai vùng đất của người Lạc Việt và người Âu Việt, lập ra nước Âu Lạc, xưng là An Dương Vương và dời đô về Phong Khê — thành Cổ Loa, huyện Đông Anh, Hà Nội ngày nay. Tòa thành đắp ba vòng xoáy trôn ốc, có hào nước nối với sông, vừa là kinh đô vừa là căn cứ quân sự. Người Âu Lạc chế được nỏ bắn nhiều mũi tên một lúc, thứ vũ khí đã đi vào truyền thuyết dưới tên nỏ thần. Năm 179 trước Công nguyên, Triệu Đà đánh chiếm Âu Lạc, đất nước bước vào hơn một nghìn năm Bắc thuộc."
+          "body": "Khoảng năm 208 trước Công nguyên, Thục Phán hợp nhất hai vùng đất của người Lạc Việt và người Âu Việt, lập ra nước Âu Lạc, xưng là An Dương Vương và dời đô về Phong Khê — thành Cổ Loa, huyện Đông Anh, Hà Nội ngày nay. Tòa thành đắp ba vòng xoáy trôn ốc, có hào nước nối với sông, vừa là kinh đô vừa là căn cứ quân sự. Người Âu Lạc chế được nỏ bắn nhiều mũi tên một lúc, thứ vũ khí đã đi vào truyền thuyết dưới tên nỏ thần. Năm 179 trước Công nguyên, Triệu Đà đánh chiếm Âu Lạc, đất nước bước vào hơn một nghìn năm Bắc thuộc.",
+          "image": "/media/7a7ba98327bee44ea60641afbe23cfaf0fd607c54d8a2b532a7935a7857cb10d",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Co_Loa_Museum_Arrowheads.jpg",
+          "imageCredit": "Julez A. · CC BY-SA 4.0 · Wikimedia Commons",
+          "caption": "Mũi tên đồng tìm thấy ở Cổ Loa, trưng bày tại khu di tích Cổ Loa (Đông Anh, Hà Nội)."
         },
         {
           "heading": "Tổng kết",
-          "image": null,
-          "caption": null,
           "body": "Từ Văn Lang tới Âu Lạc, người Việt cổ đã kịp dựng nên một nhà nước, một nền văn minh và một bờ cõi trước khi mất nước. Chính ký ức về thời kỳ ấy là thứ nuôi các cuộc khởi nghĩa suốt nghìn năm sau đó.",
+          "image": "/media/fd017ac3b14403c09f57f0aab7406f4466da8d1aba79b05c1dbd46cc5adf127c",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Ngoc_Lu.jpg",
+          "imageCredit": "VuThiAnh · Public domain · Wikimedia Commons",
+          "caption": "Trống đồng Ngọc Lũ (Hà Nam), tiêu biểu cho văn minh Đông Sơn thời Văn Lang – Âu Lạc.",
           "summary": [
             "Nước Văn Lang ra đời khoảng thế kỷ VII TCN, kinh đô Phong Châu, đứng đầu là Hùng Vương.",
             "Văn hóa Đông Sơn để lại trống đồng — đỉnh cao nghề đúc đồng của người Việt cổ.",
@@ -124,32 +144,43 @@
       "slug": "tran-chien-bach-dang-938",
       "title": "Trận chiến Bạch Đằng 938",
       "era": "Năm 938",
-      "cover": null,
+      "published": true,
+      "cover": "/media/a227ac321857a35c04a18e17fdcb7ee7ced8afc19910afa0a1880f0953b3e9b2",
+      "coverSource": "https://commons.wikimedia.org/wiki/File:Ng%C3%B4_Quy%E1%BB%81n_%C4%91%E1%BA%A1i_ph%C3%A1_qu%C3%A2n_Nam_H%C3%A1n_tr%C3%AAn_s%C3%B4ng_B%E1%BA%A1ch_%C4%90%E1%BA%B1ng.jpg",
+      "coverCredit": "Unknown artisan from the village of Dong Ho. · Public domain · Wikimedia Commons",
       "rewardItem": "coc-go-bach-dang",
       "pages": [
         {
           "heading": "Trước giờ quyết định",
-          "image": null,
-          "caption": null,
-          "body": "Hơn một nghìn năm Bắc thuộc đã lung lay từ đầu thế kỷ X. Năm 905, Khúc Thừa Dụ giành lấy quyền tự chủ; năm 931, Dương Đình Nghệ đánh đuổi quân Nam Hán và tự xưng Tiết độ sứ. Nhưng năm 937, viên tướng dưới quyền là Kiều Công Tiễn giết Dương Đình Nghệ để đoạt chức, rồi sợ hãi cho người sang cầu cứu nhà Nam Hán. Ngô Quyền — con rể Dương Đình Nghệ — từ Ái Châu kéo quân ra Bắc trị tội kẻ phản bội, và lập tức đứng trước một đạo thủy quân xâm lược đang tiến vào cửa biển."
+          "body": "Hơn một nghìn năm Bắc thuộc đã lung lay từ đầu thế kỷ X. Năm 905, Khúc Thừa Dụ giành lấy quyền tự chủ; năm 931, Dương Đình Nghệ đánh đuổi quân Nam Hán và tự xưng Tiết độ sứ. Nhưng năm 937, viên tướng dưới quyền là Kiều Công Tiễn giết Dương Đình Nghệ để đoạt chức, rồi sợ hãi cho người sang cầu cứu nhà Nam Hán. Ngô Quyền — con rể Dương Đình Nghệ — từ Ái Châu kéo quân ra Bắc trị tội kẻ phản bội, và lập tức đứng trước một đạo thủy quân xâm lược đang tiến vào cửa biển.",
+          "image": "/media/ac1c18af752c4297e9d7e42e6d582b486f90cdc96df89defe62c28dfb02bbaca",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Cua_song_Bach_Dang.JPG",
+          "imageCredit": "Viethavvh at vi.wikipedia · Public domain · Wikimedia Commons",
+          "caption": "Sông Bạch Đằng đoạn gần Đình Vũ (Hải Phòng) ngày nay, vùng cửa sông nơi diễn ra trận đánh."
         },
         {
           "heading": "Trận địa cọc ngầm",
-          "image": null,
-          "caption": null,
-          "body": "Ngô Quyền chọn sông Bạch Đằng làm nơi quyết chiến. Ông cho quân đốn hàng nghìn cây gỗ lớn, vót nhọn đầu và bịt sắt, rồi đóng ngầm xuống lòng sông ở khúc hiểm yếu gần cửa biển. Đó là một trận địa vô hình: khi thủy triều lên, cả bãi cọc chìm hẳn dưới mặt nước, thuyền lớn đi qua không hề hay biết. Toàn bộ kế hoạch được tính theo con nước — thứ mà quân ta thuộc lòng còn quân giặc thì hoàn toàn xa lạ."
+          "body": "Ngô Quyền chọn sông Bạch Đằng làm nơi quyết chiến. Ông cho quân đốn hàng nghìn cây gỗ lớn, vót nhọn đầu và bịt sắt, rồi đóng ngầm xuống lòng sông ở khúc hiểm yếu gần cửa biển. Đó là một trận địa vô hình: khi thủy triều lên, cả bãi cọc chìm hẳn dưới mặt nước, thuyền lớn đi qua không hề hay biết. Toàn bộ kế hoạch được tính theo con nước — thứ mà quân ta thuộc lòng còn quân giặc thì hoàn toàn xa lạ.",
+          "image": "/media/247f640542e9e888960e8a53dc8759036e9016ea3d66df1c5406c2328908821e",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:B%C3%A3i_c%E1%BB%8Dc_c%E1%BB%ADa_s%C3%B4ng_B%E1%BA%A1ch_%C4%90%E1%BA%B1ng.jpg",
+          "imageCredit": "Goodmorninghpvn at Vietnamese Wikipedia · Public domain · Wikimedia Commons",
+          "caption": "Bãi cọc nhọn tái hiện ở cửa sông Bạch Đằng, mô phỏng trận địa cọc ngầm."
         },
         {
           "heading": "Nước rút, thuyền tan",
-          "image": null,
-          "caption": null,
-          "body": "Cuối năm 938, Lưu Hoằng Tháo, con vua Nam Hán, dẫn đoàn thuyền chiến tiến vào sông Bạch Đằng. Ngô Quyền cho thuyền nhẹ ra khiêu chiến đúng lúc triều đang lên, đánh vài hiệp rồi giả thua bỏ chạy, nhử cả đoàn thuyền địch vượt qua bãi cọc. Khi nước bắt đầu rút, quân ta từ hai bên bờ và thượng nguồn đổ ra phản công. Thuyền giặc quay đầu thì đâm phải hàng cọc nhọn, vỡ và đắm hàng loạt. Lưu Hoằng Tháo tử trận ngay giữa dòng sông; vua Nam Hán đóng quân tiếp ứng ở biên giới, nghe tin con chết đành thu quân về."
+          "body": "Cuối năm 938, Lưu Hoằng Tháo, con vua Nam Hán, dẫn đoàn thuyền chiến tiến vào sông Bạch Đằng. Ngô Quyền cho thuyền nhẹ ra khiêu chiến đúng lúc triều đang lên, đánh vài hiệp rồi giả thua bỏ chạy, nhử cả đoàn thuyền địch vượt qua bãi cọc. Khi nước bắt đầu rút, quân ta từ hai bên bờ và thượng nguồn đổ ra phản công. Thuyền giặc quay đầu thì đâm phải hàng cọc nhọn, vỡ và đắm hàng loạt. Lưu Hoằng Tháo tử trận ngay giữa dòng sông; vua Nam Hán đóng quân tiếp ứng ở biên giới, nghe tin con chết đành thu quân về.",
+          "image": "/media/44c546c2cd44190a488ef1afff4d56ad36854f6dd071e6619378863bfb9aee5d",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Model_of_Battle_in_Bach_Dang_River_in_938_AD_-_DSC05544.JPG",
+          "imageCredit": "Daderot · CC0 · Wikimedia Commons",
+          "caption": "Mô hình trận Bạch Đằng năm 938 tại Bảo tàng Lịch sử Quốc gia (Hà Nội): thuyền Nam Hán mắc cọc."
         },
         {
           "heading": "Tổng kết",
-          "image": null,
-          "caption": null,
           "body": "Bạch Đằng năm 938 không chỉ là một trận thắng. Nó khép lại hơn một nghìn năm Bắc thuộc và mở ra kỷ nguyên độc lập lâu dài. Năm 939, Ngô Quyền xưng vương, bỏ chức Tiết độ sứ của phương Bắc và đóng đô ở Cổ Loa — chọn lại đúng kinh đô của An Dương Vương thuở trước.",
+          "image": "/media/171a06be9c4cb1ed58df91ecb858eb9841227b20c88f104bec5db427a00818e1",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:L%C4%83ng_Ng%C3%B4_Quy%E1%BB%81n.jpg",
+          "imageCredit": "Bùi Thụy Đào Nguyên · CC BY-SA 3.0 · Wikimedia Commons",
+          "caption": "Lăng Ngô Quyền ở làng cổ Đường Lâm (Sơn Tây, Hà Nội), quê hương của ông.",
           "summary": [
             "Kiều Công Tiễn cầu viện Nam Hán năm 937 là cái cớ để quân xâm lược tiến vào.",
             "Ngô Quyền đóng cọc gỗ bịt sắt ngầm dưới lòng sông Bạch Đằng, giấu kín theo con nước.",
@@ -195,32 +226,43 @@
       "slug": "hao-khi-dong-a",
       "title": "Hào khí Đông A",
       "era": "1258 – 1288",
-      "cover": null,
+      "published": true,
+      "cover": "/media/5aa3f7059722dc9fafc0e5f5771baede539981f33445349823afa5dd4c2a6d02",
+      "coverSource": "https://commons.wikimedia.org/wiki/File:Tran_Hung_Dao_Statue_panorama,_Nam_Dinh_City,_Vietnam_(01).jpg",
+      "coverCredit": "TaiwaneseWaveVN · CC BY-SA 4.0 · Wikimedia Commons",
       "rewardItem": "an-tin-dong-a",
       "pages": [
         {
           "heading": "Hai chữ Đông A",
-          "image": null,
-          "caption": null,
-          "body": "Năm 1226, nhà Trần thay nhà Lý nắm giữ vận nước. Chữ Trần viết bằng chữ Hán ghép từ bộ phụ và chữ đông, nên người đời sau chiết tự thành hai chữ Đông A và dùng nó để gọi tinh thần của cả một triều đại. Nhà Trần chia lại ruộng đất, đắp đê Đỉnh Nhĩ dọc sông Hồng, mở khoa thi chọn người tài, và giữ chính sách ngụ binh ư nông: lúc bình thường quân sĩ về làm ruộng, khi có giặc thì cả nước là lính. Nhờ vậy một nước nhỏ mới đủ sức đương đầu với đế quốc mạnh nhất thế giới lúc bấy giờ."
+          "body": "Năm 1226, nhà Trần thay nhà Lý nắm giữ vận nước. Chữ Trần viết bằng chữ Hán ghép từ bộ phụ và chữ đông, nên người đời sau chiết tự thành hai chữ Đông A và dùng nó để gọi tinh thần của cả một triều đại. Nhà Trần chia lại ruộng đất, đắp đê Đỉnh Nhĩ dọc sông Hồng, mở khoa thi chọn người tài, và giữ chính sách ngụ binh ư nông: lúc bình thường quân sĩ về làm ruộng, khi có giặc thì cả nước là lính. Nhờ vậy một nước nhỏ mới đủ sức đương đầu với đế quốc mạnh nhất thế giới lúc bấy giờ.",
+          "image": "/media/bc925d2b14d59670a8146f8c2440d749390e55a68219ccca834835fbe1c7bd23",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:DenTran-NamDinh.JPG",
+          "imageCredit": "Handyhuy · CC BY-SA 3.0 · Wikimedia Commons",
+          "caption": "Cổng chính quần thể đền Trần (Nam Định), nơi thờ các vua và quan tướng nhà Trần."
         },
         {
           "heading": "Diên Hồng và Hịch tướng sĩ",
-          "image": null,
-          "caption": null,
-          "body": "Quân Mông – Nguyên ba lần sang xâm lược: năm 1258, năm 1285 và năm 1287 – 1288. Trước cuộc xâm lược lần thứ hai, vua Trần triệu tập hội nghị Bình Than năm 1282 để bàn kế đánh giặc với các vương hầu, rồi hội nghị Diên Hồng năm 1284 mời các bô lão trong cả nước về điện, hỏi nên hòa hay nên đánh. Muôn người đồng thanh hô một tiếng: Đánh. Trần Quốc Tuấn viết Hịch tướng sĩ để hun đúc lòng quân; binh sĩ thích lên cánh tay hai chữ Sát Thát. Trần Quốc Toản mới mười sáu tuổi, không được dự bàn việc nước, bóp nát quả cam trong tay lúc nào không hay."
+          "body": "Quân Mông – Nguyên ba lần sang xâm lược: năm 1258, năm 1285 và năm 1287 – 1288. Trước cuộc xâm lược lần thứ hai, vua Trần triệu tập hội nghị Bình Than năm 1282 để bàn kế đánh giặc với các vương hầu, rồi hội nghị Diên Hồng năm 1284 mời các bô lão trong cả nước về điện, hỏi nên hòa hay nên đánh. Muôn người đồng thanh hô một tiếng: Đánh. Trần Quốc Tuấn viết Hịch tướng sĩ để hun đúc lòng quân; binh sĩ thích lên cánh tay hai chữ Sát Thát. Trần Quốc Toản mới mười sáu tuổi, không được dự bàn việc nước, bóp nát quả cam trong tay lúc nào không hay.",
+          "image": "/media/7692406692ab342346537d2f8bac4d448adefe7dfd995fac5e2b1c3f0195183a",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:%C4%90%E1%BB%81n_th%E1%BB%9D_%C4%90%E1%BB%A9c_Th%C3%A1nh_Tr%E1%BA%A7n,_Qu%E1%BA%ADn_1,_th%C3%A1ng_12_n%C4%83m_2021_(H%E1%BB%8Bch_t%C6%B0%E1%BB%9Bng_s%C4%A9_v%C4%83n).jpg",
+          "imageCredit": "Phương Huy · CC BY-SA 4.0 · Wikimedia Commons",
+          "caption": "Trích đoạn Hịch tướng sĩ khắc trên bức phù điêu tại đền thờ Đức Thánh Trần (Quận 1, TP.HCM)."
         },
         {
           "heading": "Bạch Đằng năm 1288",
-          "image": null,
-          "caption": null,
-          "body": "Lần thứ ba, quân Nguyên kéo sang cùng một đoàn thuyền lương lớn. Trần Khánh Dư đánh tan đoàn thuyền ấy ở Vân Đồn, khiến đại quân giặc lâm vào cảnh thiếu ăn giữa đất lạ. Trên đường rút chạy bằng đường thủy, chúng lọt vào sông Bạch Đằng, nơi Trần Quốc Tuấn đã cho đóng lại trận địa cọc ngầm theo đúng kế của Ngô Quyền ba trăm năm trước. Tháng 4 năm 1288, thuyền giặc mắc cọc và bị đánh tan, tướng Ô Mã Nhi bị bắt sống. Cuộc xâm lược thứ ba chấm dứt tại đó."
+          "body": "Lần thứ ba, quân Nguyên kéo sang cùng một đoàn thuyền lương lớn. Trần Khánh Dư đánh tan đoàn thuyền ấy ở Vân Đồn, khiến đại quân giặc lâm vào cảnh thiếu ăn giữa đất lạ. Trên đường rút chạy bằng đường thủy, chúng lọt vào sông Bạch Đằng, nơi Trần Quốc Tuấn đã cho đóng lại trận địa cọc ngầm theo đúng kế của Ngô Quyền ba trăm năm trước. Tháng 4 năm 1288, thuyền giặc mắc cọc và bị đánh tan, tướng Ô Mã Nhi bị bắt sống. Cuộc xâm lược thứ ba chấm dứt tại đó.",
+          "image": "/media/c526d43c00bf5e48f360b8bbb444b13108a26be76f76cd7313065c6d542df6dc",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Bach_Dang_River_Victory_over_Mongols,_1288_(9980692603).jpg",
+          "imageCredit": "Gary Todd from Xinzheng, China · CC0 · Wikimedia Commons",
+          "caption": "Tranh trận Bạch Đằng 1288 và cọc gỗ thật vớt từ lòng sông, Bảo tàng Lịch sử TP.HCM."
         },
         {
           "heading": "Tổng kết",
-          "image": null,
-          "caption": null,
           "body": "Ba lần thắng một đế quốc từng đi từ Thái Bình Dương sang tới châu Âu không đến từ vũ khí mạnh hơn, mà từ một triều đình biết hỏi ý dân và một quân đội biết dùng địa hình của chính mình.",
+          "image": "/media/e63e7683788b8844dbe2a462b2701ae01ef0188313d810cd63073a698f14ed55",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Tran_Hung_Dao_Temple_(9982025783).jpg",
+          "imageCredit": "Gary Todd from Xinzheng, China · CC0 · Wikimedia Commons",
+          "caption": "Tượng Trần Hưng Đạo trước đền thờ Đức Thánh Trần ở TP. Hồ Chí Minh.",
           "summary": [
             "Đông A là cách chiết tự chữ Trần, trở thành tên gọi hào khí của cả triều đại.",
             "Hội nghị Diên Hồng năm 1284 hỏi ý các bô lão cả nước, tất cả đều chọn đánh.",
@@ -266,32 +308,43 @@
       "slug": "dai-pha-quan-thanh",
       "title": "Đại phá quân Thanh",
       "era": "Xuân 1789",
-      "cover": null,
+      "published": true,
+      "cover": "/media/15448c4558bbb1ede2528d6377b1529ce753aa115891226bf11c8573bb9c5ecd",
+      "coverSource": "https://commons.wikimedia.org/wiki/File:Quang_Trung_Nguy%E1%BB%85n_Hu%E1%BB%87,_G%C3%B2_%C4%90%E1%BB%91ng_%C4%90a.JPG",
+      "coverCredit": "Nguyễn Thanh Quang · CC BY-SA 3.0 · Wikimedia Commons",
       "rewardItem": "ao-bao-quang-trung",
       "pages": [
         {
           "heading": "Hai mươi chín vạn quân",
-          "image": null,
-          "caption": null,
-          "body": "Cuối năm 1788, vua Lê Chiêu Thống chạy sang cầu cứu nhà Thanh để giành lại ngai vàng. Tôn Sĩ Nghị được cử làm tổng chỉ huy, dẫn hai mươi chín vạn quân theo bốn đường tiến vào nước ta và chiếm được Thăng Long gần như không tốn sức. Quân Tây Sơn ở Bắc Hà ít hơn nhiều lần, chủ động rút về phòng tuyến Tam Điệp – Biện Sơn để bảo toàn lực lượng và cấp báo vào Phú Xuân. Tôn Sĩ Nghị đóng quân trong thành, cho binh lính ăn Tết, tin chắc rằng ra Giêng mới cần đánh tiếp."
+          "body": "Cuối năm 1788, vua Lê Chiêu Thống chạy sang cầu cứu nhà Thanh để giành lại ngai vàng. Tôn Sĩ Nghị được cử làm tổng chỉ huy, dẫn hai mươi chín vạn quân theo bốn đường tiến vào nước ta và chiếm được Thăng Long gần như không tốn sức. Quân Tây Sơn ở Bắc Hà ít hơn nhiều lần, chủ động rút về phòng tuyến Tam Điệp – Biện Sơn để bảo toàn lực lượng và cấp báo vào Phú Xuân. Tôn Sĩ Nghị đóng quân trong thành, cho binh lính ăn Tết, tin chắc rằng ra Giêng mới cần đánh tiếp.",
+          "image": "/media/696384cb0b601de5fb37cc39048c7c9ef0c80146be44601af083da6345b1d236",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:%E6%B8%85%E4%BA%BA%E7%94%BB%E5%B9%B3%E5%AE%9A%E5%AE%89%E5%8D%97%E6%88%98%E5%9B%BE%E5%86%8C4.png",
+          "imageCredit": "Không rõ tác giả · Public domain · Wikimedia Commons",
+          "caption": "Tranh cung đình nhà Thanh vẽ quân Thanh vượt sông Phú Lương (sông Hồng) vào Thăng Long cuối năm 1788 – góc nhìn của bên xâm lược."
         },
         {
           "heading": "Hành quân thần tốc",
-          "image": null,
-          "caption": null,
-          "body": "Ngày 22 tháng 12 năm 1788, Nguyễn Huệ lên ngôi Hoàng đế, lấy niên hiệu Quang Trung, rồi lập tức xuất quân ra Bắc. Đến Nghệ An, ông dừng lại tuyển thêm binh và duyệt quân, đọc lời hiểu dụ nổi tiếng: đánh cho để dài tóc, đánh cho để đen răng, đánh cho sử tri Nam quốc anh hùng chi hữu chủ. Đại quân chia làm năm đạo, đi suốt ngày đêm; tương truyền cứ ba người một tốp, hai người khiêng võng cho người thứ ba ngủ rồi thay phiên nhau. Ngày 20 tháng Chạp, quân Tây Sơn đã có mặt ở Tam Điệp, sớm hơn mọi tính toán của địch."
+          "body": "Ngày 22 tháng 12 năm 1788, Nguyễn Huệ lên ngôi Hoàng đế, lấy niên hiệu Quang Trung, rồi lập tức xuất quân ra Bắc. Đến Nghệ An, ông dừng lại tuyển thêm binh và duyệt quân, đọc lời hiểu dụ nổi tiếng: đánh cho để dài tóc, đánh cho để đen răng, đánh cho sử tri Nam quốc anh hùng chi hữu chủ. Đại quân chia làm năm đạo, đi suốt ngày đêm; tương truyền cứ ba người một tốp, hai người khiêng võng cho người thứ ba ngủ rồi thay phiên nhau. Ngày 20 tháng Chạp, quân Tây Sơn đã có mặt ở Tam Điệp, sớm hơn mọi tính toán của địch.",
+          "image": "/media/1e1e1287f26d36b668ed27acff0f8c6b126c142530a3931c85d677ed1f385565",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Hu%E1%BA%BF_-_Quang_Trung_Statue,_Ban_Mountain_site.jpg",
+          "imageCredit": "P. Hughes · CC BY 4.0 · Wikimedia Commons",
+          "caption": "Tượng Quang Trung ở núi Bân (Huế), nơi Nguyễn Huệ lên ngôi cuối năm 1788 trước khi tiến quân ra Bắc."
         },
         {
           "heading": "Ngọc Hồi – Đống Đa",
-          "image": null,
-          "caption": null,
-          "body": "Đêm 30 Tết, quân Tây Sơn vượt sông Gián Khẩu, tiêu diệt gọn các đồn tiền tiêu. Mùng 3 Tết vây đồn Hà Hồi, dùng loa truyền lệnh giữa đêm khiến quân Thanh xin hàng mà không phải giao chiến. Rạng sáng mùng 5 Tết Kỷ Dậu, tức ngày 30 tháng 1 năm 1789, đại quân đánh đồn Ngọc Hồi, lấy ván ghép quấn rơm ướt che đạn để xông vào; cùng lúc đô đốc Long bất ngờ đánh thẳng vào Đống Đa. Sầm Nghi Đống thắt cổ tự tử, Tôn Sĩ Nghị bỏ cả ấn tín vượt cầu phao chạy về Bắc. Trưa hôm ấy Quang Trung tiến vào Thăng Long, tấm áo bào sạm đen khói súng."
+          "body": "Đêm 30 Tết, quân Tây Sơn vượt sông Gián Khẩu, tiêu diệt gọn các đồn tiền tiêu. Mùng 3 Tết vây đồn Hà Hồi, dùng loa truyền lệnh giữa đêm khiến quân Thanh xin hàng mà không phải giao chiến. Rạng sáng mùng 5 Tết Kỷ Dậu, tức ngày 30 tháng 1 năm 1789, đại quân đánh đồn Ngọc Hồi, lấy ván ghép quấn rơm ướt che đạn để xông vào; cùng lúc đô đốc Long bất ngờ đánh thẳng vào Đống Đa. Sầm Nghi Đống thắt cổ tự tử, Tôn Sĩ Nghị bỏ cả ấn tín vượt cầu phao chạy về Bắc. Trưa hôm ấy Quang Trung tiến vào Thăng Long, tấm áo bào sạm đen khói súng.",
+          "image": "/media/4cabc1e74edc6a490414222866c2f48a84f28cf4b00873ffa32a1d7f5bb0bc3e",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Go_Dong_Da_3.JPG",
+          "imageCredit": "The original uploader was Bình Giang at Vietnamese Wikipedia. · Public domain · Wikimedia Commons",
+          "caption": "Tượng đài Quang Trung tại Gò Đống Đa (Hà Nội), nơi ghi dấu chiến thắng Xuân Kỷ Dậu 1789."
         },
         {
           "heading": "Tổng kết",
-          "image": null,
-          "caption": null,
           "body": "Chỉ trong năm ngày Tết, một đạo quân vừa hành quân hơn sáu trăm cây số đã quét sạch hai mươi chín vạn quân xâm lược. Đó là chiến thắng của tốc độ, của bí mật, và của một người cầm quân dám đánh vào đúng lúc kẻ địch tin rằng không ai đánh.",
+          "image": "/media/836f7e51919355c6f595fb3059fd656ec066f481e47078478046b91843093c5c",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:B%E1%BA%A3o_T%C3%A0ng_Quang_Trung.JPG",
+          "imageCredit": "Original uploader was Liftold at vi.wikipedia · CC BY-SA 3.0 · Wikimedia Commons",
+          "caption": "Bảo tàng Quang Trung ở quê hương Tây Sơn (Bình Định).",
           "summary": [
             "Lê Chiêu Thống cầu viện, Tôn Sĩ Nghị đem 29 vạn quân Thanh chiếm Thăng Long cuối năm 1788.",
             "Nguyễn Huệ lên ngôi Hoàng đế Quang Trung ngày 22/12/1788 rồi hành quân thần tốc ra Bắc.",
@@ -337,32 +390,43 @@
       "slug": "su-thi-dien-bien-phu",
       "title": "Sử thi Điện Biên Phủ",
       "era": "Năm 1954",
-      "cover": null,
+      "published": true,
+      "cover": "/media/91735eee556d84ff8fde5f2b43c3e02db16dbd6d428aad9d7109c019fba1b544",
+      "coverSource": "https://commons.wikimedia.org/wiki/File:Victory_in_Battle_of_Dien_Bien_Phu.jpg",
+      "coverCredit": "Vietnam People's Army · Public domain · Wikimedia Commons",
       "rewardItem": "la-co-quyet-chien",
       "pages": [
         {
           "heading": "Lòng chảo Điện Biên",
-          "image": null,
-          "caption": null,
-          "body": "Cuối năm 1953, trong kế hoạch Nava, thực dân Pháp cho quân nhảy dù xuống lòng chảo Điện Biên Phủ ở Tây Bắc và biến nơi đây thành tập đoàn cứ điểm mạnh nhất Đông Dương: bốn mươi chín cứ điểm chia làm ba phân khu, có sân bay, pháo binh, xe tăng và hơn mười sáu nghìn quân. Các tướng lĩnh Pháp và Mỹ đến thị sát đều gọi đó là pháo đài bất khả xâm phạm, và mong quân ta kéo lên đánh để bị nghiền nát. Bộ Chính trị quyết định nhận lời thách thức ấy, chọn Điện Biên Phủ làm điểm quyết chiến chiến lược."
+          "body": "Cuối năm 1953, trong kế hoạch Nava, thực dân Pháp cho quân nhảy dù xuống lòng chảo Điện Biên Phủ ở Tây Bắc và biến nơi đây thành tập đoàn cứ điểm mạnh nhất Đông Dương: bốn mươi chín cứ điểm chia làm ba phân khu, có sân bay, pháo binh, xe tăng và hơn mười sáu nghìn quân. Các tướng lĩnh Pháp và Mỹ đến thị sát đều gọi đó là pháo đài bất khả xâm phạm, và mong quân ta kéo lên đánh để bị nghiền nát. Bộ Chính trị quyết định nhận lời thách thức ấy, chọn Điện Biên Phủ làm điểm quyết chiến chiến lược.",
+          "image": "/media/cf96874de1f2b4b9dbc81b3ce36db15ee84c3a7021dcc717f920760e58bc54dd",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:M%C6%B0%E1%BB%9Dng_Thanh_Valley.jpg",
+          "imageCredit": "Tycho (shansov.net) · CC BY-SA 3.0 · Wikimedia Commons",
+          "caption": "Lòng chảo Mường Thanh nhìn từ thành phố Điện Biên Phủ ngày nay."
         },
         {
           "heading": "Kéo pháo và một quyết định khó",
-          "image": null,
-          "caption": null,
-          "body": "Hàng vạn bộ đội và dân công mở đường xuyên rừng, gánh gạo, thồ đạn bằng xe đạp qua hàng trăm cây số. Những khẩu pháo nặng hàng tấn được kéo bằng tay lên dốc núi trong đêm; pháo thủ Tô Vĩnh Diện đã lấy thân mình chèn pháo khi dây tời đứt. Pháo vào tới trận địa thì Đại tướng Võ Nguyên Giáp nhận ra đánh nhanh thắng nhanh sẽ phải trả giá quá đắt, và ra một quyết định khó nhất đời cầm quân: chuyển sang đánh chắc tiến chắc, kéo toàn bộ pháo ra rồi bố trí lại từ đầu."
+          "body": "Hàng vạn bộ đội và dân công mở đường xuyên rừng, gánh gạo, thồ đạn bằng xe đạp qua hàng trăm cây số. Những khẩu pháo nặng hàng tấn được kéo bằng tay lên dốc núi trong đêm; pháo thủ Tô Vĩnh Diện đã lấy thân mình chèn pháo khi dây tời đứt. Pháo vào tới trận địa thì Đại tướng Võ Nguyên Giáp nhận ra đánh nhanh thắng nhanh sẽ phải trả giá quá đắt, và ra một quyết định khó nhất đời cầm quân: chuyển sang đánh chắc tiến chắc, kéo toàn bộ pháo ra rồi bố trí lại từ đầu.",
+          "image": "/media/a3576459ccd25cd052c1b7d41727d1418fb6873f1cc487c9343b8d043d70395e",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:105mm_Howitzer_Used_at_Dienbienphu,_1954_(9732175909).jpg",
+          "imageCredit": "Gary Todd from Xinzheng, China · CC0 · Wikimedia Commons",
+          "caption": "Lựu pháo 105 ly từng dùng trong chiến dịch Điện Biên Phủ, trưng bày tại Bảo tàng Lịch sử Quân sự (Hà Nội)."
         },
         {
           "heading": "Năm mươi sáu ngày đêm",
-          "image": null,
-          "caption": null,
-          "body": "Ngày 13 tháng 3 năm 1954, quân ta nổ súng mở màn chiến dịch. Đợt một đánh chiếm Him Lam, Độc Lập, Bản Kéo ở phía bắc. Đợt hai giành giật từng thước đất trên các cao điểm phía đông, ác liệt nhất là đồi A1, nơi bộ đội đào một đường hầm dài để đưa gần một tấn thuốc nổ vào lòng đồi. Đợt ba siết chặt vòng vây, cắt đứt tiếp tế đường không. Chiều 7 tháng 5 năm 1954, quân ta đánh thẳng vào sở chỉ huy; lá cờ Quyết chiến quyết thắng tung bay trên nóc hầm tướng Đờ Cát, toàn bộ ban tham mưu địch bị bắt sống."
+          "body": "Ngày 13 tháng 3 năm 1954, quân ta nổ súng mở màn chiến dịch. Đợt một đánh chiếm Him Lam, Độc Lập, Bản Kéo ở phía bắc. Đợt hai giành giật từng thước đất trên các cao điểm phía đông, ác liệt nhất là đồi A1, nơi bộ đội đào một đường hầm dài để đưa gần một tấn thuốc nổ vào lòng đồi. Đợt ba siết chặt vòng vây, cắt đứt tiếp tế đường không. Chiều 7 tháng 5 năm 1954, quân ta đánh thẳng vào sở chỉ huy; lá cờ Quyết chiến quyết thắng tung bay trên nóc hầm tướng Đờ Cát, toàn bộ ban tham mưu địch bị bắt sống.",
+          "image": "/media/a7845d4afe7601bce74bc684da80ef4c0d725b28d9d4369b1b3bfb97c4b8f360",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Dien_Bien_Phu002.jpg",
+          "imageCredit": "Không rõ tác giả · Public domain · Wikimedia Commons",
+          "caption": "Lính Pháp co cụm trong chiến hào giữa trận địa bị pháo kích ở Điện Biên Phủ, 1954."
         },
         {
           "heading": "Tổng kết",
-          "image": null,
-          "caption": null,
           "body": "Năm mươi sáu ngày đêm khoét núi ngủ hầm đã kết thúc chín năm kháng chiến chống Pháp. Ngày 21 tháng 7 năm 1954, Hiệp định Genève được ký kết, miền Bắc hoàn toàn giải phóng, và tên Điện Biên Phủ trở thành lời cổ vũ cho các dân tộc thuộc địa khắp thế giới.",
+          "image": "/media/2f2a4dafb739ab3b07cac78bec37d66321def01b515c2b008f9f0073eb39aecb",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:The_Victory_Monument_of_Dien_Bien_Phu_(far).jpg",
+          "imageCredit": "Ioe2015 · CC BY-SA 4.0 · Wikimedia Commons",
+          "caption": "Tượng đài Chiến thắng Điện Biên Phủ trên đồi D1.",
           "summary": [
             "Pháp biến Điện Biên Phủ thành tập đoàn cứ điểm 49 cứ điểm, hơn 16.000 quân, tự coi là bất khả xâm phạm.",
             "Bộ đội và dân công kéo pháo bằng tay vào trận địa; Đại tướng Võ Nguyên Giáp chuyển sang phương châm đánh chắc tiến chắc.",

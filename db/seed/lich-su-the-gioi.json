@@ -2,6 +2,15 @@
   "slug": "lich-su-the-gioi",
   "name": "Lịch sử Thế giới",
   "order": 2,
+  "countryCode": null,
+  "published": true,
+  "blurb": "",
+  "cover": null,
+  "coverSource": null,
+  "coverCredit": null,
+  "mosaic": "/media/4f8358338453e105264332b160487a0e9dab321edda471cd6b6ea8aa2189bcdd",
+  "mosaicSource": "https://commons.wikimedia.org/wiki/File:Cantino_planisphere_(1502).jpg",
+  "mosaicCredit": "anonymous Portuguese (1502) · Public domain · Wikimedia Commons",
   "reward": {
     "title": "Người đi qua bốn nền văn minh",
     "body": "Viên đá Giza, huy hiệu quân đoàn La Mã, la bàn hàng hải, mô hình đầu máy hơi nước — bốn món, bốn câu trả lời cho cùng một câu hỏi: con người dùng gì để vượt qua giới hạn của chính mình?\n\nNgười Ai Cập dùng tổ chức lao động, người La Mã dùng luật pháp và đường sá, người châu Âu thế kỷ XV dùng kim chỉ nam để dám đi khuất tầm mắt, và thế kỷ XVIII dùng hơi nước để không còn phụ thuộc vào sức cơ bắp. Mỗi lần vượt qua một giới hạn, loài người lại phát hiện ra giới hạn kế tiếp. Đó là lý do lịch sử chưa bao giờ có chương cuối."
@@ -10,34 +19,34 @@
     {
       "slug": "vien-da-giza",
       "name": "Viên đá Giza",
+      "description": "Một khối đá vôi từ cao nguyên Giza — mảnh nhỏ của công trình giữ kỷ lục cao nhất thế giới suốt gần bốn nghìn năm.",
       "image": "/items/vien-da-giza.svg",
       "imageSource": "https://game-icons.net/",
-      "imageCredit": "Game-icons.net · CC BY 3.0",
-      "description": "Một khối đá vôi từ cao nguyên Giza — mảnh nhỏ của công trình giữ kỷ lục cao nhất thế giới suốt gần bốn nghìn năm."
+      "imageCredit": "Game-icons.net · CC BY 3.0"
     },
     {
       "slug": "huy-hieu-quan-doan",
       "name": "Huy hiệu quân đoàn La Mã",
+      "description": "Hình chim đại bàng mà mỗi quân đoàn La Mã mang theo ra trận. Mất huy hiệu bị coi là nỗi nhục lớn nhất của cả quân đoàn.",
       "image": "/items/huy-hieu-quan-doan.svg",
       "imageSource": "https://game-icons.net/",
-      "imageCredit": "Game-icons.net · CC BY 3.0",
-      "description": "Hình chim đại bàng mà mỗi quân đoàn La Mã mang theo ra trận. Mất huy hiệu bị coi là nỗi nhục lớn nhất của cả quân đoàn."
+      "imageCredit": "Game-icons.net · CC BY 3.0"
     },
     {
       "slug": "la-ban-hang-hai",
       "name": "La bàn hàng hải",
+      "description": "Chiếc kim luôn chỉ hướng bắc đã cho phép thủy thủ rời khỏi tầm nhìn bờ biển mà vẫn biết mình đang ở đâu.",
       "image": "/items/la-ban-hang-hai.svg",
       "imageSource": "https://game-icons.net/",
-      "imageCredit": "Game-icons.net · CC BY 3.0",
-      "description": "Chiếc kim luôn chỉ hướng bắc đã cho phép thủy thủ rời khỏi tầm nhìn bờ biển mà vẫn biết mình đang ở đâu."
+      "imageCredit": "Game-icons.net · CC BY 3.0"
     },
     {
       "slug": "mo-hinh-dau-may",
       "name": "Mô hình đầu máy hơi nước",
+      "description": "Cỗ máy biến than thành chuyển động, và biến khoảng cách hàng trăm cây số thành vài giờ đồng hồ.",
       "image": "/items/mo-hinh-dau-may.svg",
       "imageSource": "https://game-icons.net/",
-      "imageCredit": "Game-icons.net · CC BY 3.0",
-      "description": "Cỗ máy biến than thành chuyển động, và biến khoảng cách hàng trăm cây số thành vài giờ đồng hồ."
+      "imageCredit": "Game-icons.net · CC BY 3.0"
     }
   ],
   "books": [
@@ -45,32 +54,43 @@
       "slug": "kim-tu-thap-ai-cap",
       "title": "Kim tự tháp Ai Cập",
       "era": "Khoảng 2560 TCN",
-      "cover": null,
+      "published": true,
+      "cover": "/media/7494e3191752e1260706d2ebc2deb8a5f0e6c77612040510c7b0c1928f5a9681",
+      "coverSource": "https://commons.wikimedia.org/wiki/File:All_Gizah_Pyramids.jpg",
+      "coverCredit": "Ricardo Liberato · CC BY-SA 2.0 · Wikimedia Commons",
       "rewardItem": "vien-da-giza",
       "pages": [
         {
           "heading": "Người khổng lồ bằng đá",
-          "image": null,
-          "caption": null,
-          "body": "Kim tự tháp Kheops ở Giza cao 146 mét khi vừa xây xong, và giữ kỷ lục công trình cao nhất thế giới suốt gần bốn nghìn năm — mãi tới đầu thế kỷ XIV mới có một nhà thờ ở châu Âu vượt qua. Người Ai Cập cổ đã xếp khoảng 2,3 triệu khối đá vôi, mỗi khối nặng trung bình 2,5 tấn. Điều khó tin không nằm ở khối lượng: bốn cạnh đáy dài bằng nhau tới từng centimet, và bốn mặt quay gần như đúng bốn hướng chính."
+          "body": "Kim tự tháp Kheops ở Giza cao 146 mét khi vừa xây xong, và giữ kỷ lục công trình cao nhất thế giới suốt gần bốn nghìn năm — mãi tới đầu thế kỷ XIV mới có một nhà thờ ở châu Âu vượt qua. Người Ai Cập cổ đã xếp khoảng 2,3 triệu khối đá vôi, mỗi khối nặng trung bình 2,5 tấn. Điều khó tin không nằm ở khối lượng: bốn cạnh đáy dài bằng nhau tới từng centimet, và bốn mặt quay gần như đúng bốn hướng chính.",
+          "image": "/media/632a1ce98dd2b14a2d880ad4157668c028db313d8057a9e362f875b8112fea3c",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Kheops-Pyramid.jpg",
+          "imageCredit": "Nina · CC BY 2.5 · Wikimedia Commons",
+          "caption": "Đại kim tự tháp Khufu (Kheops) ở Giza, xây khoảng năm 2560 TCN."
         },
         {
           "heading": "Ai đã xây, và xây bằng gì",
-          "image": null,
-          "caption": null,
-          "body": "Herodotus chép rằng một trăm nghìn người bị bắt đi làm khổ sai suốt hai mươi năm. Khảo cổ học nói khác. Ngay cạnh Giza, người ta đào được cả một ngôi làng thợ với lò bánh mì, xưởng bia, kho cá và xương bò — dấu vết của những đội thợ được nuôi ăn và trả công, chừng hai đến ba vạn người thay phiên nhau. Dụng cụ của họ chỉ là đục đồng, búa đá và xe trượt gỗ; muốn kéo khối đá đi trên cát thì đổ nước xuống trước cho cát chặt lại."
+          "body": "Herodotus chép rằng một trăm nghìn người bị bắt đi làm khổ sai suốt hai mươi năm. Khảo cổ học nói khác. Ngay cạnh Giza, người ta đào được cả một ngôi làng thợ với lò bánh mì, xưởng bia, kho cá và xương bò — dấu vết của những đội thợ được nuôi ăn và trả công, chừng hai đến ba vạn người thay phiên nhau. Dụng cụ của họ chỉ là đục đồng, búa đá và xe trượt gỗ; muốn kéo khối đá đi trên cát thì đổ nước xuống trước cho cát chặt lại.",
+          "image": "/media/5884499447343981aac5ac871f2f8677ed8a014a6708a2130a10e0c70666fddb",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Tombs_of_the_builders_of_the_pyramids.jpg",
+          "imageCredit": "Ahmed Yousry Mahfouz · CC BY-SA 4.0 · Wikimedia Commons",
+          "caption": "Khu mộ của những người thợ xây kim tự tháp ở Giza — bằng chứng họ là người lao động được chôn cất tử tế, không phải nô lệ."
         },
         {
           "heading": "Vì sao lại là hình tháp",
-          "image": null,
-          "caption": null,
-          "body": "Hình tháp không có sẵn từ đầu — nó là kết quả của gần một trăm năm thử và sai. Ban đầu vua Ai Cập được chôn dưới một khối hộp thấp gọi là mastaba. Khoảng năm 2670 trước Công nguyên, Imhotep chồng sáu khối mastaba nhỏ dần lên nhau cho vua Djoser, thành kim tự tháp bậc thang đầu tiên. Tới đời vua Sneferu, thợ Ai Cập thử làm bốn mặt phẳng: công trình ở Meidum đổ, cái ở Dahshur phải đổi độ dốc giữa chừng nên đến nay vẫn mang tên \"kim tự tháp gãy\". Cái thứ ba mới đứng vững."
+          "body": "Hình tháp không có sẵn từ đầu — nó là kết quả của gần một trăm năm thử và sai. Ban đầu vua Ai Cập được chôn dưới một khối hộp thấp gọi là mastaba. Khoảng năm 2670 trước Công nguyên, Imhotep chồng sáu khối mastaba nhỏ dần lên nhau cho vua Djoser, thành kim tự tháp bậc thang đầu tiên. Tới đời vua Sneferu, thợ Ai Cập thử làm bốn mặt phẳng: công trình ở Meidum đổ, cái ở Dahshur phải đổi độ dốc giữa chừng nên đến nay vẫn mang tên \"kim tự tháp gãy\". Cái thứ ba mới đứng vững.",
+          "image": "/media/fdd44e7f057ef588161576993fdf05321e671d5b1c5f211cec7be6d020d802b9",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Saqqara_pyramid_ver_2.jpg",
+          "imageCredit": "Charles J. Sharp · CC BY-SA 3.0 · Wikimedia Commons",
+          "caption": "Kim tự tháp bậc thang của vua Djoser ở Saqqara — bước chuyển từ mộ mastaba sang hình tháp."
         },
         {
           "heading": "Thứ còn lại sau bốn nghìn năm",
-          "image": null,
-          "caption": null,
           "body": "Kim tự tháp ta thấy hôm nay chỉ là bộ khung trần. Ngày mới xong, Kheops được bọc một lớp đá vôi trắng mài nhẵn chở từ bờ bên kia sông Nin, sáng lóa dưới nắng; lớp áo ấy bị bóc gần hết vào thời Trung cổ để lấy đá xây thành Cairo. Quanh nó là cả một quần thể: hai kim tự tháp lớn của Khafre và Menkaure, những kim tự tháp nhỏ dành cho hoàng hậu, các đền thờ, và tượng Nhân sư mình sư tử đầu người tạc thẳng vào nền đá vôi tại chỗ.",
+          "image": "/media/576823b8f14d268a0484ef003306fd5fdc28aebed3a31318fd26ad470fccfe25",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Great_Sphinx_of_Giza_-_20080716a.jpg",
+          "imageCredit": "Taken by the uploader, w:es:Usuario:Barcex · CC BY-SA 3.0 · Wikimedia Commons",
+          "caption": "Tượng Nhân sư lớn ở Giza, phía sau là một kim tự tháp, sau hơn bốn nghìn năm.",
           "summary": [
             "Kheops cao 146 m, giữ kỷ lục công trình cao nhất thế giới gần bốn nghìn năm.",
             "Khoảng 2,3 triệu khối đá vôi, mỗi khối nặng trung bình 2,5 tấn.",
@@ -116,35 +136,43 @@
       "slug": "de-che-la-ma",
       "title": "Đế chế La Mã",
       "era": "753 TCN – 476",
-      "cover": null,
+      "published": true,
+      "cover": "/media/40cd81ff10130a2019a2cee6f2ba9da94ed19a80966ad09211228881b41ad606",
+      "coverSource": "https://commons.wikimedia.org/wiki/File:Colosseum_in_Rome,_Italy_-_April_2007.jpg",
+      "coverCredit": "Diliff · CC BY-SA 2.5 · Wikimedia Commons",
       "rewardItem": "huy-hieu-quan-doan",
       "pages": [
         {
           "heading": "Từ một thị trấn bên sông Tiber",
-          "image": null,
-          "caption": null,
           "body": "Truyền thuyết chép rằng thành Roma được dựng năm 753 trước Công nguyên, ban đầu chỉ là một thị trấn nhỏ bên sông Tiber. Đến năm 509 TCN, người La Mã lật đổ vua và lập nền cộng hòa: quyền lực chia cho Viện nguyên lão và các quan chấp chính được bầu hằng năm. Chính cái khung đó — không ai nắm quyền trọn đời — đã giúp một thị trấn nhỏ dần thu phục toàn bộ bán đảo Ý, rồi vượt biển Địa Trung Hải.",
-          "summary": null
+          "image": "/media/03b2a04db72c4063be4375a6656f698d25d425858f3b6b32084ecd222f5850e4",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Capitoline_she-wolf_Musei_Capitolini_MC1181.jpg",
+          "imageCredit": "Không rõ tác giả · Public domain · Wikimedia Commons",
+          "caption": "Tượng đồng sói Capitoline cho hai anh em Romulus và Remus bú — hai đứa trẻ được đúc thêm vào thế kỷ 15."
         },
         {
           "heading": "Đường sá, luật pháp và quân đoàn",
-          "image": null,
-          "caption": null,
           "body": "Sức mạnh La Mã không chỉ nằm ở lưỡi gươm. Họ lát hơn tám vạn cây số đường đá nối các tỉnh về Roma, dựng cầu dẫn nước đưa nước sạch vào thành phố, và viết ra một hệ thống luật mà luật pháp châu Âu ngày nay vẫn kế thừa. Quân đoàn La Mã là đội quân chuyên nghiệp: lính phục vụ hai mươi năm, được trả lương, và khi giải ngũ được cấp đất. Mỗi quân đoàn mang theo một huy hiệu hình đại bàng — mất nó là nỗi nhục của cả đơn vị.",
-          "summary": null
+          "image": "/media/fbe72425506ddf5fb4546fe630c18eeaa7850aa2207ead6872ca08a65576fbc4",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Legion_in_MarschTrajans%C3%A4ule.jpg",
+          "imageCredit": "Rabax63 · CC BY-SA 4.0 · Wikimedia Commons",
+          "caption": "Quân đoàn La Mã hành quân, phù điêu trên cột Trajan ở Roma (năm 113)."
         },
         {
           "heading": "Từ cộng hòa sang đế chế",
-          "image": null,
-          "caption": null,
           "body": "Chiến thắng liên tiếp mang về của cải khổng lồ, và cùng với nó là những vị tướng mạnh hơn cả nhà nước. Sau nhiều chục năm nội chiến, năm 27 trước Công nguyên Octavianus nhận danh hiệu Augustus và trở thành hoàng đế đầu tiên. Nền cộng hòa chấm dứt trên thực tế, dù danh nghĩa Viện nguyên lão vẫn còn. Hai thế kỷ sau đó tương đối yên ổn, đủ để thương nhân đi từ Anh tới Ai Cập mà chỉ dùng một đồng tiền và một thứ tiếng.",
-          "summary": null
+          "image": "/media/adc116f9917fe8b0660f422e1ec099e81b83f3d0c574b121f2077461b4f30e10",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Head_of_Emperor_Augustus_%E2%80%93_Prima_Porta_type_-_possibly_from_Tarentum.jpg",
+          "imageCredit": "TimeTravelRome · CC BY 2.0 · Wikimedia Commons",
+          "caption": "Đầu tượng hoàng đế Augustus bằng đá cẩm thạch, kiểu Prima Porta — hoàng đế đầu tiên của La Mã."
         },
         {
           "heading": "Vì sao một đế chế sụp đổ",
-          "image": null,
-          "caption": null,
           "body": "Không có một cú đánh duy nhất nào hạ gục La Mã. Biên giới quá dài để giữ, thuế khóa nặng dần, quyền lực chuyển tay bằng đảo chính liên tục. Năm 395 đế chế tách hẳn thành hai nửa Đông và Tây. Nửa phía Tây mất dần từng tỉnh vào tay các bộ tộc từ phương bắc, và năm 476 vị hoàng đế cuối cùng bị phế truất. Nửa phía Đông — Byzantine — còn tồn tại thêm gần một nghìn năm nữa.",
+          "image": "/media/b0cf3be0144431a0682f3df06fd128a621477b0a6d51cb466f7eaf0279e33d5f",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Roman_Forum_east_end_panorama.jpg",
+          "imageCredit": "Nhartmannphotos · CC BY-SA 4.0 · Wikimedia Commons",
+          "caption": "Tàn tích Quảng trường La Mã (Forum Romanum) — trung tâm quyền lực một thời của đế chế.",
           "summary": [
             "Roma dựng năm 753 TCN, lập nền cộng hòa năm 509 TCN.",
             "Đường sá, cầu dẫn nước và luật pháp là di sản bền hơn cả quân đội.",
@@ -190,35 +218,43 @@
       "slug": "ky-nguyen-phat-kien-dia-ly",
       "title": "Kỷ nguyên phát kiến địa lý",
       "era": "Thế kỷ XV – XVI",
-      "cover": null,
+      "published": true,
+      "cover": "/media/d44d69b33509c14287940fa8d16b24e81b9e6595d152bded97107ab60777f127",
+      "coverSource": "https://commons.wikimedia.org/wiki/File:Life_Size_Replica_of_Bartolomeu_Dias_Caravel_..._(52659163964).jpg",
+      "coverCredit": "Bernard DUPONT from FRANCE · CC BY-SA 2.0 · Wikimedia Commons",
       "rewardItem": "la-ban-hang-hai",
       "pages": [
         {
           "heading": "Vì sao người ta ra khơi",
-          "image": null,
-          "caption": null,
           "body": "Cuối thế kỷ XV, hồ tiêu, quế và đinh hương từ châu Á về tới châu Âu phải qua tay hàng chục người trung gian, giá đội lên nhiều lần. Ai tìm được đường biển thẳng tới nguồn hàng sẽ giàu có khủng khiếp. Cùng lúc đó, ba công cụ chín muồi: la bàn cho biết hướng khi không thấy bờ, thước trắc tinh đo được vĩ độ bằng sao, và tàu caravel nhỏ nhưng đi ngược gió được.",
-          "summary": null
+          "image": "/media/281187d9ec640306425a63e4f64205934c802ecdec6c8e2583d13adda231acf2",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Le_livre_des_merveilles_de_Marco_Polo-pepper.jpg",
+          "imageCredit": "Maître de Boucicaut et Maître de Mazarine · Public domain · Wikimedia Commons",
+          "caption": "Thu hoạch hồ tiêu ở miền nam Ấn Độ, tranh minh họa sách của Marco Polo (đầu thế kỷ 15)."
         },
         {
           "heading": "Những chuyến đi đổi bản đồ",
-          "image": null,
-          "caption": null,
           "body": "Trước cả châu Âu, từ năm 1405 đến 1433 đô đốc Trịnh Hòa của nhà Minh đã bảy lần dẫn hạm đội tới Ấn Độ Dương và bờ Đông Phi. Ở châu Âu, năm 1488 Bartolomeu Dias vòng qua mũi Hảo Vọng. Năm 1492 Cristoforo Colombo vượt Đại Tây Dương và cập vào vùng Caribe — ông tin tới cuối đời rằng mình đã tới châu Á. Năm 1498 Vasco da Gama tới được Ấn Độ bằng đường biển. Đoàn tàu của Magellan rời cảng năm 1519; ông tử trận giữa đường, và năm 1522 chỉ một con tàu về tới nơi, hoàn tất vòng quanh thế giới đầu tiên.",
-          "summary": null
+          "image": "/media/716a878414f371a12b599f1f3529da3ee50412c88dfa31461c4942f41a0ce850",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:A_chegada_de_Vasco_da_Gama_a_Calicute_em_1498.jpg",
+          "imageCredit": "Roque Gameiro · Public domain · Wikimedia Commons",
+          "caption": "Vasco da Gama đến Calicut (Ấn Độ) năm 1498, tranh của Roque Gameiro vẽ khoảng năm 1900."
         },
         {
           "heading": "Hai mặt của một cuộc gặp gỡ",
-          "image": null,
-          "caption": null,
           "body": "Các chuyến đi nối liền hai nửa thế giới vốn không biết nhau. Khoai tây, ngô, cà chua, ớt từ châu Mỹ sang, đổi lại lúa mì, ngựa, mía từ lục địa cũ — bữa ăn của cả hai bên thay đổi vĩnh viễn. Nhưng cùng chuyến tàu ấy là bệnh đậu mùa, sởi và thương hàn, những thứ mà cư dân bản địa châu Mỹ chưa từng có sức đề kháng; nhiều cộng đồng mất phần lớn dân số. Kèm theo là ba thế kỷ buôn bán nô lệ xuyên Đại Tây Dương.",
-          "summary": null
+          "image": "/media/07acfd04dbf8b2d2dfd2455b14cff80cc50beb6db8b0e989ba89d4d56da65739",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Landing_of_Columbus_(2).jpg",
+          "imageCredit": "John Vanderlyn · Public domain · Wikimedia Commons",
+          "caption": "Columbus đổ bộ lên đảo Guanahani năm 1492 — tranh lý tưởng hóa của John Vanderlyn vẽ năm 1847."
         },
         {
           "heading": "Thế giới thu nhỏ lại",
-          "image": null,
-          "caption": null,
           "body": "Sau một thế kỷ, bản đồ thế giới lần đầu có hình dạng gần đúng như ta biết hôm nay, và lần đầu tiên hàng hóa, cây trồng, con người và mầm bệnh đi vòng quanh Trái Đất một cách thường xuyên. Đó là bước khởi đầu của cái mà ngày nay ta gọi là toàn cầu hóa — với cả phần lợi lẫn phần giá phải trả.",
+          "image": "/media/0183a7f12029551602dd191a25699a5ac31648b3b7fcb9a1b25f20e76c56180e",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:OrteliusWorldMap1570.jpg",
+          "imageCredit": "Abraham Ortelius · Public domain · Wikimedia Commons",
+          "caption": "Bản đồ thế giới Typus Orbis Terrarum của Abraham Ortelius, năm 1570.",
           "summary": [
             "Động lực là con đường buôn gia vị; điều kiện là la bàn, thước trắc tinh và tàu caravel.",
             "Trịnh Hòa đi trước từ 1405; Dias 1488, Colombo 1492, Da Gama 1498, đoàn Magellan về năm 1522.",
@@ -264,35 +300,43 @@
       "slug": "cach-mang-cong-nghiep",
       "title": "Cách mạng công nghiệp",
       "era": "Từ khoảng 1760",
-      "cover": null,
+      "published": true,
+      "cover": "/media/2bcd5e3935ceaad21e66e6fcf7d7be132b04950f0671acacd88c82583caaedec",
+      "coverSource": "https://commons.wikimedia.org/wiki/File:Philipp_Jakob_Loutherbourg_d._J._002.jpg",
+      "coverCredit": "Philip James de Loutherbourg · Public domain · Wikimedia Commons",
       "rewardItem": "mo-hinh-dau-may",
       "pages": [
         {
           "heading": "Khi sức người không còn là giới hạn",
-          "image": null,
-          "caption": null,
           "body": "Suốt hàng nghìn năm, mọi thứ con người làm ra đều bị chặn bởi sức cơ bắp của người và vật, cộng thêm chút gió và nước chảy. Từ khoảng năm 1760 ở nước Anh, giới hạn đó bị phá vỡ. Than đá cho nhiệt, máy hơi nước biến nhiệt thành chuyển động, và chuyển động ấy chạy suốt ngày đêm, không mệt, không phụ thuộc mùa.",
-          "summary": null
+          "image": "/media/d3da1e8f996b72fe1c0518e9adaba20ba5999c335aeef03899dd46d4a851ae8e",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Maquina_vapor_Watt_ETSIIM.jpg",
+          "imageCredit": "Nicolás Pérez · CC BY-SA 3.0 · Wikimedia Commons",
+          "caption": "Máy hơi nước kiểu Watt do hãng Napier (London) chế tạo năm 1832, nay trưng bày tại Madrid."
         },
         {
           "heading": "Máy móc và nhà xưởng",
-          "image": null,
-          "caption": null,
           "body": "Ngành dệt đi trước. Máy kéo sợi Jenny của James Hargreaves cho một người kéo cùng lúc nhiều sợi thay vì một. Năm 1769 James Watt được cấp bằng sáng chế cho cải tiến máy hơi nước, giúp nó tiết kiệm nhiên liệu tới mức đặt ở đâu cũng được — không cần cạnh dòng nước nữa. Từ đó nhà xưởng mọc lên quanh mỏ than và thành phố, và lần đầu tiên hàng vạn người rời làng quê đi làm công ăn lương theo tiếng còi tầm.",
-          "summary": null
+          "image": "/media/471959b411529c2bf74fc840f8e176563f9b89c1e33186c7248643b010e7b5cb",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Powerloom_weaving_in_1835.jpg",
+          "imageCredit": "Illustrator T. Allom, Engraver J. Tingle · Public domain · Wikimedia Commons",
+          "caption": "Xưởng dệt bằng máy dệt cơ khí ở Anh năm 1835, tranh khắc của T. Allom."
         },
         {
           "heading": "Đường sắt và tốc độ",
-          "image": null,
-          "caption": null,
           "body": "Năm 1825 tuyến đường sắt công cộng đầu tiên nối Stockton và Darlington đi vào hoạt động; năm 1829 đầu máy Rocket của George Stephenson thắng cuộc thi Rainhill và định hình dáng của mọi đầu máy sau đó. Chuyến đi mất nhiều ngày bằng ngựa rút xuống còn vài giờ. Hàng hóa rẻ đi, thư từ nhanh hơn, và các thành phố xa nhau bắt đầu phải dùng chung một giờ — giờ đường sắt chính là khởi đầu của múi giờ thống nhất.",
-          "summary": null
+          "image": "/media/80c8803d0da2a7f5703256deaea5fa4544cb05e616a0ef437c4e8b5d3fe3685f",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Opening_of_the_Liverpool_and_Manchester_Railway.jpg",
+          "imageCredit": "I Shaw, Junior · Public domain · Wikimedia Commons",
+          "caption": "Lễ khai trương tuyến đường sắt Liverpool – Manchester năm 1830, tranh của Isaac Shaw."
         },
         {
           "heading": "Cái giá và di sản",
-          "image": null,
-          "caption": null,
           "body": "Sản lượng tăng vọt, nhưng thành phố công nghiệp thời đầu là nơi khói than phủ kín, nước thải chảy ra sông, trẻ em mười tuổi làm mười hai giờ mỗi ngày. Chính những điều kiện đó đã sinh ra công đoàn, luật lao động và luật vệ sinh đô thị — những thứ hôm nay ta coi là hiển nhiên. Cách mạng công nghiệp vì thế không chỉ đổi cách làm ra đồ vật, nó đổi luôn cách xã hội tự tổ chức.",
+          "image": "/media/2d33857305ff77b9d33bb1b8d17837ac32e769000280583a43c4e4f197c2c226",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Mill_Children_in_Macon.jpg",
+          "imageCredit": "Lewis Hine · Public domain · Wikimedia Commons",
+          "caption": "Trẻ em lao động trong nhà máy dệt ở Macon, Georgia (Mỹ), ảnh của Lewis Hine năm 1909.",
           "summary": [
             "Từ khoảng 1760 tại Anh, than và máy hơi nước phá vỡ giới hạn sức cơ bắp.",
             "Máy kéo sợi Jenny và cải tiến của Watt (bằng sáng chế 1769) đưa sản xuất vào nhà xưởng.",

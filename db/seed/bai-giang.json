@@ -1,0 +1,38 @@
+[
+  {
+    "slug": "chien-thang-bach-dang-nam-938",
+    "grade": 10,
+    "title": "Chiến thắng Bạch Đằng năm 938",
+    "summary": "Diễn biến trận Bạch Đằng 938 và ý nghĩa mở ra thời kỳ độc lập tự chủ.",
+    "book": "tran-chien-bach-dang-938",
+    "published": true,
+    "slide": {
+      "sha256": "d2b3808111958f9cb19b051c711c6d4faf172fc6a947f9235c2e7dabfdc21430",
+      "filename": "bai-giang-bach-dang-938.pptx"
+    },
+    "preview": "/media/c049b655f18fb89341629f57b62123391e133fad020db1d93bfc96930d78a776",
+    "previewSource": "https://commons.wikimedia.org/wiki/File:B%E1%BA%A1ch_%C4%90%E1%BA%B1ng_Giang_chi_chi%E1%BA%BFn_(938).jpg",
+    "previewCredit": "Kinh nghiệm (Wikipedia tiếng Việt) · Public domain · Wikimedia Commons",
+    "mindmap": "/media/ffbe1cf28e3bb9b2e1ed43477b3a708cb88c42d7c81ad1dad9e88dbbdf758187",
+    "mindmapSource": "Vẽ cho ChronoShelf từ nội dung quyển “Trận chiến Bạch Đằng 938”",
+    "mindmapCredit": "Tự vẽ cho ChronoShelf · CC0 1.0"
+  },
+  {
+    "slug": "nha-nuoc-van-lang-au-lac",
+    "grade": 10,
+    "title": "Nhà nước Văn Lang – Âu Lạc",
+    "summary": "Nhà nước đầu tiên ở lưu vực sông Hồng: tổ chức Hùng Vương – lạc hầu – lạc tướng, và chuyển biến sang Âu Lạc.",
+    "book": "khoi-nguon-bo-coi",
+    "published": true,
+    "slide": {
+      "sha256": "251fc5fce3cd9eefdd8b5e5730610847262bf72a746e9d22666c671f99911f12",
+      "filename": "bai-giang-van-lang-au-lac.pptx"
+    },
+    "preview": "/media/d0585f86fad20ef61f37377f85d8d92c6d058dee19aca4d51f2c7d466d84a693",
+    "previewSource": "https://commons.wikimedia.org/wiki/File:An_Duong_Vuong_Temple_Gate_Co_Loa.jpg",
+    "previewCredit": "Julez A. · CC BY-SA 4.0 · Wikimedia Commons",
+    "mindmap": "/media/7f9b92805c132f9ab2b6a0911a6b1a2b8f858da2bd2c28abc008f0c81e28bc26",
+    "mindmapSource": "Vẽ cho ChronoShelf từ nội dung quyển “Khởi nguồn bờ cõi”",
+    "mindmapCredit": "Tự vẽ cho ChronoShelf · CC0 1.0"
+  }
+]

@@ -12,11 +12,10 @@ TypeScript. Chỉ nhắm **màn hình PC**, ngưỡng thấp nhất là 1024×76
 
 | File | Trả lời câu hỏi |
 |---|---|
-| **`CLAUDE.md`** | **Bắt đầu từ đây.** Toàn bộ kiến thức dự án: kiến trúc, quy tắc bắt buộc, bẫy đã gặp, lệnh. |
 | `content.md` | Sản phẩm *là gì* — sitemap, cơ chế, nội dung từng trang. |
 | `DESIGN.md` | Trông *như thế nào* — toàn bộ design token và lý do từng con số. |
 | `db/schema/README.md` | Thứ tự chạy schema, ba role và vì sao có ba. Đọc trước khi đụng SQL. |
-| `docs/superpowers/specs/` | Spec đã duyệt, mỗi subsystem một file. |
+| `db/seed/` | Nội dung khởi tạo: kệ, sách, câu hỏi, bài giảng, cùng ảnh và slide đi kèm. |
 
 ## Bắt đầu
 
@@ -42,6 +41,46 @@ npm run dev
 Mở `http://localhost:3000` — dùng `localhost`, **không phải `127.0.0.1`**: Next 16 chặn tài
 nguyên dev cross-origin và React sẽ không hydrate xong.
 
+## Dựng trên server
+
+Seed dựng lại **toàn bộ nội dung** đang có: 3 kệ, 13 quyển, câu hỏi trắc nghiệm, bài giảng,
+cùng 72 ảnh và 2 bộ slide nằm trong `db/seed/media/` và `db/seed/tai-lieu/`. Không có dữ liệu
+người dùng nào đi theo.
+
+```bash
+# 1. Dưới quyền superuser: role ứng dụng và database (chỉ một lần)
+psql -U postgres -c "CREATE ROLE chronoshelf_app LOGIN PASSWORD '<mật khẩu mạnh>'"
+psql -U postgres -c "CREATE DATABASE chronoshelf"
+
+# 2. .env.local: DATABASE_URL trỏ chronoshelf_app, SESSION_SECRET là chuỗi ngẫu nhiên dài
+#    .env.pgadmin: PGADMIN_URL=postgres://postgres:<mật khẩu>@127.0.0.1:5432/chronoshelf
+node --env-file-if-exists=.env.local --env-file=.env.pgadmin scripts/db-migrate.mjs
+node --env-file=.env.pgadmin scripts/seed-content.mjs
+npm run db:check                 # phải ra "… đạt / 0 hỏng"
+
+# 3. Build và chạy
+npm run build && npm start
+```
+
+Rồi đăng ký một tài khoản qua giao diện và phong admin cho nó:
+
+```sql
+INSERT INTO public.user_roles (user_id, role)
+SELECT id, 'admin' FROM public.users WHERE email = 'ban@example.com'
+ON CONFLICT (user_id) DO UPDATE SET role = 'admin';
+```
+
+Seed chạy lại bao nhiêu lần cũng được. Nó **không** ghi đè phần admin đã biên tập trên kệ
+(giới thiệu, phần thưởng, ảnh bìa, tranh ghép) hay bài giảng đã có. Nhưng nó **ghi đè** sách,
+trang và câu hỏi theo bản trong repo.
+
+**Đã sửa nội dung qua `/quan-tri` ở máy dev?** Xuất lại trước khi commit, nếu không seed sẽ dựng
+ra bản cũ:
+
+```bash
+node --env-file=.env.pgadmin scripts/seed-export.mjs
+```
+
 ## Lệnh
 
 ```bash
@@ -59,7 +98,8 @@ prepare`). Sau mỗi lần đụng `db/schema/` thì chạy thêm `db:check` **v
 
 - Sửa màu/chữ/spacing thì sửa **`DESIGN.md`** rồi `npm run design:build`. Đừng sửa
   `tailwind.theme.json` bằng tay, và đừng hardcode mã hex trong component.
-- Sửa **nội dung bài học** thì vào màn quản trị `/quan-tri`, không sửa file. `db/seed/*.json`
-  là bootstrap một chiều — sửa nó không làm đổi nội dung đang chạy.
+- Sửa **nội dung bài học** thì vào màn quản trị `/quan-tri`, không sửa file. `db/seed/` là
+  bootstrap một chiều — sửa nó không làm đổi nội dung đang chạy. Chiều ngược lại (database →
+  `db/seed/`) là `scripts/seed-export.mjs`.
 - `npm run check` cần `.env.local` có mặt. `DATABASE_URL` không cần trỏ tới database sống,
   nhưng phải tồn tại — `next build` nạp `lib/db/sequelize.ts` và file đó throw nếu thiếu.

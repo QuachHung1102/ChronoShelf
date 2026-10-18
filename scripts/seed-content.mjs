@@ -13,23 +13,25 @@
  * ghi được — và lúc bootstrap thì chưa có admin nào.
  *
  * Idempotent: chạy lại nhiều lần cho cùng một kết quả.
+ *
+ * Đọc thêm db/seed/media/ + db/seed/tai-lieu/ (ảnh và slide, đặt tên theo sha256) và
+ * db/seed/bai-giang.json. Ba thứ đó do `scripts/seed-export.mjs` xuất từ database đang
+ * chạy — chạy nó trước khi commit nếu nội dung vừa được sửa qua /quan-tri.
  */
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { bamMoi } from "../lib/auth/mat-khau.ts";
+import { laGoiZip, PPTX_MIME, sniffImage } from "../lib/media/sniff.ts";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const dir = join(root, "db", "seed");
 
-/** Mã ISO-3166-1 numeric mà world-atlas dùng làm id quốc gia (chặng D cần). */
-const COUNTRY_CODE = { "lich-su-viet-nam": "704" };
-
 const q = (v) => (v === null || v === undefined ? "NULL" : `'${String(v).replace(/'/g, "''")}'`);
 const qArray = (a) => (a?.length ? `ARRAY[${a.map(q).join(", ")}]::text[]` : "NULL");
 
-const files = (await readdir(dir)).filter((f) => f.endsWith(".json"));
+const files = (await readdir(dir)).filter((f) => f.endsWith(".json") && f !== "bai-giang.json");
 if (files.length === 0) {
   console.error("Không tìm thấy file nội dung nào trong " + dir);
   process.exit(1);
@@ -40,20 +42,65 @@ for (const file of files) shelves.push(JSON.parse(await readFile(join(dir, file)
 
 // Không phát `BEGIN;`/`COMMIT;` ở đây: script tự bọc cả lô trong MỘT transaction bên
 // dưới, nên seed hỏng giữa chừng sẽ roll back sạch thay vì để lại nửa quyển sách.
+// Phần tử là chuỗi SQL, hoặc `{ text, values }` khi cần tham số (bytea không đi qua `q()`).
 const out = [];
+
+/**
+ * Ảnh và slide nạp TRƯỚC mọi nội dung. Không có khóa ngoại nào giữ `/media/<sha>`, nên
+ * thiếu tệp thì seed vẫn chạy xanh mà trang hiện ảnh vỡ — vì vậy cuối script có phép đếm
+ * URL treo. Tên tệp là sha256 của chính nó: tính lại để một tệp hỏng hay bị đổi tên không
+ * lọt vào dưới một định danh sai. Kiểu do magic byte quyết định, đúng như route tải lên.
+ */
+async function tepNhiPhan(sub) {
+  const ds = await readdir(join(dir, sub)).catch(() => []);
+  return Promise.all(
+    ds.map(async (ten) => {
+      const bytes = await readFile(join(dir, sub, ten));
+      const sha = createHash("sha256").update(bytes).digest("hex");
+      if (!ten.startsWith(sha + ".")) throw new Error(`db/seed/${sub}/${ten}: sha256 không khớp tên tệp`);
+      return { sha, bytes };
+    }),
+  );
+}
+
+for (const { sha, bytes } of await tepNhiPhan("media")) {
+  const mime = sniffImage(bytes);
+  if (!mime) throw new Error(`db/seed/media/${sha}: không phải PNG/JPEG/WebP/GIF`);
+  out.push({
+    text:
+      "INSERT INTO public.media (sha256, mime, bytes, byte_len) VALUES ($1, $2, $3, $4)" +
+      " ON CONFLICT (sha256) DO NOTHING",
+    values: [sha, mime, bytes, bytes.length],
+  });
+}
+
+const baiGiang = JSON.parse(await readFile(join(dir, "bai-giang.json"), "utf8").catch(() => "[]"));
+for (const { sha, bytes } of await tepNhiPhan("tai-lieu")) {
+  if (!laGoiZip(bytes)) throw new Error(`db/seed/tai-lieu/${sha}: không phải tệp .pptx`);
+  const filename = baiGiang.find((b) => b.slide?.sha256 === sha)?.slide.filename ?? `${sha}.pptx`;
+  out.push({
+    text:
+      "INSERT INTO public.documents (sha256, mime, filename, bytes, byte_len) VALUES ($1, $2, $3, $4, $5)" +
+      " ON CONFLICT (sha256) DO NOTHING",
+    values: [sha, PPTX_MIME, filename, bytes, bytes.length],
+  });
+}
 
 for (const shelf of shelves) {
   out.push(
-    // `blurb`, `reward_title` và `reward_body` chỉ ghi lúc CHÈN MỚI, và cố ý vắng mặt
-    // trong `DO UPDATE`: ba cột đó là chỗ admin soạn qua `/quan-tri`, còn seed là bootstrap
-    // MỘT CHIỀU. Đưa chúng vào DO UPDATE là biến mỗi lần chạy `seed:content` thành một
-    // lần xóa trắng công biên tập của admin.
+    // `blurb`, phần thưởng, ảnh bìa và tranh ghép chỉ ghi lúc CHÈN MỚI, và cố ý vắng mặt
+    // trong `DO UPDATE`: đó là chỗ admin soạn qua `/quan-tri`, còn seed là bootstrap MỘT
+    // CHIỀU. Đưa chúng vào DO UPDATE là biến mỗi lần chạy `seed:content` thành một lần
+    // xóa trắng công biên tập của admin.
     `INSERT INTO public.shelves\n` +
-      `  (slug, name, position, country_code, blurb, reward_title, reward_body, published)\n` +
+      `  (slug, name, position, country_code, blurb, reward_title, reward_body, published,\n` +
+      `   cover_url, cover_source, cover_credit, mosaic_url, mosaic_source, mosaic_credit)\n` +
       `VALUES\n` +
-      `  (${q(shelf.slug)}, ${q(shelf.name)}, ${shelf.order}, ` +
-      `${q(COUNTRY_CODE[shelf.slug] ?? null)}, '', ` +
-      `${q(shelf.reward?.title ?? "")}, ${q(shelf.reward?.body ?? "")}, true)\n` +
+      `  (${q(shelf.slug)}, ${q(shelf.name)}, ${Number(shelf.order)}, ` +
+      `${q(shelf.countryCode)}, ${q(shelf.blurb ?? "")}, ` +
+      `${q(shelf.reward?.title ?? "")}, ${q(shelf.reward?.body ?? "")}, ${shelf.published !== false},\n` +
+      `   ${q(shelf.cover)}, ${q(shelf.coverSource)}, ${q(shelf.coverCredit)},\n` +
+      `   ${q(shelf.mosaic)}, ${q(shelf.mosaicSource)}, ${q(shelf.mosaicCredit)})\n` +
       `ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name, position = EXCLUDED.position,\n` +
       `  country_code = EXCLUDED.country_code, published = EXCLUDED.published;`,
   );
@@ -79,12 +126,15 @@ for (const shelf of shelves) {
     // từ vị trí chứ không lưu (spec §2.2).
     out.push(
       `INSERT INTO public.books\n` +
-        `  (slug, shelf_slug, position, title, era, cover_url, reward_item_slug, published) VALUES\n` +
+        `  (slug, shelf_slug, position, title, era, cover_url, cover_source, cover_credit,\n` +
+        `   reward_item_slug, published) VALUES\n` +
         `  (${q(book.slug)}, ${q(shelf.slug)}, ${i + 1}, ${q(book.title)}, ${q(book.era)}, ` +
-        `${q(book.cover)}, ${q(book.rewardItem)}, true)\n` +
+        `${q(book.cover)}, ${q(book.coverSource)}, ${q(book.coverCredit)}, ` +
+        `${q(book.rewardItem)}, ${book.published !== false})\n` +
         `ON CONFLICT (slug) DO UPDATE SET shelf_slug = EXCLUDED.shelf_slug,\n` +
         `  position = EXCLUDED.position, title = EXCLUDED.title, era = EXCLUDED.era,\n` +
-        `  cover_url = EXCLUDED.cover_url, reward_item_slug = EXCLUDED.reward_item_slug,\n` +
+        `  cover_url = EXCLUDED.cover_url, cover_source = EXCLUDED.cover_source,\n` +
+        `  cover_credit = EXCLUDED.cover_credit, reward_item_slug = EXCLUDED.reward_item_slug,\n` +
         `  published = EXCLUDED.published, updated_at = now();`,
     );
 
@@ -95,9 +145,11 @@ for (const shelf of shelves) {
     book.pages.forEach((page, p) => {
       out.push(
         `INSERT INTO public.pages\n` +
-          `  (book_slug, position, heading, body, image_url, caption, summary) VALUES\n` +
+          `  (book_slug, position, heading, body, image_url, image_source, image_credit,\n` +
+          `   caption, summary) VALUES\n` +
           `  (${q(book.slug)}, ${p + 1}, ${q(page.heading)}, ${q(page.body)}, ` +
-          `${q(page.image)}, ${q(page.caption)}, ${qArray(page.summary)});`,
+          `${q(page.image)}, ${q(page.imageSource)}, ${q(page.imageCredit)}, ` +
+          `${q(page.caption)}, ${qArray(page.summary)});`,
       );
     });
 
@@ -117,6 +169,23 @@ for (const shelf of shelves) {
       );
     });
   });
+}
+
+// Bài giảng: SAU sách (`book_slug` tham chiếu tới nó) và sau tài liệu (`slide_sha256`).
+// `DO NOTHING` chứ không DO UPDATE: bài giảng chỉ sinh ra từ /quan-tri, nên một bài đã có
+// trong database luôn mới hơn bản trong repo — cùng lý do với phần biên tập của kệ.
+for (const b of baiGiang) {
+  out.push(
+    `INSERT INTO public.lessons\n` +
+      `  (slug, grade, title, summary, book_slug, slide_sha256, slide_filename,\n` +
+      `   preview_url, preview_source, preview_credit, mindmap_url, mindmap_source, mindmap_credit,\n` +
+      `   published) VALUES\n` +
+      `  (${q(b.slug)}, ${Number(b.grade)}, ${q(b.title)}, ${q(b.summary ?? "")}, ${q(b.book)},\n` +
+      `   ${q(b.slide?.sha256)}, ${q(b.slide?.filename)},\n` +
+      `   ${q(b.preview)}, ${q(b.previewSource)}, ${q(b.previewCredit)},\n` +
+      `   ${q(b.mindmap)}, ${q(b.mindmapSource)}, ${q(b.mindmapCredit)}, ${b.published !== false})\n` +
+      `ON CONFLICT (slug) DO NOTHING;`,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -182,19 +251,33 @@ await client.connect();
 try {
   await client.query("BEGIN");
   for (const stmt of out) await client.query(stmt);
+  // Ảnh treo: một URL `/media/<sha>` không có dòng tương ứng. Không khóa ngoại nào bắt
+  // được chuyện này, nên đếm ngay trong transaction và roll back nếu có.
+  const treo = await client.query(
+    "SELECT u FROM (SELECT cover_url u FROM public.books UNION ALL SELECT image_url FROM public.pages" +
+      " UNION ALL SELECT image_url FROM public.items UNION ALL SELECT cover_url FROM public.shelves" +
+      " UNION ALL SELECT mosaic_url FROM public.shelves UNION ALL SELECT preview_url FROM public.lessons" +
+      " UNION ALL SELECT mindmap_url FROM public.lessons) x" +
+      " WHERE u LIKE '/media/%' AND substr(u, 8) NOT IN (SELECT sha256 FROM public.media)",
+  );
+  if (treo.rowCount > 0) {
+    throw new Error(`${treo.rowCount} ảnh trỏ vào tệp không có trong db/seed/media/: ${treo.rows[0].u} …`);
+  }
   await client.query("COMMIT");
   const { rows } = await client.query(
     "SELECT (SELECT count(*) FROM public.shelves) AS shelves," +
       " (SELECT count(*) FROM public.items) AS items," +
       " (SELECT count(*) FROM public.books) AS books," +
       " (SELECT count(*) FROM public.pages) AS pages," +
-      " (SELECT count(*) FROM public.book_questions) AS questions",
+      " (SELECT count(*) FROM public.book_questions) AS questions," +
+      " (SELECT count(*) FROM public.lessons) AS lessons," +
+      " (SELECT count(*) FROM public.media) AS media",
   );
   const c = rows[0];
   console.log(
     "Seed xong: " + c.shelves + " kệ, " + c.items + " vật phẩm, " +
       c.books + " sách (kể cả 1 mồi nhử chưa xuất bản), " + c.pages + " trang, " +
-      c.questions + " câu hỏi.",
+      c.questions + " câu hỏi, " + c.lessons + " bài giảng, " + c.media + " ảnh.",
   );
 } catch (e) {
   await client.query("ROLLBACK").catch(() => {});

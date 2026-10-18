@@ -2,6 +2,15 @@
   "slug": "lich-su-quanh-cuoc-song",
   "name": "Lịch sử quanh cuộc sống",
   "order": 3,
+  "countryCode": null,
+  "published": true,
+  "blurb": "",
+  "cover": null,
+  "coverSource": null,
+  "coverCredit": null,
+  "mosaic": "/media/c869b2d737699d247bc80b6e26c4b5e8e1e46ad644300bf61f3f5d414058cd8b",
+  "mosaicSource": "https://commons.wikimedia.org/wiki/File:Along_the_River_During_the_Qingming_Festival_(detail_of_original).jpg",
+  "mosaicCredit": "Zhang Zeduan · Public domain · Wikimedia Commons",
   "reward": {
     "title": "Người đọc được đồ vật",
     "body": "Đồng xu, quả bóng, tà áo dài, bóng đèn. Bốn thứ tầm thường đến mức không ai nhìn kỹ — và đó chính là điều làm chúng quý.\n\nLịch sử trong sách giáo khoa là những cái tên lớn và những cái mốc lớn. Nhưng lịch sử thật thì nằm trong túi áo, trên sân chơi, trong tủ quần áo và trên trần nhà bạn. Từ hôm nay, bạn có một thói quen mới: cầm một món đồ lên và hỏi nó ra đời thế nào. Bức tranh vừa ghép xong không phải phần thưởng cuối cùng — nó là cái nhìn bạn mang theo ra khỏi trang này."
@@ -10,34 +19,34 @@
     {
       "slug": "dong-xu-co",
       "name": "Đồng xu cổ",
+      "description": "Một đồng tiền lỗ vuông giữa — dáng tiền quen thuộc ở Đông Á suốt hai nghìn năm, xâu lại thành chuỗi mà mang đi.",
       "image": "/items/dong-xu-co.svg",
       "imageSource": "https://game-icons.net/",
-      "imageCredit": "Game-icons.net · CC BY 3.0",
-      "description": "Một đồng tiền lỗ vuông giữa — dáng tiền quen thuộc ở Đông Á suốt hai nghìn năm, xâu lại thành chuỗi mà mang đi."
+      "imageCredit": "Game-icons.net · CC BY 3.0"
     },
     {
       "slug": "qua-bong-da",
       "name": "Quả bóng da",
+      "description": "Mười tám mảnh da khâu tay, bơm căng. Món đồ chơi đơn giản nhất thế giới, và cũng là môn thể thao đông người xem nhất.",
       "image": "/items/qua-bong-da.svg",
       "imageSource": "https://game-icons.net/",
-      "imageCredit": "Game-icons.net · CC BY 3.0",
-      "description": "Mười tám mảnh da khâu tay, bơm căng. Món đồ chơi đơn giản nhất thế giới, và cũng là môn thể thao đông người xem nhất."
+      "imageCredit": "Game-icons.net · CC BY 3.0"
     },
     {
       "slug": "ta-ao-dai",
       "name": "Tà áo dài",
+      "description": "Hai tà áo dài chấm gót — hình dáng ra đời từ chiếc áo ngũ thân, được rút gọn lại vào những năm 1930.",
       "image": "/items/ta-ao-dai.svg",
       "imageSource": "https://game-icons.net/",
-      "imageCredit": "Game-icons.net · CC BY 3.0",
-      "description": "Hai tà áo dài chấm gót — hình dáng ra đời từ chiếc áo ngũ thân, được rút gọn lại vào những năm 1930."
+      "imageCredit": "Game-icons.net · CC BY 3.0"
     },
     {
       "slug": "bong-den-soi-dot",
       "name": "Bóng đèn sợi đốt",
+      "description": "Sợi tóc bóng đèn nóng sáng trong bầu thủy tinh hút chân không — thứ đã kéo dài ngày làm việc của loài người thêm vài giờ.",
       "image": "/items/bong-den-soi-dot.svg",
       "imageSource": "https://game-icons.net/",
-      "imageCredit": "Game-icons.net · CC BY 3.0",
-      "description": "Sợi tóc bóng đèn nóng sáng trong bầu thủy tinh hút chân không — thứ đã kéo dài ngày làm việc của loài người thêm vài giờ."
+      "imageCredit": "Game-icons.net · CC BY 3.0"
     }
   ],
   "books": [
@@ -45,35 +54,43 @@
       "slug": "tu-vo-so-den-tien-giay",
       "title": "Từ vỏ sò đến tiền giấy",
       "era": "Thời cổ đại – nay",
-      "cover": null,
+      "published": true,
+      "cover": "/media/eea081998852fba1f0241c781148ff88383b8715574d50b53a1827b133f26f8b",
+      "coverSource": "https://commons.wikimedia.org/wiki/File:Eastern_Zhou_Spade_Coins.jpg",
+      "coverCredit": "Gary Todd · CC0 · Wikimedia Commons",
       "rewardItem": "dong-xu-co",
       "pages": [
         {
           "heading": "Trước khi có tiền",
-          "image": null,
-          "caption": null,
           "body": "Ban đầu người ta đổi trực tiếp: một con gà lấy một đấu gạo. Cách này chỉ chạy được khi hai bên tình cờ cần đúng thứ của nhau — người có gà mà muốn muối thì phải tìm cho ra người có muối và đang thèm gà. Để thoát khỏi sự trùng hợp hiếm hoi ấy, các cộng đồng chọn ra một món ai cũng nhận: vỏ sò, hạt muối, tấm vải, con trâu. Món đó không cần ăn được, chỉ cần bền, dễ mang và khó làm giả.",
-          "summary": null
+          "image": "/media/55568d298da2584f17398d13a409ee1dfacc98adfdca98d95f8bff5033ee928d",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Cowrie_Shells_Used_as_Currency.jpg",
+          "imageCredit": "Gary Todd · CC0 · Wikimedia Commons",
+          "caption": "Vỏ ốc tiền (vỏ sò) tự nhiên từng được dùng làm vật trao đổi ở Trung Quốc cổ đại – Bảo tàng Thượng Hải."
         },
         {
           "heading": "Kim loại và những đồng xu đầu tiên",
-          "image": null,
-          "caption": null,
           "body": "Kim loại giải quyết gọn cả ba yêu cầu: không hỏng, chia nhỏ được, và hiếm. Khoảng thế kỷ VII trước Công nguyên, vương quốc Lydia ở Tiểu Á đúc những đồng tiền đầu tiên có đóng dấu nhà vua — dấu ấy bảo chứng cho trọng lượng, người nhận khỏi phải cân lại. Ở Đông Á, đồng tiền tròn có lỗ vuông giữa trở thành khuôn mẫu suốt hai nghìn năm: xâu dây qua lỗ là mang đi được cả trăm đồng.",
-          "summary": null
+          "image": "/media/a583201a823b1358c5474349b844b42c36f533b6026ca543518166ab7e85b760",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Lydian_electrum_Lion_coins_-_Flickr_-_brewbooks.jpg",
+          "imageCredit": "brewbooks from near Seattle, USA · CC BY-SA 2.0 · Wikimedia Commons",
+          "caption": "Những đồng xu hợp kim vàng – bạc (electrum) dập hình đầu sư tử của vương quốc Lydia, thế kỷ 7–6 TCN."
         },
         {
           "heading": "Tiền giấy ra đời",
-          "image": null,
-          "caption": null,
           "body": "Kim loại có nhược điểm: nặng. Thương nhân Trung Hoa bắt đầu gửi tiền đồng lấy giấy biên nhận, rồi chính giấy biên nhận được đem trao đổi. Đến thời Tống, nhà nước đứng ra phát hành tiền giấy — gọi là giao tử — và đó là tiền giấy do chính quyền phát hành sớm nhất được ghi nhận. Ở Việt Nam, năm 1396 Hồ Quý Ly cho phát hành \"thông bảo hội sao\", bắt dân đổi tiền đồng lấy giấy. Cải cách thất bại vì dân không tin tờ giấy bằng tin đồng kim loại.",
-          "summary": null
+          "image": "/media/ab63dcc6b5f1024ce228e2068c6906dc58f0dde4c51e3d930f9c928c1dec4734",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Inner_Mongolia_Museum_Ming_dynasty_paper_bank_note.jpg",
+          "imageCredit": "BabelStone · CC BY-SA 3.0 · Wikimedia Commons",
+          "caption": "Tờ tiền giấy \"Đại Minh thông hành bảo sao\" mệnh giá 1 quán thời nhà Minh – Bảo tàng Nội Mông."
         },
         {
           "heading": "Tiền là một lời hứa",
-          "image": null,
-          "caption": null,
           "body": "Đồng tiền đầu tiên của nước ta là \"Thái Bình hưng bảo\", đúc dưới thời Đinh Tiên Hoàng khoảng năm 970 — đúc được tiền riêng là một tuyên bố về chủ quyền. Ngày nay phần lớn tiền không còn hình dáng nào cả: nó là những con số trong máy chủ ngân hàng. Nhưng bản chất không đổi từ thời vỏ sò: tiền có giá trị vì mọi người cùng tin rằng người tiếp theo cũng sẽ nhận nó.",
+          "image": "/media/709a446ccae7ef158a65796f0cd8b8c39cbdc4c8b01bc3d511c82274632e756b",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Bank_of_England_%C2%A35_note_1931.jpg",
+          "imageCredit": "The Bank of England · Public domain · Wikimedia Commons",
+          "caption": "Tờ 5 bảng Ngân hàng Anh năm 1931, in dòng chữ \"I promise to pay the Bearer\" – hứa trả cho người cầm phiếu.",
           "summary": [
             "Đổi hàng lấy hàng chỉ chạy khi hai bên tình cờ cần đúng thứ của nhau.",
             "Lydia đúc những đồng tiền có dấu bảo chứng đầu tiên, khoảng thế kỷ VII TCN.",
@@ -120,35 +137,43 @@
       "slug": "hanh-trinh-qua-bong",
       "title": "Hành trình quả bóng",
       "era": "Thời cổ đại – nay",
-      "cover": null,
+      "published": true,
+      "cover": "/media/6ac71df2ea80ddd6c8d243ba3e2a34bf2178250db2380fea9fb04bd8721b5b1e",
+      "coverSource": "https://commons.wikimedia.org/wiki/File:Fu%C3%9Fballgeschichte_(1872).jpg",
+      "coverCredit": "After William Small · Public domain · Wikimedia Commons",
       "rewardItem": "qua-bong-da",
       "pages": [
         {
           "heading": "Trò chơi có ở khắp nơi",
-          "image": null,
-          "caption": null,
           "body": "Đá một vật tròn vào một cái đích là trò chơi mà nhiều nền văn hóa nghĩ ra một cách độc lập. Người Trung Hoa cổ có xúc cúc — đá quả bóng nhồi lông qua một khung lưới, được ghi chép từ thời Hán và dùng để rèn quân. Người Nhật có kemari, người Hy Lạp và La Mã có những trò bóng riêng. Điểm chung: chưa ai có luật thống nhất, mỗi làng chơi một kiểu.",
-          "summary": null
+          "image": "/media/19d0c5ccaf42e6576956263a08ee9011ec109409db653fb334ff3ff8c5db3bd1",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Great_Ball_Court_Chichen_Itza_03_2011_1424.jpg",
+          "imageCredit": "Mariordo (Mario Roberto Durán Ortiz) · CC BY-SA 4.0 · Wikimedia Commons",
+          "caption": "Sân bóng lớn ở Chichen Itza (Mexico), nơi người Maya chơi trò bóng cao su nghi lễ."
         },
         {
           "heading": "Nước Anh viết ra luật",
-          "image": null,
-          "caption": null,
           "body": "Ở Anh thế kỷ XIX, mỗi trường học chơi một luật khác nhau, nên hai trường gặp nhau là cãi nhau. Năm 1863, đại diện các câu lạc bộ họp tại London lập ra Hiệp hội bóng đá và thống nhất bộ luật đầu tiên. Quyết định lớn nhất là cấm dùng tay — chính điều khoản ấy tách bóng đá khỏi môn bóng bầu dục. Từ một bộ luật viết trên vài trang giấy, trò chơi có thể lan đi bất cứ đâu mà vẫn là cùng một trò chơi.",
-          "summary": null
+          "image": "/media/b849c95bf52c8fa32d56f719eef1dc08d0a238d3d7084928bddbfb4b21978edc",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Original_laws_of_the_game_1863.jpg",
+          "imageCredit": "Adrian Roebuck · CC BY-SA 3.0 · Wikimedia Commons",
+          "caption": "Sổ biên bản viết tay của Hiệp hội Bóng đá Anh năm 1863, ghi bộ luật bóng đá đầu tiên, trưng bày ở bảo tàng."
         },
         {
           "heading": "Đi theo tàu buôn ra thế giới",
-          "image": null,
-          "caption": null,
           "body": "Thủy thủ, kỹ sư và thương nhân người Anh mang bóng đá tới mọi cảng biển họ ghé. Năm 1904, bảy liên đoàn châu Âu lập ra FIFA. Kỳ World Cup đầu tiên tổ chức năm 1930 tại Uruguay, và đội chủ nhà vô địch. Ở Việt Nam, bóng đá theo chân người Pháp vào từ cuối thế kỷ XIX, bén rễ trước hết ở Sài Gòn rồi lan ra cả nước.",
-          "summary": null
+          "image": "/media/da8968647bb5bfad55d2c20a52777a65c2c9e008e9c79e197b181953ad96282c",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Uruguay_national_football_team_1930.jpg",
+          "imageCredit": "Không rõ tác giả · Public domain · Wikimedia Commons",
+          "caption": "Đội tuyển Uruguay – nhà vô địch World Cup đầu tiên năm 1930, khi bóng đá đã lan tới Nam Mỹ."
         },
         {
           "heading": "Vì sao là môn thể thao lớn nhất",
-          "image": null,
-          "caption": null,
           "body": "Bóng đá cần rất ít: một khoảng đất, hai cái cọc làm gôn, và một quả bóng — thiếu bóng thì bó giẻ lại cũng chơi được. Luật đủ đơn giản để một đứa trẻ hiểu trong năm phút, nhưng đủ mở để không trận nào giống trận nào. Chính sự rẻ và đơn giản đó, chứ không phải sự hào nhoáng, là lý do nó có mặt ở mọi ngõ xóm trên hành tinh.",
+          "image": "/media/33bbeb85e082d80ce26081b1f55ebf1cf1ed54d38fd5e3e1d9e5c9d6622874e4",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:White_Horse_Final1923.jpg",
+          "imageCredit": "Không rõ tác giả · Public domain · Wikimedia Commons",
+          "caption": "Đám đông tràn xuống sát khung thành trong trận chung kết Cúp FA 1923 tại sân Wembley, London.",
           "summary": [
             "Nhiều nền văn hóa nghĩ ra trò đá bóng độc lập với nhau; Trung Hoa cổ có xúc cúc.",
             "Năm 1863 Hiệp hội bóng đá Anh ra đời và viết bộ luật thống nhất đầu tiên.",
@@ -195,35 +220,43 @@
       "slug": "trang-phuc-qua-cac-thoi-ky",
       "title": "Trang phục qua các thời kỳ",
       "era": "Thời tiền sử – nay",
-      "cover": null,
+      "published": true,
+      "cover": "/media/9a70e02b7d01091a1ab6fc0a8d7924b2b4b5c8e5ff2e64950e6f0398d938b161",
+      "coverSource": "https://commons.wikimedia.org/wiki/File:C%C3%B4_Nguy%E1%BB%85n-th%E1%BB%8B-H%E1%BA%ADu,_ng%C6%B0%E1%BB%9Di_thi%E1%BA%BFu-n%E1%BB%AF_%C4%91%E1%BA%A7u-ti%C3%AAn_m%E1%BA%B7c_qu%E1%BA%A7n-%C3%A1o_l%E1%BB%91i_m%E1%BB%9Bi_ki%E1%BB%83u_Lemur.jpg",
+      "coverCredit": "Musée Annam · Public domain · Wikimedia Commons",
       "rewardItem": "ta-ao-dai",
       "pages": [
         {
           "heading": "Che thân, rồi mới đến đẹp",
-          "image": null,
-          "caption": null,
           "body": "Quần áo bắt đầu từ nhu cầu giữ ấm và tránh gai góc: da thú buộc quanh người, khâu bằng kim xương và gân động vật. Khi con người biết trồng lanh, trồng bông và nuôi tằm, vải ra đời và cùng với nó là nghề dệt. Từ lúc có vải, trang phục thôi chỉ là lớp che: nó bắt đầu nói cho người khác biết bạn là ai.",
-          "summary": null
+          "image": "/media/01c82617375854e4ffdf079e2908b95f93eab32757b78de303e01be2295e60f5",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Tunics_folded_clothing_and_chest_of_Kha.jpg",
+          "imageCredit": "Museo Egizio · CC0 · Wikimedia Commons",
+          "caption": "Áo vải lanh, quần áo gấp và rương đựng đồ trong mộ ông Kha, Ai Cập cổ đại (khoảng 1400 TCN) – Bảo tàng Ai Cập Turin."
         },
         {
           "heading": "Áo quần kể chuyện thân phận",
-          "image": null,
-          "caption": null,
           "body": "Ở hầu hết các xã hội cũ, màu sắc và chất liệu bị quy định chặt. Màu vàng dành cho vua, lụa là thứ dân thường không được mặc, hoa văn rồng phượng chỉ hoàng gia mới dùng. Nhìn một người từ xa là biết họ thuộc tầng lớp nào, làm nghề gì, đã lập gia đình chưa. Trang phục vì thế là một thứ luật pháp mặc trên người.",
-          "summary": null
+          "image": "/media/c4bc4313ba53530efe10c14492aa59f327ff2aef0d4ebd3f6b36268a0a2f080f",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:LES_MANDARINS_EN_TENUE_DE_CEREMONIE.jpg",
+          "imageCredit": "Không rõ người chụp · Public domain · Wikimedia Commons",
+          "caption": "Các đại thần triều Nguyễn trong triều phục, trong đó có Cao Xuân Dục và Nguyễn Hữu Bài – ảnh đầu thế kỷ 20."
         },
         {
           "heading": "Chiếc áo dài Việt Nam",
-          "image": null,
-          "caption": null,
           "body": "Giữa thế kỷ XVIII, chúa Nguyễn Phúc Khoát ban lệnh về y phục ở Đàng Trong, và chiếc áo ngũ thân — năm thân áo, cổ đứng, cài khuy bên phải — dần thành lối mặc chung. Đến thập niên 1930, họa sĩ Nguyễn Cát Tường đưa ra kiểu áo mới: bỏ bớt thân, ôm sát người, hai tà dài và mềm. Kiểu áo ấy được đặt tên là Lemur theo bút danh của ông, và là hình dáng gần nhất với chiếc áo dài ta thấy ngày nay.",
-          "summary": null
+          "image": "/media/a382e25f05c55e3b0bfec32636756c5e9f46f7295da66ac07616c6c55a165a02",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Jeunes_filles_%C3%A0_la_galerie_d%27art,_Hano%C3%AF_en_1930.jpg",
+          "imageCredit": "Không rõ tác giả · Public domain · Wikimedia Commons",
+          "caption": "Các thiếu nữ mặc áo dài tại một phòng trưng bày nghệ thuật ở Hà Nội, năm 1930."
         },
         {
           "heading": "Khi ai cũng mặc được mọi thứ",
-          "image": null,
-          "caption": null,
           "body": "Máy dệt công nghiệp và máy khâu khiến vải rẻ đi hàng chục lần, và những quy định về ai được mặc gì dần biến mất. Chọn mặc gì trở thành chuyện cá nhân — điều mà tổ tiên ta không có. Đổi lại là một vấn đề mới: ngành thời trang hiện là một trong những ngành thải nhiều rác và tiêu tốn nhiều nước nhất thế giới.",
+          "image": "/media/70b2b1f049fbf90d95abd9f573547bd6a0969a81810c2dd54ad267eaec46ab74",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Interior_view_of_the_central_office_of_I.M._Singer_%26_Co.,_458_Broadway,_New_York_City_-_Keating_sc._LCCN2003663010.jpg",
+          "imageCredit": "Library of Congress · Public domain · Wikimedia Commons",
+          "caption": "Phòng trưng bày máy may của hãng I. M. Singer ở New York – tranh khắc gỗ thế kỷ 19.",
           "summary": [
             "Quần áo khởi đầu từ da thú khâu bằng kim xương, trước khi có vải dệt.",
             "Trong xã hội cũ, màu sắc và chất liệu bị quy định theo tầng lớp.",
@@ -270,35 +303,43 @@
       "slug": "nhung-phat-minh-thap-sang",
       "title": "Những phát minh thắp sáng",
       "era": "Thời tiền sử – nay",
-      "cover": null,
+      "published": true,
+      "cover": "/media/68069d8c509da93a66339a51895fc67b4694940d6dc6867a6263dc075c4c9bb2",
+      "coverSource": "https://commons.wikimedia.org/wiki/File:Demonstration_light_bulb,_stated_to_be_the_first_light_bulb_ever_lit_in_public,_1879,_from_Henry_Ford_collections_-_Museum_of_Science_and_Industry_(Chicago)_-_DSC06446.JPG",
+      "coverCredit": "Daderot · CC0 · Wikimedia Commons",
       "rewardItem": "bong-den-soi-dot",
       "pages": [
         {
           "heading": "Ngọn lửa đầu tiên",
-          "image": null,
-          "caption": null,
           "body": "Trong phần lớn lịch sử, đêm là thời gian chết: không nhìn thấy thì không làm được gì. Lửa là nguồn sáng nhân tạo đầu tiên, rồi tới đèn dầu — một cái bấc nhúng trong mỡ động vật hoặc dầu thực vật — và nến sáp. Tất cả đều chung ba nhược điểm: yếu, khói, và dễ gây cháy. Ánh sáng thời ấy đắt tới mức người ta đi ngủ khi mặt trời lặn không phải vì buồn ngủ, mà vì không đủ tiền thắp.",
-          "summary": null
+          "image": "/media/bbc9ad6ffb5774a5de35fa07308a17523db555b19bd91c4eaf1cedeccaead08b",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:An_impressive_collection_of_oil_lamps,_Romisch-Germanisches_Museum,_Cologne_(8119522850).jpg",
+          "imageCredit": "Carole Raddato from FRANKFURT, Germany · CC BY-SA 2.0 · Wikimedia Commons",
+          "caption": "Bộ sưu tập đèn dầu bằng đất nung thời La Mã tại Bảo tàng La Mã – Germanic, Cologne (Đức)."
         },
         {
           "heading": "Đèn khí và đường phố ban đêm",
-          "image": null,
-          "caption": null,
           "body": "Đầu thế kỷ XIX, các thành phố châu Âu bắt đầu dẫn khí đốt bằng đường ống tới từng cột đèn đường. Lần đầu tiên đường phố sáng suốt đêm. Hệ quả vượt xa chuyện nhìn đường: cửa hàng mở muộn hơn, nhà máy chạy ca đêm, và nhịp sinh hoạt của cả xã hội giãn dài ra sau hoàng hôn.",
-          "summary": null
+          "image": "/media/351a8a36ae9fa8f3c7203dfe2e38081f66078c6430672dadde72afa7f56b8ca6",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:Freilichtmuseum_Berlin_Gaslaterne_Nr_35.jpg",
+          "imageCredit": "Manfred Brueckels · CC BY-SA 3.0 · Wikimedia Commons",
+          "caption": "Cột đèn khí ba nhánh kiểu Charlottenburg tại bảo tàng ngoài trời về đèn khí ở Berlin."
         },
         {
           "heading": "Bóng đèn điện",
-          "image": null,
-          "caption": null,
           "body": "Ý tưởng nung một sợi dây tới mức phát sáng đã có từ lâu, nhưng sợi dây luôn cháy đứt sau ít phút. Năm 1879, Thomas Edison ở Mỹ và Joseph Swan ở Anh gần như đồng thời tìm ra lời giải: đặt sợi đốt trong bầu thủy tinh hút hết không khí, để nó không có gì mà cháy. Edison còn làm một việc quan trọng không kém — dựng cả hệ thống phát điện và dây dẫn, vì một bóng đèn không có điện thì chỉ là đồ thủy tinh.",
-          "summary": null
+          "image": "/media/46dfe9dedb4dad1e7b3cd1cb79e547274e244c70dc002f295d6b95fc81f528d9",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:1880EDISON1881LampsSOCKETSrwLIPACKowner.jpg",
+          "imageCredit": "Richard Warren Lipack · CC BY-SA 3.0 · Wikimedia Commons",
+          "caption": "Các kiểu bóng đèn sợi đốt và đui đèn Edison những năm 1880–1881, cho thấy bóng đèn được cải tiến dần."
         },
         {
           "heading": "Từ sợi đốt đến LED",
-          "image": null,
-          "caption": null,
           "body": "Bóng sợi đốt phí tới khoảng 95% điện năng thành nhiệt. Đèn huỳnh quang khá hơn, rồi đèn LED thay đổi hẳn cuộc chơi: cùng độ sáng, LED tốn khoảng một phần mười điện và bền hàng chục nghìn giờ. LED đỏ ra đời từ năm 1962, nhưng phải tới đèn LED xanh lam của những năm 1990 mới ghép đủ ba màu để tạo ánh sáng trắng — công trình được trao giải Nobel Vật lý năm 2014.",
+          "image": "/media/9f6ea273466beb8227e42b041b91099c4cf29938bf66a0afd08f2d7a8433373f",
+          "imageSource": "https://commons.wikimedia.org/wiki/File:A_clear_Philips,_E27,_4.3W,_LED_filament_light_bulb,_horizontal.jpg",
+          "imageCredit": "W.carter · CC BY-SA 4.0 · Wikimedia Commons",
+          "caption": "Bóng đèn LED dạng \"sợi đốt\" 4,3 W ngày nay: dải LED được làm giống hình dây tóc của bóng đèn cũ.",
           "summary": [
             "Trước khi có điện, ánh sáng đắt tới mức quyết định luôn giờ đi ngủ của cả xã hội.",
             "Đèn khí đầu thế kỷ XIX làm đường phố sáng suốt đêm và kéo dài ngày làm việc.",
