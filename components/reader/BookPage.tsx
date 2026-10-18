@@ -1,4 +1,5 @@
 import type { ContentPage } from "@/lib/content/types";
+import { GhiCongAnh } from "@/components/ui/GhiCongAnh";
 import s from "./reader.module.scss";
 
 /**
@@ -50,28 +51,20 @@ export function BookPage({
 
       {page.image && (
         <figure className="mb-md flex flex-col gap-xs">
-          {/* eslint-disable-next-line @next/next/no-img-element -- ảnh nội dung tĩnh trong public/ */}
+          {/* eslint-disable-next-line @next/next/no-img-element -- ảnh nằm trong bảng `media`, phục vụ qua /media/[id] chứ không qua loader của next/image */}
           <img
             src={page.image}
             alt={page.caption ?? page.heading}
             className="aspect-[4/3] w-full rounded-sm object-cover"
           />
           {/* Một `<figure>` chỉ được có ĐÚNG MỘT `<figcaption>`, nên chú thích và dòng ghi
-              công nằm chung một thẻ chứ không phải hai. */}
+              công nằm chung một thẻ. Ghi công đi qua `GhiCongAnh`: nguồn là URL thì thành một
+              chữ "Nguồn" bấm được — in nguyên URL Wikimedia (hơn 100 ký tự, không khoảng
+              trắng) từng tràn ra khỏi mép giấy và đẩy chữ bài học xuống nửa trang. */}
           {(page.caption || page.imageCredit) && (
             <figcaption className="font-ui text-caption text-ink-dilute">
-              {page.caption && <span className="italic">{page.caption}</span>}
-              {/* Nguồn hiển thị dưới dạng VĂN BẢN THƯỜNG, cố ý không bọc `<a href>`: giá trị
-                  thật trong DB là chuỗi mô tả có khoảng trắng và gạch ngang dài
-                  ("https://github.com/…/ChronoShelf — public/items/x.svg"), bọc vào liên kết
-                  chỉ ra một link chết 404. Điều kiện BY của CC BY-SA đòi ghi công và nêu
-                  nguồn, không đòi nguồn phải bấm được. */}
-              {page.imageCredit && (
-                <span className="block">
-                  Ảnh: {page.imageCredit}
-                  {page.imageSource && <> — Nguồn: {page.imageSource}</>}
-                </span>
-              )}
+              {page.caption && <span className="block italic">{page.caption}</span>}
+              <GhiCongAnh credit={page.imageCredit} nguon={page.imageSource} className="break-words text-ink-dilute" />
             </figcaption>
           )}
         </figure>

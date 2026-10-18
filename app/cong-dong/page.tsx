@@ -35,14 +35,16 @@ export default async function CongDongPage() {
   return (
     <main id="noi-dung" className="min-w-0 flex-1 px-page-margin py-xl">
       <div className="mx-auto max-w-5xl">
-        <p className="font-ui text-label-caps uppercase text-son">Phòng đọc chung</p>
-        <h1 className="mt-sm font-ui text-display-lg text-primary">
-          Chuyện lịch sử đáng để kể tiếp
-        </h1>
-        <p className="mt-sm max-w-measure font-ui text-body-md text-ink-dilute">
-          Đặt một câu hỏi còn vướng, chia sẻ điều vừa khám phá, hoặc góp thêm một mảnh
-          ghép cho câu chuyện của bạn học.
-        </p>
+        <header className="border-b border-mist pb-2xl pt-md">
+          <p className="font-ui text-label-caps uppercase text-son">Phòng đọc chung</p>
+          <h1 className="mt-md text-balance font-ui text-display-xl text-primary">
+            Chuyện lịch sử đáng để kể tiếp
+          </h1>
+          <p className="mt-lg max-w-measure text-pretty font-ui text-body-md text-ink-dilute">
+            Đặt một câu hỏi còn vướng, chia sẻ điều vừa khám phá, hoặc góp thêm một mảnh
+            ghép cho câu chuyện của bạn học.
+          </p>
+        </header>
 
         {/* Bảng tin rỗng thì đổ về MỘT cột. Bố cục hai cột chỉ hợp lý khi cột chính có
             bài để đọc; lúc chưa có bài nào, nó đẩy hành động duy nhất của màn hình —
@@ -52,8 +54,8 @@ export default async function CongDongPage() {
         <div
           className={
             bangTinRong
-              ? "mt-xl grid items-start gap-lg"
-              : "mt-xl grid items-start gap-lg grid-cols-[minmax(0,1fr)_18rem]"
+              ? "mt-2xl grid items-start gap-2xl"
+              : "mt-2xl grid items-start gap-2xl grid-cols-[minmax(0,1fr)_18rem]"
           }
         >
           <section className="min-w-0" aria-labelledby="bang-tin">
@@ -90,44 +92,36 @@ export default async function CongDongPage() {
                         aria-labelledby={`bai-${bai.id}`}
                       >
                         <header className="flex items-start justify-between gap-md">
-                          <div className="flex items-center gap-sm">
-                            {/* Vòng tròn đổi màu theo loại bài — đây là kênh quét bằng
-                                mắt duy nhất còn lại sau khi byline tụt xuống cỡ chữ
-                                metadata. Không phải phân biệt CHỈ bằng màu (WCAG 1.4.1):
-                                icon khác hình và chữ vẫn ghi rõ "Câu hỏi"/"Chia sẻ". */}
+                          <div>
+                            {/* Loại bài là một chip CÓ CHỮ: bản trước dùng vòng tròn màu,
+                                nhưng cả hai nhánh đều `bg-primary` nên nó không phân biệt
+                                được gì. Câu hỏi là khối mực đặc, chia sẻ là viền mực — khác
+                                cả hình lẫn chữ, không dựa riêng vào màu (WCAG 1.4.1). */}
                             <span
-                              className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-on-ink ${
-                                laCauHoi ? "bg-primary" : "bg-primary"
+                              aria-hidden
+                              className={`inline-flex items-center gap-xs rounded-full border border-primary px-sm py-xs font-ui text-label-md ${
+                                laCauHoi ? "bg-primary text-on-ink" : "text-primary"
                               }`}
                             >
                               {laCauHoi ? (
-                                <HelpCircle aria-hidden className="h-5 w-5" />
+                                <HelpCircle aria-hidden className="h-4 w-4" />
                               ) : (
-                                <PenLine aria-hidden className="h-5 w-5" />
+                                <PenLine aria-hidden className="h-4 w-4" />
                               )}
+                              {laCauHoi ? "Câu hỏi" : "Chia sẻ"}
                             </span>
-                            <div>
-                              {/* Vẫn là <h2> (aria-labelledby của <article> trỏ vào nó),
-                                  chỉ thôi mang cỡ chữ tiêu đề: biệt danh là một chuỗi băm
-                                  4 ký tự, nó không được to hơn chính bài viết. */}
-                              {/* `<h3>`, không phải `<h2>`: bài nằm TRONG mục
-                                  "Bảng tin mới nhất" vốn đã là `<h2>`, nên để cùng cấp
-                                  là dàn bài của trình đọc màn hình không lồng bài vào
-                                  bảng tin. `aria-labelledby` nhận mọi phần tử, không
-                                  đòi phải là `<h2>`. */}
-                              <h3
-                                id={`bai-${bai.id}`}
-                                className="font-ui text-label-md text-ink-dilute"
-                              >
-                                {laCauHoi ? "Câu hỏi" : "Chia sẻ"} của {bai.tacGia}
-                              </h3>
-                              <time
-                                dateTime={bai.createdAt.toISOString()}
-                                className="font-ui text-caption text-ink-dilute"
-                              >
+                            {/* `<h3>` vì bài nằm TRONG mục "Bảng tin mới nhất" (`<h2>`);
+                                `aria-labelledby` của `<article>` trỏ vào nó. */}
+                            <h3
+                              id={`bai-${bai.id}`}
+                              className="mt-sm font-ui text-label-md text-ink-dilute"
+                            >
+                              <span className="sr-only">{laCauHoi ? "Câu hỏi" : "Chia sẻ"} </span>
+                              của {bai.tacGia} ·{" "}
+                              <time dateTime={bai.createdAt.toISOString()}>
                                 {dinhDangThoiGian.format(bai.createdAt)}
                               </time>
-                            </div>
+                            </h3>
                           </div>
 
                           {goDuocBai && (
@@ -155,7 +149,7 @@ export default async function CongDongPage() {
                         </p>
 
                         <section
-                          className="mt-lg border-t border-ink-dilute pt-md"
+                          className="mt-lg border-t border-mist pt-md"
                           aria-label={`Bình luận cho bài của ${bai.tacGia}`}
                         >
                           <h4 className="font-ui text-label-md text-primary">
@@ -266,7 +260,7 @@ export default async function CongDongPage() {
             )}
           </section>
 
-          <aside className="space-y-md" aria-label="Đăng bài và thành tích">
+          <aside className="sticky top-lg space-y-md" aria-label="Đăng bài và thành tích">
             <section className={CARD}>
               <h2 className="font-ui text-title-md text-primary">Góp một câu chuyện</h2>
 
