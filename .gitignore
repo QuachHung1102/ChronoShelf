@@ -63,3 +63,17 @@ next-env.d.ts
 # chậu mực, tức nguồn của một quyết định thiết kế.
 .impeccable/*
 !.impeccable/refs/
+
+# File của agent AI và công cụ đi kèm — giữ trên máy, không vào repo.
+CLAUDE.md
+AGENTS.md
+.claude/
+.codex/
+.agents/
+skills-lock.json
+.serena/
+.impeccable/
+.scratch/
+docs/agents/
+docs/superpowers/
+docs/nhat-ky/
